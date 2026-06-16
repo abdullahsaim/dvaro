@@ -13,7 +13,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
         then: function () {
             // Tenant app — path-based multi-tenancy: /app/{tenant_slug}/...
-            Route::middleware('web')
+            // 'tenant' middleware resolves + binds the tenant from the slug.
+            Route::middleware(['web', 'tenant'])
                 ->prefix('app/{tenant_slug}')
                 ->name('tenant.')
                 ->group(base_path('routes/tenant.php'));
@@ -45,5 +46,6 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // TenantNotResolvedException is intentionally NOT added to dontReport():
+        // it signals a tenant-context bug and must surface fully in development.
     })->create();

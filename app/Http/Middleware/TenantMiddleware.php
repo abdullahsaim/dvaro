@@ -2,24 +2,44 @@
 
 namespace App\Http\Middleware;
 
+use App\Modules\SaasCore\Models\Tenant;
 use Closure;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Resolves the active tenant from the {tenant_slug} path segment and binds
- * it into the container/context for the duration of the request.
+ * Resolves the current tenant from the {tenant_slug} path segment and binds
+ * it to the container as 'current_tenant' for the lifetime of the request.
  *
- * SKELETON ONLY — passthrough. No resolution logic yet.
- *
- * Path-based multi-tenancy: dvaro.com.au/app/{tenant_slug}/...
+ * Attached to the tenant route group via the 'tenant' alias (bootstrap/app.php).
  */
 class TenantMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
-        // TODO: resolve tenant from {tenant_slug}, abort 404 if not found,
-        // bind current tenant into context for TenantScope.
+        $slug = $request->route('tenant_slug');
+
+        $tenant = Tenant::where('slug', $slug)->first();
+
+        if ($tenant === null) {
+            abort(404, 'Tenant not found.');
+        }
+
+        // Hard block inactive tenants. Active + trial may proceed.
+        if (in_array($tenant->status, [Tenant::STATUS_SUSPENDED, Tenant::STATUS_CANCELLED], true)) {
+            abort(403, 'This tenant account is not active.');
+        }
+
+        // Bind for TenantScope / HasTenant and the rest of the request.
+        app()->instance('current_tenant', $tenant);
+
+        // Expose a slim, safe tenant payload to every Inertia page.
+        Inertia::share('tenant', fn () => [
+            'name' => $tenant->name,
+            'slug' => $tenant->slug,
+            'status' => $tenant->status,
+        ]);
 
         return $next($request);
     }
