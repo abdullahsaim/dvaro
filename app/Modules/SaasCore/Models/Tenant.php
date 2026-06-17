@@ -2,7 +2,9 @@
 
 namespace App\Modules\SaasCore\Models;
 
+use App\Scopes\TenantScope;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 
 /**
@@ -51,5 +53,63 @@ class Tenant extends Model
     public function getRouteKeyName(): string
     {
         return 'slug';
+    }
+
+    /**
+     * The tenant's access-granting subscription (active OR trialing).
+     *
+     * Subscription is tenant-scoped (HasTenant). The global TenantScope is
+     * dropped here so this works in any context — onboarding, super admin,
+     * console — where this Tenant may not be the bound request tenant.
+     */
+    public function activeSubscription(): HasOne
+    {
+        return $this->hasOne(Subscription::class)
+            ->withoutGlobalScope(TenantScope::class)
+            ->whereIn('status', [
+                Subscription::STATUS_ACTIVE,
+                Subscription::STATUS_TRIALING,
+            ])
+            ->latestOfMany();
+    }
+
+    public function hasSubscription(): bool
+    {
+        return $this->activeSubscription()->exists();
+    }
+
+    /**
+     * The plan behind the active subscription, or null when none.
+     */
+    public function activePlan(): ?Plan
+    {
+        return $this->activeSubscription?->plan;
+    }
+
+    /**
+     * Whether the active plan enables the given module key.
+     */
+    public function hasModule(string $key): bool
+    {
+        return (bool) $this->activePlan()?->hasModule($key);
+    }
+
+    /**
+     * Whether $current is within the active plan's limit for $key.
+     *
+     * No plan, or a negative limit (incl. an absent key => -1, meaning
+     * unlimited), is always within limit.
+     */
+    public function withinLimit(string $key, int $current): bool
+    {
+        $plan = $this->activePlan();
+
+        if ($plan === null) {
+            return true;
+        }
+
+        $limit = $plan->getLimit($key);
+
+        return $limit < 0 || $current < $limit;
     }
 }
