@@ -21,9 +21,15 @@
 - [ ] Super Admin Panel
 - [ ] CRM (leads, intake forms)
 - [ ] Fleet Management
-- [ ] Agreement Engine
+- [In Progress] Agreement Engine
+  - [Done] Agreement model + migration (HasTenant; type/status/billing constants; rate & bond_amount in cents; version + parent_agreement_id self-FK for immutable versioning; customer_id & parent_agreement_id restrictOnDelete; isSigned/isActive/latestVersion helpers; indexes on tenant_id+status and customer_id)
+  - [Note] vehicle_id is plain unsignedBigInteger (nullable) — FK constraint deferred to Fleet module session
+  - [ ] Versioning/signature/PDF/template workflow, services, controllers (later sessions)
 - [ ] Invoice & Financial Engine
-- [ ] Customer Management
+- [In Progress] Customer Management
+  - [Done] Customer model + migration (HasTenant; licence_number/passport_number encrypted casts; blacklisted/active scopes; date_of_birth/licence_expiry date casts; index on tenant_id+is_blacklisted)
+  - [Done] hasOutstandingBalance() stub returning false (ledger not built yet)
+  - [ ] Blacklist / bond / ledger logic, services, controllers, portal (later sessions)
 - [ ] Customer Portal
 - [ ] Workshop & Mechanic Portal
 - [ ] AI Assistant
