@@ -20,10 +20,16 @@
   - [ ] Super admin plan management UI
 - [ ] Super Admin Panel
 - [ ] CRM (leads, intake forms)
-- [ ] Fleet Management
+- [In Progress] Fleet Management
+  - [Done] Vehicle model + migration (HasTenant; 6 status constants + STATUSES array; daily_rate in cents; registration_number unique per tenant (tenant_id+registration_number); qr_code_token nullable+globally unique, generation deferred; date casts on expiry/service fields; available/rented/needsService scopes; isAvailable / insuranceExpiringSoon / registrationExpiringSoon helpers; agreements() hasMany)
+  - [Done] agreements.vehicle_id FK attached → vehicles.id (restrictOnDelete — vehicle can't be deleted with agreement history); Agreement->vehicle() belongsTo added
+  - [Done] VehicleStatusChanged event (vehicle + old/new status; no listeners yet)
+  - [Done] ChangeVehicleStatusAction — the ONLY sanctioned path to mutate vehicle status (validates against STATUSES, fires VehicleStatusChanged, no-op on unchanged status); never mutate status directly elsewhere
+  - [ ] QR code token generation/resolution (Workshop session)
+  - [ ] Utilisation/reporting, vehicle docs & image storage, expiry reminder notifications, controllers/routes/UI (later sessions)
 - [In Progress] Agreement Engine
   - [Done] Agreement model + migration (HasTenant; type/status/billing constants; rate & bond_amount in cents; version + parent_agreement_id self-FK for immutable versioning; customer_id & parent_agreement_id restrictOnDelete; isSigned/isActive/latestVersion helpers; indexes on tenant_id+status and customer_id)
-  - [Note] vehicle_id is plain unsignedBigInteger (nullable) — FK constraint deferred to Fleet module session
+  - [Done] vehicle_id FK → vehicles.id (restrictOnDelete) attached in Fleet session; vehicle() belongsTo added
   - [ ] Versioning/signature/PDF/template workflow, services, controllers (later sessions)
 - [ ] Invoice & Financial Engine
 - [In Progress] Customer Management

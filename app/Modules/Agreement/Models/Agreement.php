@@ -3,6 +3,7 @@
 namespace App\Modules\Agreement\Models;
 
 use App\Modules\Customer\Models\Customer;
+use App\Modules\Fleet\Models\Vehicle;
 use App\Traits\HasTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -72,6 +73,15 @@ class Agreement extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    /**
+     * The vehicle this agreement covers. The FK (restrictOnDelete) was added
+     * once the Fleet module's vehicles table existed.
+     */
+    public function vehicle(): BelongsTo
+    {
+        return $this->belongsTo(Vehicle::class);
     }
 
     /**
