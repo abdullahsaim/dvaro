@@ -31,7 +31,22 @@
   - [Done] Agreement model + migration (HasTenant; type/status/billing constants; rate & bond_amount in cents; version + parent_agreement_id self-FK for immutable versioning; customer_id & parent_agreement_id restrictOnDelete; isSigned/isActive/latestVersion helpers; indexes on tenant_id+status and customer_id)
   - [Done] vehicle_id FK → vehicles.id (restrictOnDelete) attached in Fleet session; vehicle() belongsTo added
   - [ ] Versioning/signature/PDF/template workflow, services, controllers (later sessions)
-- [ ] Invoice & Financial Engine
+- [In Progress] Invoice & Financial Engine
+  - [Done] Ledger foundation (append-only system of record):
+    - ledger_entries migration (HasTenant; customer_id restrictOnDelete; created_by → users nullOnDelete; 9 type strings; amount integer cents; reference_type/reference_id loose pointer; indexes on (tenant_id, customer_id) and (reference_type, reference_id))
+    - SIGN CONVENTION: amount POSITIVE = debit/charge (owes more), NEGATIVE = credit/payment (owes less); balance = SUM(amount)
+    - LedgerEntry model: append-only enforced IN CODE at 3 layers — instance update()/delete() overrides, updating/deleting model-event guards, and a custom LedgerEntryBuilder blocking query-builder mass update()/delete(); UPDATED_AT = null; forCustomer scope
+    - LedgerImmutableException (plain RuntimeException — internal invariant, no HTTP render)
+    - LedgerService: append() is the ONLY sanctioned write path (validates type); getBalance() sums tenant-scoped entries; created_by left null (system) until auth wired
+  - [Done] Invoice structure (foundation only — NO prorating, NO late fees, NO payment gateway):
+    - invoices migration (HasTenant; customer_id + agreement_id restrictOnDelete; type recurring/manual/prorated; status draft/sent/paid/overdue/cancelled default draft; subtotal/total/paid_amount cents; indexes on (tenant_id, status) and (tenant_id, due_date))
+    - invoice_items migration (invoice_id cascadeOnDelete; HasTenant; vehicle_id restrictOnDelete — reporting link must survive; nullable period_start/period_end)
+    - Invoice model (belongsTo Customer/Agreement, hasMany items; isPaid/isOverdue/outstandingAmount)
+    - InvoiceItem model (belongsTo Invoice/Vehicle)
+    - CreateInvoiceService + CreateInvoiceDTO: creates invoice+items in DB::transaction, total = sum(item amounts), appends rental_charge ledger entry (reference invoice), fires InvoiceGenerated; no notifications yet
+    - InvoiceGenerated event (no listeners yet — Notification session)
+  - [Verified] Tinker: 2-item invoice → matching ledger entry + getBalance; all 3 immutability layers throw (incl. query-builder bypass); multi-invoice summing; negative payment lowers balance; tenant isolation
+  - [ ] Prorated vehicle-change splitting, late-fee automation, payment recording, PDF receipts, controllers/routes/UI (later sessions)
 - [In Progress] Customer Management
   - [Done] Customer model + migration (HasTenant; licence_number/passport_number encrypted casts; blacklisted/active scopes; date_of_birth/licence_expiry date casts; index on tenant_id+is_blacklisted)
   - [Done] hasOutstandingBalance() stub returning false (ledger not built yet)
