@@ -31,4 +31,12 @@ return [
         'deleted'        => 'Vehicle removed from your fleet.',
         'status_changed' => 'Vehicle status updated.',
     ],
+
+    'customer' => [
+        'created'       => 'Customer added.',
+        'updated'       => 'Customer updated.',
+        'deleted'       => 'Customer removed.',
+        'blacklisted'   => 'Customer blacklisted.',
+        'unblacklisted' => 'Customer removed from the blacklist.',
+    ],
 ];

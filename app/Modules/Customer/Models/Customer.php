@@ -2,9 +2,12 @@
 
 namespace App\Modules\Customer\Models;
 
+use App\Modules\Finance\Models\LedgerEntry;
+use App\Scopes\TenantScope;
 use App\Traits\HasTenant;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Customer — a tenant's rental customer.
@@ -18,6 +21,7 @@ use Illuminate\Database\Eloquent\Model;
 class Customer extends Model
 {
     use HasTenant;
+    use SoftDeletes;
 
     protected $fillable = [
         'tenant_id',
@@ -61,13 +65,20 @@ class Customer extends Model
     }
 
     /**
-     * Whether the customer has an unpaid balance.
+     * Whether the customer has an unpaid balance (cents > 0).
      *
-     * Stub: the financial ledger does not exist yet (Invoice/Finance module,
-     * later session). Returns false until the ledger is the system of record.
+     * Self-contained on purpose: it does NOT go through LedgerService, because
+     * that path relies on the bound current_tenant (TenantScope) which is not
+     * guaranteed outside a web request — queue jobs, scheduled commands, etc.
+     * Instead we drop TenantScope and constrain explicitly by the customer's own
+     * tenant_id, so the sum is correct (and tenant-safe) in ANY execution
+     * context. Sign convention: positive amount = the customer owes money.
      */
     public function hasOutstandingBalance(): bool
     {
-        return false;
+        return LedgerEntry::withoutGlobalScope(TenantScope::class)
+            ->where('customer_id', $this->id)
+            ->where('tenant_id', $this->tenant_id)
+            ->sum('amount') > 0;
     }
 }

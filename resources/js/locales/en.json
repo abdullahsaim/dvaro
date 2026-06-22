@@ -31,6 +31,7 @@
         "actions": "Actions",
         "all": "All",
         "none": "—",
+        "search": "Search",
         "confirm_delete": "Remove this vehicle from your fleet?"
     },
     "fleet": {
@@ -63,6 +64,46 @@
             "suspended": "Suspended",
             "accident": "Accident",
             "reserved": "Reserved"
+        }
+    },
+    "customer": {
+        "title": "Customers",
+        "add_customer": "Add customer",
+        "new_customer": "New customer",
+        "edit_customer": "Edit customer",
+        "customer_details": "Customer details",
+        "empty": "No customers yet.",
+        "confirm_delete": "Remove this customer?",
+        "search_placeholder": "Search by name or phone",
+        "filter_all": "All",
+        "filter_active": "Active",
+        "filter_blacklisted": "Blacklisted",
+        "status": "Status",
+        "blacklisted_badge": "Blacklisted",
+        "active_badge": "Active",
+        "outstanding_balance": "Outstanding balance",
+        "balance_owing": "Owing",
+        "balance_clear": "Clear",
+        "blacklist": "Blacklist",
+        "unblacklist": "Remove from blacklist",
+        "blacklist_reason": "Reason",
+        "blacklist_reason_placeholder": "Why is this customer being blacklisted?",
+        "blacklist_action": "Blacklist customer",
+        "blacklisted_reason_label": "Blacklist reason",
+        "rental_history": "Rental history",
+        "rental_history_placeholder": "Rental history will appear here once the rental module is built.",
+        "fields": {
+            "name": "Name",
+            "email": "Email",
+            "phone": "Phone",
+            "date_of_birth": "Date of birth",
+            "licence_number": "Licence number",
+            "licence_expiry": "Licence expiry",
+            "passport_number": "Passport number",
+            "address": "Address",
+            "emergency_contact_name": "Emergency contact name",
+            "emergency_contact_phone": "Emergency contact phone",
+            "risk_notes": "Risk notes"
         }
     }
 }

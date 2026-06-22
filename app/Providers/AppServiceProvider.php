@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Modules\Customer\Models\Customer;
+use App\Modules\Customer\Policies\CustomerPolicy;
 use App\Modules\Fleet\Models\Vehicle;
 use App\Modules\Fleet\Policies\VehiclePolicy;
 use Illuminate\Database\Schema\Blueprint;
@@ -26,6 +28,7 @@ class AppServiceProvider extends ServiceProvider
         // Policies in app/Modules/** are NOT auto-discovered (Laravel only looks
         // in App\Policies for App\Models). Register module policies explicitly.
         Gate::policy(Vehicle::class, VehiclePolicy::class);
+        Gate::policy(Customer::class, CustomerPolicy::class);
 
         // Reusable migration helper: add a tenant_id column + index in one line.
         //

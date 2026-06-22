@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Customer\Http\Controllers\CustomerController;
 use App\Modules\Fleet\Http\Controllers\FleetController;
 use App\Modules\SaasCore\Http\Controllers\TenantAuthController;
 use App\Modules\SaasCore\Http\Controllers\TenantDashboardController;
@@ -38,4 +39,14 @@ Route::middleware('auth:tenant')->group(function () {
     // Status transitions go through their own endpoint → ChangeVehicleStatusAction.
     Route::post('fleet/{vehicle}/status', [FleetController::class, 'changeStatus'])
         ->name('fleet.status');
+
+    // Customers — {customer} binds through TenantScope (cross-tenant id => 404).
+    Route::resource('customers', CustomerController::class);
+
+    // Blacklist transitions go through their own endpoints → Blacklist/
+    // UnblacklistCustomerAction (the only sanctioned paths, which fire events).
+    Route::post('customers/{customer}/blacklist', [CustomerController::class, 'blacklist'])
+        ->name('customers.blacklist');
+    Route::post('customers/{customer}/unblacklist', [CustomerController::class, 'unblacklist'])
+        ->name('customers.unblacklist');
 });
