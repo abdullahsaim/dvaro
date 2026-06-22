@@ -25,7 +25,28 @@ return [
     ],
 
     'resend' => [
-        'key' => env('RESEND_KEY'),
+        // CLAUDE.md env uses RESEND_API_KEY; fall back to the framework default.
+        'key' => env('RESEND_API_KEY', env('RESEND_KEY')),
+    ],
+
+    'mailgun' => [
+        'domain' => env('MAILGUN_DOMAIN'),
+        'secret' => env('MAILGUN_SECRET'),
+        // ap-southeast-2 is served by the US API host; EU domains use api.eu.
+        'endpoint' => env('MAILGUN_ENDPOINT', 'api.mailgun.net'),
+        // The From address used by the notification email providers.
+        'from' => env('MAIL_FROM_ADDRESS', 'no-reply@dvaro.com.au'),
+    ],
+
+    'clicksend' => [
+        'username' => env('CLICKSEND_USERNAME'),
+        'api_key' => env('CLICKSEND_API_KEY'),
+        // WhatsApp sends are billed against a registered ClickSend number.
+        'whatsapp_number' => env('CLICKSEND_WHATSAPP_NUMBER'),
+    ],
+
+    'cellcast' => [
+        'api_key' => env('CELLCAST_API_KEY'),
     ],
 
     'slack' => [
