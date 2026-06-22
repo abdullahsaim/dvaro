@@ -44,6 +44,38 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'tenant' => TenantMiddleware::class,
         ]);
+
+        // Register Inertia's server-side middleware on the web group. Required so
+        // session-flashed validation errors are shared into Inertia page props.
+        $middleware->web(append: [
+            \App\Http\Middleware\HandleInertiaRequests::class,
+        ]);
+
+        // CRITICAL ordering: Laravel's middleware-priority sort hoists the
+        // framework Authenticate middleware ('auth:tenant') ahead of unsorted
+        // custom middleware. Without this, auth would run BEFORE TenantMiddleware
+        // resolves the tenant — breaking tenant-scoped auth lookups and the guest
+        // redirect below. Pin TenantMiddleware into the priority list immediately
+        // before the auth middleware so tenant context is always bound first.
+        // NB: the default priority list references the AuthenticatesRequests
+        // CONTRACT (the router matches Authenticate to it via instanceof), so we
+        // anchor to the interface, not the concrete Authenticate class.
+        $middleware->prependToPriorityList(
+            before: \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
+            prepend: TenantMiddleware::class,
+        );
+
+        // Where 'auth:tenant' sends unauthenticated guests. TenantMiddleware
+        // runs earlier in the pipeline and binds 'current_tenant', so we detect
+        // tenant context from that single source of truth rather than re-parsing
+        // the path. No tenant bound (other route groups) → fall back to root.
+        $middleware->redirectGuestsTo(function () {
+            if (app()->bound('current_tenant')) {
+                return route('tenant.login', ['tenant_slug' => app('current_tenant')->slug]);
+            }
+
+            return '/';
+        });
     })
     ->withExceptions(function (Exceptions $exceptions) {
         // TenantNotResolvedException is intentionally NOT added to dontReport():

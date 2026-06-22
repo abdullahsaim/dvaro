@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Modules\SaasCore\Models\Tenant;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -39,6 +40,17 @@ class TenantMiddleware
             'name' => $tenant->name,
             'slug' => $tenant->slug,
             'status' => $tenant->status,
+        ]);
+
+        // Resolved lazily at render time (after the guard has run): the current
+        // tenant user, or null when unauthenticated.
+        Inertia::share('auth', fn () => [
+            'user' => ($user = Auth::guard('tenant')->user()) ? [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+            ] : null,
         ]);
 
         return $next($request);

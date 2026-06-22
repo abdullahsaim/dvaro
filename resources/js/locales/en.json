@@ -2,5 +2,15 @@
     "app": {
         "name": "DVARO",
         "tagline": "Intelligent Fleet & Rental Operations"
+    },
+    "auth": {
+        "sign_in": "Sign in",
+        "email": "Email",
+        "password": "Password",
+        "remember_me": "Remember me",
+        "logout": "Log out"
+    },
+    "dashboard": {
+        "welcome": "Welcome, {name}"
     }
 }

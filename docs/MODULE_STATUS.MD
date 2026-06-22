@@ -3,7 +3,9 @@
 ## Infrastructure
 - [Done] Project scaffold + 14-module structure
 - [Done] Multi-tenancy foundation (TenantScope + TenantMiddleware)
-- [ ] Auth guards (tenant, superadmin, customer, mechanic)
+- [In Progress] Auth guards
+  - [Done] tenant guard (login/logout) — see SaaS Core below
+  - [ ] superadmin, customer, mechanic guards (separate future sessions)
 - [ ] Provider interfaces (SMS, Email, AI, Payment)
 - [ ] CI/CD pipeline (GitHub Actions)
 
@@ -15,6 +17,17 @@
   - [Done] PlanLimitExceededException (403 JSON, code PLAN_LIMIT_REACHED)
   - [Done] TenantOnboardingService + DTO + TenantRegistered event (DB::transaction, trialing subscription)
   - [Done] Tenant model: activeSubscription/activePlan/hasModule/withinLimit; plan_id FK (nullOnDelete)
+  - [Done] Tenant Portal Authentication (tenant guard — login/logout only; NO password reset, NO registration UI):
+    - tenant_users migration (HasTenant; UNIQUE(tenant_id, email) — email is per-tenant, NOT global; role string; rememberToken)
+    - TenantUser model — DEDICATED, separate from App\Models\User; extends Authenticatable; HasTenant + Spatie HasRoles + Notifiable; $guard_name='tenant' (so Spatie resolves roles under the tenant guard); password hashed cast; ROLE_ADMIN/STAFF/ACCOUNTS constants
+    - config/auth.php: 'tenant_users' provider → TenantUser (other 3 portals still scaffold to User)
+    - TenantRolesSeeder — creates tenant_admin/tenant_staff/tenant_accounts under guard 'tenant'; NOT wired into DatabaseSeeder, run on demand
+    - TenantAuthController (showLogin/login/logout) + LoginRequest (email|ip rate limit, 5 attempts); login scoped to current_tenant — attempt() passes explicit tenant_id ON TOP of the automatic TenantScope on the provider lookup, so one tenant's credentials can never authenticate against another
+    - routes/tenant.php: GET/POST login, POST logout + GET dashboard placeholder behind auth:tenant
+    - Inertia shares auth.user (slim payload) lazily from the tenant guard; Vue Pages/Tenant/Login.vue (PublicLayout) + Dashboard.vue (AppLayout) — FUNCTIONAL ONLY, design pass later; added '@' → resources/js Vite alias
+    - CRITICAL FIX: pinned TenantMiddleware into the middleware PRIORITY list before the AuthenticatesRequests contract (bootstrap/app.php prependToPriorityList). Laravel's priority sort otherwise hoists auth:tenant ahead of the tenant resolver, so auth would run before the tenant is bound. Anchored to the contract, not concrete Authenticate, because the default priority list references the interface.
+    - redirectGuestsTo: unauthenticated tenant routes → that tenant's login (detected via bound current_tenant, not path re-parsing); falls back to '/' when no tenant bound
+  - [Verified] Pest/PHPUnit feature suite tests/Feature/TenantAuthTest.php (DatabaseTransactions — NOT RefreshDatabase, never migrate:fresh): same email in 2 tenants = 2 distinct users; login to own tenant; tenant A creds REJECTED at tenant B login; session persists (re-resolved from session store via forgetGuards between requests); tenant A session does NOT authenticate on tenant B (redirects to B login); logout; guest→login redirect; rate limit on 6th attempt. 8 tests / full suite green.
   - [ ] Onboarding controller + routes (not built — services/models only)
   - [ ] Stripe/PayPal subscription billing
   - [ ] Super admin plan management UI
