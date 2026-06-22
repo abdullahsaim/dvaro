@@ -10,6 +10,8 @@ use App\Modules\Customer\Models\Customer;
 use App\Modules\Customer\Policies\CustomerPolicy;
 use App\Modules\Fleet\Models\Vehicle;
 use App\Modules\Fleet\Policies\VehiclePolicy;
+use App\Modules\Invoice\Models\Invoice;
+use App\Modules\Invoice\Policies\InvoicePolicy;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
@@ -38,6 +40,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Customer::class, CustomerPolicy::class);
         Gate::policy(Lead::class, LeadPolicy::class);
         Gate::policy(Agreement::class, AgreementPolicy::class);
+        Gate::policy(Invoice::class, InvoicePolicy::class);
 
         // Public intake-form submissions: 5 per hour PER TOKEN (the {token} route
         // segment), not per IP — many customers may legitimately share one IP

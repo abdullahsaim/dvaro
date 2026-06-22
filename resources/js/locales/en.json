@@ -32,7 +32,8 @@
         "all": "All",
         "none": "—",
         "search": "Search",
-        "confirm_delete": "Remove this vehicle from your fleet?"
+        "confirm_delete": "Remove this vehicle from your fleet?",
+        "close": "Close"
     },
     "fleet": {
         "title": "Fleet",
@@ -214,6 +215,77 @@
             "notes": "Notes",
             "signed_at": "Signed at",
             "created_at": "Created"
+        },
+        "change_vehicle": "Change vehicle",
+        "change_vehicle_hint": "Swap the vehicle mid-cycle. The current invoice is split prorated between the two vehicles and a new agreement version is created for re-signing.",
+        "select_new_vehicle": "Select an available vehicle",
+        "change_date": "Change date",
+        "preview_change": "Preview proration",
+        "confirm_change": "Confirm vehicle change",
+        "cancel_change": "Cancel",
+        "proration_preview_title": "Proration preview",
+        "proration_old_vehicle": "Outgoing vehicle ({days} days)",
+        "proration_new_vehicle": "Incoming vehicle ({days} days)",
+        "proration_total": "Total (unchanged)",
+        "proration_note": "These two amounts sum exactly to the original invoice total. Confirm to apply the change."
+    },
+    "invoice": {
+        "title": "Invoices",
+        "invoice_details": "Invoice details",
+        "empty": "No invoices yet.",
+        "search_placeholder": "Search by customer name",
+        "filter_all": "All",
+        "view": "View",
+        "outstanding": "Outstanding",
+        "record_payment": "Record payment",
+        "record_payment_hint": "Record a manual payment (cash or bank transfer).",
+        "payment_amount_aud": "Amount (AUD)",
+        "payment_method": "Method",
+        "payment_notes": "Notes (optional)",
+        "payment_date": "Payment date (optional)",
+        "submit_payment": "Record payment",
+        "payment_history": "Payment history",
+        "no_payments": "No payments recorded yet.",
+        "line_items": "Line items",
+        "subtotal": "Subtotal",
+        "total": "Total",
+        "paid": "Paid",
+        "balance_owing": "Balance owing",
+        "customer_balance": "Customer ledger balance",
+        "mark_overdue": "Mark overdue",
+        "late_fee_present": "Late fee applied",
+        "download_pdf": "Download PDF",
+        "pdf_pending": "The PDF is being generated. Refresh shortly.",
+        "recorded_by": "Recorded by",
+        "system": "System",
+        "fields": {
+            "customer": "Customer",
+            "type": "Type",
+            "status": "Status",
+            "billing_period": "Billing period",
+            "due_date": "Due date",
+            "description": "Description",
+            "vehicle": "Vehicle",
+            "period": "Period",
+            "amount": "Amount"
+        },
+        "statuses": {
+            "draft": "Draft",
+            "sent": "Sent",
+            "paid": "Paid",
+            "overdue": "Overdue",
+            "cancelled": "Cancelled"
+        },
+        "types": {
+            "recurring": "Recurring",
+            "manual": "Manual",
+            "prorated": "Prorated"
+        },
+        "methods": {
+            "cash": "Cash",
+            "bank_transfer": "Bank transfer",
+            "stripe": "Stripe",
+            "paypal": "PayPal"
         }
     }
 }

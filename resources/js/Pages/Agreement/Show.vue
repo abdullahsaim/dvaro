@@ -12,6 +12,7 @@ import { useCurrency } from '@/composables/useCurrency';
 const props = defineProps({
     agreement: { type: Object, required: true },
     versions: { type: Array, default: () => [] },
+    availableVehicles: { type: Array, default: () => [] },
 });
 
 const { t } = useI18n();
@@ -19,6 +20,7 @@ const page = usePage();
 const { formatAUD } = useCurrency();
 const base = computed(() => `/app/${page.props.tenant.slug}/agreements`);
 const flash = computed(() => page.props.flash?.success);
+const flashError = computed(() => page.props.flash?.error);
 
 const isDraft = computed(() => props.agreement.status === 'draft');
 const canVersion = computed(() => ['signed', 'active'].includes(props.agreement.status));
@@ -106,6 +108,38 @@ function sign() {
 function createVersion() {
     router.post(`${base.value}/${props.agreement.id}/version`, {}, { preserveScroll: true });
 }
+
+// ── Change vehicle (two-step: preview → confirm) ────────────────────────────
+// Step 1 posts with confirm=false → server runs ProrationService::calculate
+// ONLY (pure, no writes) and flashes the split into proration_preview.
+// Step 2 posts with confirm=true → server runs VehicleChangeService::execute.
+const showChangeForm = ref(false);
+const changeForm = useForm({ new_vehicle_id: '', change_date: '', confirm: false });
+
+// The preview is delivered via flash; it applies only to THIS agreement.
+const preview = computed(() => {
+    const p = page.props.flash?.proration_preview;
+    return p && Number(p.agreement_id) === Number(props.agreement.id) ? p : null;
+});
+
+function previewChange() {
+    changeForm.confirm = false;
+    changeForm.post(`${base.value}/${props.agreement.id}/change-vehicle`, { preserveScroll: true });
+}
+
+function confirmChange() {
+    if (!preview.value) return;
+    // Reuse the exact inputs the preview was computed from.
+    changeForm.new_vehicle_id = preview.value.new_vehicle_id;
+    changeForm.change_date = preview.value.change_date;
+    changeForm.confirm = true;
+    changeForm.post(`${base.value}/${props.agreement.id}/change-vehicle`, { preserveScroll: true });
+}
+
+function cancelChange() {
+    showChangeForm.value = false;
+    changeForm.reset();
+}
 </script>
 
 <template>
@@ -133,6 +167,12 @@ function createVersion() {
                 class="mt-4 rounded border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800 dark:border-green-900 dark:bg-green-900/30 dark:text-green-300"
             >
                 {{ flash }}
+            </p>
+            <p
+                v-if="flashError"
+                class="mt-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900 dark:bg-red-900/30 dark:text-red-300"
+            >
+                {{ flashError }}
             </p>
 
             <!-- Details -->
@@ -210,6 +250,89 @@ function createVersion() {
                     >
                         {{ t('agreement.create_version') }}
                     </button>
+                </div>
+            </div>
+
+            <!-- Change vehicle (signed/active only) — two-step preview/confirm -->
+            <div v-if="canVersion" class="mt-6 max-w-2xl rounded border border-slate-200 p-4 dark:border-slate-800">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-semibold">{{ t('agreement.change_vehicle') }}</h2>
+                    <button
+                        v-if="!showChangeForm"
+                        type="button"
+                        class="rounded bg-slate-100 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                        @click="showChangeForm = true"
+                    >
+                        {{ t('agreement.change_vehicle') }}
+                    </button>
+                </div>
+
+                <div v-if="showChangeForm" class="mt-3">
+                    <p class="text-sm text-slate-500 dark:text-slate-400">{{ t('agreement.change_vehicle_hint') }}</p>
+
+                    <div class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                            <label class="block text-sm text-slate-600 dark:text-slate-400">{{ t('agreement.select_new_vehicle') }}</label>
+                            <select v-model="changeForm.new_vehicle_id" class="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900">
+                                <option value="" disabled>{{ t('agreement.select_new_vehicle') }}</option>
+                                <option v-for="v in availableVehicles" :key="v.id" :value="v.id">
+                                    {{ v.registration_number }} — {{ v.make }} {{ v.model }}
+                                </option>
+                            </select>
+                            <span v-if="changeForm.errors.new_vehicle_id" class="mt-1 block text-xs text-red-600">{{ changeForm.errors.new_vehicle_id }}</span>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-slate-600 dark:text-slate-400">{{ t('agreement.change_date') }}</label>
+                            <input v-model="changeForm.change_date" type="date" class="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900" />
+                            <span v-if="changeForm.errors.change_date" class="mt-1 block text-xs text-red-600">{{ changeForm.errors.change_date }}</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 flex gap-3">
+                        <button
+                            type="button"
+                            :disabled="!changeForm.new_vehicle_id || !changeForm.change_date || changeForm.processing"
+                            class="rounded bg-slate-800 px-4 py-2 text-sm text-white disabled:opacity-50 dark:bg-slate-200 dark:text-slate-900"
+                            @click="previewChange"
+                        >
+                            {{ t('agreement.preview_change') }}
+                        </button>
+                        <button
+                            type="button"
+                            class="rounded bg-slate-100 px-4 py-2 text-sm text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                            @click="cancelChange"
+                        >
+                            {{ t('agreement.cancel_change') }}
+                        </button>
+                    </div>
+
+                    <!-- Proration preview (no writes have happened yet) -->
+                    <div v-if="preview" class="mt-4 rounded border border-amber-200 bg-amber-50 p-4 text-sm dark:border-amber-900 dark:bg-amber-900/20">
+                        <h3 class="font-semibold">{{ t('agreement.proration_preview_title') }}</h3>
+                        <dl class="mt-2 space-y-1">
+                            <div class="flex justify-between">
+                                <dt>{{ t('agreement.proration_old_vehicle', { days: preview.old_vehicle_days }) }}</dt>
+                                <dd class="font-medium">{{ formatAUD(preview.old_vehicle_amount) }}</dd>
+                            </div>
+                            <div class="flex justify-between">
+                                <dt>{{ t('agreement.proration_new_vehicle', { days: preview.new_vehicle_days }) }} — {{ preview.new_vehicle_label }}</dt>
+                                <dd class="font-medium">{{ formatAUD(preview.new_vehicle_amount) }}</dd>
+                            </div>
+                            <div class="flex justify-between border-t border-amber-200 pt-1 font-semibold dark:border-amber-900">
+                                <dt>{{ t('agreement.proration_total') }}</dt>
+                                <dd>{{ formatAUD(preview.old_vehicle_amount + preview.new_vehicle_amount) }}</dd>
+                            </div>
+                        </dl>
+                        <p class="mt-2 text-xs text-amber-800 dark:text-amber-300">{{ t('agreement.proration_note') }}</p>
+                        <button
+                            type="button"
+                            :disabled="changeForm.processing"
+                            class="mt-3 rounded bg-amber-600 px-4 py-2 text-sm text-white disabled:opacity-50"
+                            @click="confirmChange"
+                        >
+                            {{ t('agreement.confirm_change') }}
+                        </button>
+                    </div>
                 </div>
             </div>
 

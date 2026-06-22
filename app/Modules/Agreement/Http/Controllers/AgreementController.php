@@ -146,6 +146,13 @@ class AgreementController extends Controller
                     'created_at' => $a->created_at,
                 ])
                 ->values(),
+            // Available vehicles for a mid-cycle vehicle change (the change UI is
+            // shown only for signed/active agreements). Excludes the current one.
+            'availableVehicles' => Vehicle::query()
+                ->where('status', Vehicle::STATUS_AVAILABLE)
+                ->where('id', '!=', $agreement->vehicle_id)
+                ->orderBy('registration_number')
+                ->get(['id', 'registration_number', 'make', 'model']),
         ]);
     }
 

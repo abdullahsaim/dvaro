@@ -52,4 +52,10 @@ return [
         'signed'          => 'Agreement signed. The PDF is being generated.',
         'version_created' => 'New agreement version created — it needs to be signed.',
     ],
+
+    'invoice' => [
+        'payment_recorded' => 'Payment recorded.',
+        'marked_overdue'   => 'Invoice marked as overdue.',
+        'vehicle_changed'  => 'Vehicle changed. Two prorated invoices were raised and a new agreement version created for re-signing.',
+    ],
 ];

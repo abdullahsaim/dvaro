@@ -71,6 +71,7 @@ class Agreement extends Model
         'bond_amount',
         'start_date',
         'end_date',
+        'next_billing_date',
         'notes',
         'signed_at',
         'signature_data',
@@ -85,6 +86,7 @@ class Agreement extends Model
             'bond_amount' => 'integer',
             'start_date' => 'date',
             'end_date' => 'date',
+            'next_billing_date' => 'date',
             'signed_at' => 'datetime',
         ];
     }

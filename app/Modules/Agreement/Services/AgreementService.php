@@ -9,6 +9,7 @@ use App\Modules\Agreement\Events\AgreementCreated;
 use App\Modules\Agreement\Events\AgreementSigned;
 use App\Modules\Agreement\Events\AgreementVersionCreated;
 use App\Modules\Agreement\Models\Agreement;
+use App\Modules\Invoice\Services\NextBillingDateService;
 use App\Services\BaseService;
 use Illuminate\Support\Facades\DB;
 
@@ -26,6 +27,10 @@ use Illuminate\Support\Facades\DB;
  */
 class AgreementService extends BaseService
 {
+    public function __construct(
+        private readonly NextBillingDateService $nextBilling,
+    ) {}
+
     /**
      * Create a brand-new agreement: status=draft, version=1, no parent.
      */
@@ -62,10 +67,17 @@ class AgreementService extends BaseService
         $signed = DB::transaction(function () use ($agreement, $signatureData): Agreement {
             // signature_data stored as-is (base64 canvas data URL). This is the
             // ONE sanctioned in-place mutation — a status transition, not an edit.
+            // next_billing_date is seeded here too: it is the date the SECOND
+            // recurring invoice falls due (the first covers the start_date period
+            // and is raised by RecurringInvoiceService). It is operational billing
+            // metadata, not a term, so writing it does not breach immutability.
             $agreement->update([
                 'signature_data' => $signatureData,
                 'signed_at' => now(),
                 'status' => Agreement::STATUS_SIGNED,
+                'next_billing_date' => $this->nextBilling
+                    ->calculate($agreement, $agreement->start_date)
+                    ->toDateString(),
             ]);
 
             AgreementSigned::dispatch($agreement);

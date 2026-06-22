@@ -34,6 +34,11 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
+                // Vehicle-change proration preview (step 1 of the two-step change
+                // flow): the controller flashes the calculated split here so the
+                // Agreement page can show it before the admin confirms. No writes
+                // happen on preview.
+                'proration_preview' => fn () => $request->session()->get('proration_preview'),
             ],
         ];
     }
