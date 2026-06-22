@@ -50,8 +50,21 @@
   - [Done] agreements.vehicle_id FK attached → vehicles.id (restrictOnDelete — vehicle can't be deleted with agreement history); Agreement->vehicle() belongsTo added
   - [Done] VehicleStatusChanged event (vehicle + old/new status; no listeners yet)
   - [Done] ChangeVehicleStatusAction — the ONLY sanctioned path to mutate vehicle status (validates against STATUSES, fires VehicleStatusChanged, no-op on unchanged status); never mutate status directly elsewhere
+  - [Done] Fleet UI — controllers/routes/Vue (CRUD, no new models):
+    - SoftDeletes: migration add_soft_deletes_to_vehicles_table + SoftDeletes trait on Vehicle. NO hard deletes — destroy() soft-deletes only. Soft delete is an UPDATE (sets deleted_at), so it never trips the agreements.vehicle_id restrictOnDelete FK; a vehicle with agreement history can still be archived. Trashed rows auto-excluded from route-model binding (→404) and the index list
+    - VehicleCreated event (fired once from CreateVehicleAction; no listeners yet)
+    - CreateVehicleDTO + UpdateVehicleDTO (fromRequest + toAttributes; daily_rate is CENTS per spec; no qr_code_token). UpdateVehicleDTO deliberately has NO status field
+    - CreateVehicleAction — PlanEnforcementService::check('max_vehicles', Vehicle::count()) BEFORE insert (hard block → PlanLimitExceededException 403), then create + fire VehicleCreated. Count is tenant-scoped & excludes soft-deleted (archived ≠ a plan slot)
+    - UpdateVehicleAction — thin $vehicle->update(); cannot touch status (DTO carries none), so ChangeVehicleStatusAction stays the only status path
+    - StoreVehicleRequest — registration_number unique scoped EXPLICITLY to tenant_id (the unique rule runs raw query-builder SQL that bypasses TenantScope). UpdateVehicleRequest extends it: adds ->ignore($vehicle->id) and drops `status`. ChangeStatusRequest: status required, in Vehicle::STATUSES
+    - VehiclePolicy (viewAny/create/view/update/delete/changeStatus; same-tenant check). Registered via Gate::policy in AppServiceProvider (module paths are NOT auto-discovered)
+    - CRITICAL: controller authorizes via Gate::forUser(auth('tenant')->user())->authorize(...) on EVERY vehicle action — NOT $this->authorize() (which resolves the default web guard, empty here, silently skipping the tenant-user check). A loud comment block in FleetController enforces this for future devs. (No global gate() helper exists in Laravel — Gate facade used; forUser(tenant guard) is the load-bearing part)
+    - FleetController (thin): index (?status= filter validated vs STATUSES + per-status tab counts + paginate(15)->withQueryString()), create/store, show, edit/update, destroy (soft), changeStatus → ChangeVehicleStatusAction. Flash success via __('common.fleet.*')
+    - routes/tenant.php: Route::resource('fleet')->parameter('fleet','vehicle') + POST fleet/{vehicle}/status (name tenant.fleet.*), all under existing auth:tenant. HandleInertiaRequests now shares a `flash` prop (success/error)
+    - Vue Pages/Fleet/{Index,Create,Edit,Show}.vue (AppLayout, useForm, all strings via i18n fleet.* + common.*) + Components/StatusBadge.vue (color map available=green/rented=blue/maintenance=yellow/suspended=gray/accident=red/reserved=purple). Edit & Show change status via the separate endpoint, never the edit form. FUNCTIONAL ONLY — design pass later
+  - [Verified] Tinker smoke: VehicleCreated fires on create; max_vehicles=1 hard-blocks 2nd create; status change via action fires VehicleStatusChanged; soft delete hides row but keeps it with deleted_at set; tenant B cannot see tenant A's vehicle even withTrashed. Full Pest suite 15 green; npm build green; 8 fleet routes registered with {vehicle} binding
   - [ ] QR code token generation/resolution (Workshop session)
-  - [ ] Utilisation/reporting, vehicle docs & image storage, expiry reminder notifications, controllers/routes/UI (later sessions)
+  - [ ] Utilisation/reporting, vehicle docs & image storage, expiry reminder notifications (later sessions)
 - [In Progress] Agreement Engine
   - [Done] Agreement model + migration (HasTenant; type/status/billing constants; rate & bond_amount in cents; version + parent_agreement_id self-FK for immutable versioning; customer_id & parent_agreement_id restrictOnDelete; isSigned/isActive/latestVersion helpers; indexes on tenant_id+status and customer_id)
   - [Done] vehicle_id FK → vehicles.id (restrictOnDelete) attached in Fleet session; vehicle() belongsTo added

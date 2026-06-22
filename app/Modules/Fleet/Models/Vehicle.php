@@ -7,6 +7,7 @@ use App\Traits\HasTenant;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Vehicle — a tenant's fleet vehicle.
@@ -23,6 +24,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Vehicle extends Model
 {
     use HasTenant;
+    use SoftDeletes;
 
     public const STATUS_AVAILABLE = 'available';
     public const STATUS_RENTED = 'rented';

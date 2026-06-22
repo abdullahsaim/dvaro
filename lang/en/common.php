@@ -24,4 +24,11 @@ return [
         'failed'   => 'We could not complete your registration. Please try again.',
         'throttle' => 'Too many registration attempts. Please try again in :minutes minutes.',
     ],
+
+    'fleet' => [
+        'created'        => 'Vehicle added to your fleet.',
+        'updated'        => 'Vehicle updated.',
+        'deleted'        => 'Vehicle removed from your fleet.',
+        'status_changed' => 'Vehicle status updated.',
+    ],
 ];

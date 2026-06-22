@@ -21,5 +21,48 @@
         "subscription_status": "Subscription",
         "trial_days_remaining": "Trial days remaining",
         "no_plan": "No active plan"
+    },
+    "common": {
+        "save": "Save",
+        "cancel": "Cancel",
+        "edit": "Edit",
+        "delete": "Delete",
+        "back": "Back",
+        "actions": "Actions",
+        "all": "All",
+        "none": "—",
+        "confirm_delete": "Remove this vehicle from your fleet?"
+    },
+    "fleet": {
+        "title": "Fleet",
+        "add_vehicle": "Add vehicle",
+        "new_vehicle": "New vehicle",
+        "edit_vehicle": "Edit vehicle",
+        "vehicle_details": "Vehicle details",
+        "empty": "No vehicles yet.",
+        "change_status": "Change status",
+        "update_status": "Update status",
+        "fields": {
+            "registration_number": "Registration",
+            "make": "Make",
+            "model": "Model",
+            "year": "Year",
+            "status": "Status",
+            "daily_rate": "Daily rate (cents)",
+            "insurance_company": "Insurance company",
+            "insurance_expiry": "Insurance expiry",
+            "registration_expiry": "Registration expiry",
+            "last_service_date": "Last service date",
+            "next_service_due": "Next service due",
+            "notes": "Notes"
+        },
+        "statuses": {
+            "available": "Available",
+            "rented": "Rented",
+            "maintenance": "Maintenance",
+            "suspended": "Suspended",
+            "accident": "Accident",
+            "reserved": "Reserved"
+        }
     }
 }

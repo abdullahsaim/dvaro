@@ -29,6 +29,12 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request), // includes the validation 'errors' bag
+
+            // One-shot flash messages (e.g. redirect()->with('success', ...)).
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'error' => fn () => $request->session()->get('error'),
+            ],
         ];
     }
 }

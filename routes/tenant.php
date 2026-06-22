@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Fleet\Http\Controllers\FleetController;
 use App\Modules\SaasCore\Http\Controllers\TenantAuthController;
 use App\Modules\SaasCore\Http\Controllers\TenantDashboardController;
 use Illuminate\Support\Facades\Route;
@@ -28,4 +29,13 @@ Route::middleware('auth:tenant')->group(function () {
     Route::post('logout', [TenantAuthController::class, 'logout'])->name('logout');
 
     Route::get('dashboard', [TenantDashboardController::class, 'index'])->name('dashboard');
+
+    // Fleet — resource binds {vehicle} (instead of the default {fleet}) so model
+    // binding resolves a Vehicle through TenantScope (cross-tenant id => 404).
+    Route::resource('fleet', FleetController::class)
+        ->parameter('fleet', 'vehicle');
+
+    // Status transitions go through their own endpoint → ChangeVehicleStatusAction.
+    Route::post('fleet/{vehicle}/status', [FleetController::class, 'changeStatus'])
+        ->name('fleet.status');
 });
