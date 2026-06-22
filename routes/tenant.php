@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Agreement\Http\Controllers\AgreementController;
 use App\Modules\CRM\Http\Controllers\LeadController;
 use App\Modules\Customer\Http\Controllers\CustomerController;
 use App\Modules\Fleet\Http\Controllers\FleetController;
@@ -62,4 +63,19 @@ Route::middleware('auth:tenant')->group(function () {
         ->name('leads.convert');
     Route::post('leads/{lead}/expire', [LeadController::class, 'expire'])
         ->name('leads.expire');
+
+    // Agreements — {agreement} binds through TenantScope (cross-tenant id => 404).
+    // IMMUTABLE: no edit/update/destroy — agreements are never edited or deleted.
+    // State changes only via sign (status transition) and version (a NEW row).
+    Route::resource('agreements', AgreementController::class)
+        ->except(['edit', 'update', 'destroy']);
+
+    Route::post('agreements/{agreement}/sign', [AgreementController::class, 'sign'])
+        ->name('agreements.sign');
+    Route::post('agreements/{agreement}/version', [AgreementController::class, 'createVersion'])
+        ->name('agreements.version');
+
+    // Stream the queued-and-stored PDF (read-only). pdf_path null => 404.
+    Route::get('agreements/{agreement}/pdf', [AgreementController::class, 'downloadPdf'])
+        ->name('agreements.pdf');
 });

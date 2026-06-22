@@ -25,7 +25,7 @@ This system handles real money, real agreements, and real fleets. Accuracy over 
 | Auth              | Laravel Sanctum                            |
 | Roles/Permissions | Spatie Laravel Permission                  |
 | File Storage      | AWS S3-compatible (ap-southeast-2)         |
-| PDF Generation    | Queued (spatie/laravel-pdf)                |
+| PDF Generation    | barryvdh/laravel-dompdf (Queued, pure PHP) |
 | QR Codes          | simplesoftwareio/simple-qrcode             |
 | Backup            | spatie/laravel-backup → Contabo Object Storage |
 | Real-Time         | Polling (30–60s intervals, Reverb future)  |

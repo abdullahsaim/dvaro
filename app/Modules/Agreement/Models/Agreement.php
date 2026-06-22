@@ -37,6 +37,26 @@ class Agreement extends Model
     public const BILLING_WEEKLY = 'weekly';
     public const BILLING_MONTHLY = 'monthly';
 
+    /**
+     * Allowed agreement types — used by validation (StoreAgreementRequest) and
+     * the create form. Mirrors the TYPE_* constants above.
+     */
+    public const TYPES = [
+        self::TYPE_PRIVATE,
+        self::TYPE_DELIVERY,
+        self::TYPE_RIDESHARE,
+    ];
+
+    /**
+     * Allowed billing cycles — used by validation and the create form. Mirrors
+     * the BILLING_* constants above.
+     */
+    public const BILLING_CYCLES = [
+        self::BILLING_DAILY,
+        self::BILLING_WEEKLY,
+        self::BILLING_MONTHLY,
+    ];
+
     protected $fillable = [
         'tenant_id',
         'customer_id',
@@ -51,6 +71,7 @@ class Agreement extends Model
         'bond_amount',
         'start_date',
         'end_date',
+        'notes',
         'signed_at',
         'signature_data',
         'pdf_path',

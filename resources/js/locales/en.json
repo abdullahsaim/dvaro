@@ -152,5 +152,68 @@
             "notes": "Notes",
             "token_expires_at": "Link expiry (optional)"
         }
+    },
+    "agreement": {
+        "title": "Agreements",
+        "add_agreement": "New agreement",
+        "new_agreement": "New agreement",
+        "agreement_details": "Agreement details",
+        "empty": "No agreements yet.",
+        "search_placeholder": "Search by customer name",
+        "filter_all": "All",
+        "filter_type": "Type",
+        "all_types": "All types",
+        "sign": "Sign agreement",
+        "sign_heading": "Sign this agreement",
+        "sign_hint": "Draw the signature below, then sign.",
+        "clear": "Clear",
+        "create_version": "Create new version",
+        "create_version_hint": "Creates a new draft version with the same terms. The current agreement is left unchanged.",
+        "download_pdf": "Download PDF",
+        "pdf_pending": "The PDF is being generated. Refresh shortly.",
+        "version_history": "Version history",
+        "version_label": "Version {version}",
+        "current_version": "Current",
+        "view_version": "View",
+        "signature": "Signature",
+        "select_customer": "Select a customer",
+        "select_vehicle": "Select an available vehicle",
+        "no_vehicles": "No available vehicles. Add or free up a vehicle first.",
+        "rate_aud": "Rate (AUD)",
+        "bond_aud": "Bond / security deposit (AUD)",
+        "amount_preview": "Will be stored as {cents} cents",
+        "statuses": {
+            "draft": "Draft",
+            "signed": "Signed",
+            "active": "Active",
+            "completed": "Completed",
+            "cancelled": "Cancelled"
+        },
+        "types": {
+            "private": "Private",
+            "delivery": "Delivery",
+            "rideshare": "Rideshare"
+        },
+        "billing_cycles": {
+            "daily": "Daily",
+            "weekly": "Weekly",
+            "monthly": "Monthly"
+        },
+        "fields": {
+            "customer": "Customer",
+            "vehicle": "Vehicle",
+            "type": "Type",
+            "status": "Status",
+            "version": "Version",
+            "billing_cycle": "Billing cycle",
+            "billing_cycle_day": "Billing cycle day",
+            "rate": "Rate",
+            "bond_amount": "Bond",
+            "start_date": "Start date",
+            "end_date": "End date",
+            "notes": "Notes",
+            "signed_at": "Signed at",
+            "created_at": "Created"
+        }
     }
 }

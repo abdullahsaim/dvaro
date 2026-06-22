@@ -46,4 +46,10 @@ return [
         'converted' => 'Lead converted to a customer.',
         'expired'   => 'Intake link expired.',
     ],
+
+    'agreement' => [
+        'created'         => 'Agreement created as a draft.',
+        'signed'          => 'Agreement signed. The PDF is being generated.',
+        'version_created' => 'New agreement version created — it needs to be signed.',
+    ],
 ];

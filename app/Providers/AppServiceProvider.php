@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Modules\Agreement\Models\Agreement;
+use App\Modules\Agreement\Policies\AgreementPolicy;
 use App\Modules\CRM\Models\Lead;
 use App\Modules\CRM\Policies\LeadPolicy;
 use App\Modules\Customer\Models\Customer;
@@ -35,6 +37,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Vehicle::class, VehiclePolicy::class);
         Gate::policy(Customer::class, CustomerPolicy::class);
         Gate::policy(Lead::class, LeadPolicy::class);
+        Gate::policy(Agreement::class, AgreementPolicy::class);
 
         // Public intake-form submissions: 5 per hour PER TOKEN (the {token} route
         // segment), not per IP — many customers may legitimately share one IP
