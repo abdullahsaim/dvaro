@@ -105,5 +105,52 @@
             "emergency_contact_phone": "Emergency contact phone",
             "risk_notes": "Risk notes"
         }
+    },
+    "crm": {
+        "title": "Leads",
+        "add_lead": "Add lead",
+        "new_lead": "New lead",
+        "lead_details": "Lead details",
+        "empty": "No leads yet.",
+        "confirm_delete": "Remove this lead?",
+        "confirm_expire": "Expire this intake link? It can't be undone.",
+        "search_placeholder": "Search by name or phone",
+        "submitted": "Submitted",
+        "not_submitted": "Awaiting submission",
+        "converted": "Converted",
+        "convert": "Convert to customer",
+        "expire": "Expire link",
+        "expired_badge": "Expired",
+        "not_convertible_hint": "This lead can be converted once it has been submitted and is not expired or already converted.",
+        "intake_link": "Intake link",
+        "intake_link_hint": "Share this link with the customer. Sending is manual for now.",
+        "copy": "Copy",
+        "copied": "Copied",
+        "created_heading": "Lead created",
+        "create_another": "Create another lead",
+        "status_label": "Status",
+        "submitted_at": "Submitted at",
+        "converted_at": "Converted at",
+        "view_customer": "View customer",
+        "statuses": {
+            "new": "New",
+            "contacted": "Contacted",
+            "converted": "Converted",
+            "expired": "Expired",
+            "rejected": "Rejected"
+        },
+        "fields": {
+            "name": "Name",
+            "email": "Email",
+            "phone": "Phone",
+            "address": "Address",
+            "licence_number": "Licence number",
+            "emergency_contact_name": "Emergency contact name",
+            "emergency_contact_phone": "Emergency contact phone",
+            "rental_start_date": "Preferred start date",
+            "rental_duration": "Rental duration",
+            "notes": "Notes",
+            "token_expires_at": "Link expiry (optional)"
+        }
     }
 }

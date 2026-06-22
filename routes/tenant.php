@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\CRM\Http\Controllers\LeadController;
 use App\Modules\Customer\Http\Controllers\CustomerController;
 use App\Modules\Fleet\Http\Controllers\FleetController;
 use App\Modules\SaasCore\Http\Controllers\TenantAuthController;
@@ -49,4 +50,16 @@ Route::middleware('auth:tenant')->group(function () {
         ->name('customers.blacklist');
     Route::post('customers/{customer}/unblacklist', [CustomerController::class, 'unblacklist'])
         ->name('customers.unblacklist');
+
+    // CRM leads — {lead} binds through TenantScope (cross-tenant id => 404).
+    // No edit/update: a lead is captured, shared, then converted/expired — it is
+    // not an editable record (the customer edits via the public intake form).
+    Route::resource('leads', LeadController::class)->except(['edit', 'update']);
+
+    // Conversion + manual expiry go through their own endpoints → Convert/
+    // ExpireLeadAction (the only sanctioned paths, which fire events).
+    Route::post('leads/{lead}/convert', [LeadController::class, 'convert'])
+        ->name('leads.convert');
+    Route::post('leads/{lead}/expire', [LeadController::class, 'expire'])
+        ->name('leads.expire');
 });

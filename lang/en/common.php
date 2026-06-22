@@ -39,4 +39,11 @@ return [
         'blacklisted'   => 'Customer blacklisted.',
         'unblacklisted' => 'Customer removed from the blacklist.',
     ],
+
+    'crm' => [
+        'created'   => 'Lead created. Share the intake link below.',
+        'deleted'   => 'Lead removed.',
+        'converted' => 'Lead converted to a customer.',
+        'expired'   => 'Intake link expired.',
+    ],
 ];
