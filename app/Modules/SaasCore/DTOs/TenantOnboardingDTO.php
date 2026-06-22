@@ -23,7 +23,9 @@ class TenantOnboardingDTO extends BaseDTO
     public static function fromRequest(Request $request): self
     {
         return new self(
-            name: $request->string('name')->toString(),
+            // The registration form collects the tenant name as 'company_name';
+            // it maps onto the tenant's `name` here.
+            name: $request->string('company_name')->toString(),
             email: $request->string('email')->toString(),
             password: $request->string('password')->toString(),
             plan_id: $request->filled('plan_id') ? (int) $request->input('plan_id') : null,

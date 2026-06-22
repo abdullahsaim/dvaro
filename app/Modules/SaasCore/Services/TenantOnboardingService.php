@@ -7,13 +7,16 @@ use App\Modules\SaasCore\Events\TenantRegistered;
 use App\Modules\SaasCore\Models\Plan;
 use App\Modules\SaasCore\Models\Subscription;
 use App\Modules\SaasCore\Models\Tenant;
+use App\Modules\SaasCore\Models\TenantUser;
 use App\Services\BaseService;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 /**
- * Onboards a new tenant: creates the Tenant, attaches a Plan, and opens a
- * trialing Subscription — all in one transaction.
+ * Onboards a new tenant: creates the Tenant, attaches a Plan, opens a trialing
+ * Subscription, and provisions the first admin TenantUser — all in ONE
+ * transaction. If any step (including the admin user / role assignment) throws,
+ * the whole onboarding rolls back: no orphan tenant, subscription, or user.
  *
  * Side effects (welcome email, provisioning) are NOT performed here; they
  * belong to listeners on the TenantRegistered event.
@@ -46,6 +49,23 @@ class TenantOnboardingService extends BaseService
                 'current_period_end' => $trialEndsAt,
                 'trial_ends_at' => $trialEndsAt,
             ]);
+
+            // First admin login for the tenant. tenant_id is set explicitly
+            // (no bound current_tenant during onboarding); an INSERT does not
+            // trigger TenantScope, so this is safe. The Spatie role must already
+            // exist under guard 'tenant' (TenantRolesSeeder) — assignRole()
+            // throwing here rolls the whole transaction back.
+            $user = TenantUser::create([
+                'tenant_id' => $tenant->id,
+                // No separate user-name field is collected at signup yet; the
+                // company name doubles as the first admin's display name.
+                'name' => $dto->name,
+                'email' => $dto->email,
+                'password' => $dto->password, // hashed via model cast
+                'role' => TenantUser::ROLE_ADMIN,
+            ]);
+
+            $user->assignRole(TenantUser::ROLE_ADMIN);
 
             TenantRegistered::dispatch($tenant);
 

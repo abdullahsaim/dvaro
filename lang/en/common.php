@@ -19,4 +19,9 @@ return [
         'failed'   => 'These credentials do not match our records.',
         'throttle' => 'Too many login attempts. Please try again in :seconds seconds.',
     ],
+
+    'register' => [
+        'failed'   => 'We could not complete your registration. Please try again.',
+        'throttle' => 'Too many registration attempts. Please try again in :minutes minutes.',
+    ],
 ];

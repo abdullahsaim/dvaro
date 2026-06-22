@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\RedirectIfTenantAuthenticated;
 use App\Http\Middleware\TenantMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -43,6 +44,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // once the resolver is implemented:  ->middleware('tenant')
         $middleware->alias([
             'tenant' => TenantMiddleware::class,
+            // "Guest only" for pre-tenant public routes (e.g. /register).
+            // Session-key check only — never resolves the tenant user, which
+            // would trip TenantScope on these unbound routes. See the class.
+            'guest.tenant' => RedirectIfTenantAuthenticated::class,
         ]);
 
         // Register Inertia's server-side middleware on the web group. Required so

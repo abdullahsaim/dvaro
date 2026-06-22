@@ -8,9 +8,18 @@
         "email": "Email",
         "password": "Password",
         "remember_me": "Remember me",
-        "logout": "Log out"
+        "logout": "Log out",
+        "register": "Create your account",
+        "company_name": "Company name",
+        "confirm_password": "Confirm password",
+        "create_account": "Create account",
+        "have_account": "Already have an account?"
     },
     "dashboard": {
-        "welcome": "Welcome, {name}"
+        "welcome": "Welcome, {name}",
+        "plan": "Plan",
+        "subscription_status": "Subscription",
+        "trial_days_remaining": "Trial days remaining",
+        "no_plan": "No active plan"
     }
 }

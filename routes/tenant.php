@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\SaasCore\Http\Controllers\TenantAuthController;
+use App\Modules\SaasCore\Http\Controllers\TenantDashboardController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -26,8 +27,5 @@ Route::post('login', [TenantAuthController::class, 'login'])->name('login.store'
 Route::middleware('auth:tenant')->group(function () {
     Route::post('logout', [TenantAuthController::class, 'logout'])->name('logout');
 
-    // Temporary placeholder — proves the end-to-end auth flow. Real dashboard
-    // arrives in a later session.
-    Route::get('dashboard', fn () => \Inertia\Inertia::render('Tenant/Dashboard'))
-        ->name('dashboard');
+    Route::get('dashboard', [TenantDashboardController::class, 'index'])->name('dashboard');
 });

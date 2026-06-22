@@ -28,7 +28,19 @@
     - CRITICAL FIX: pinned TenantMiddleware into the middleware PRIORITY list before the AuthenticatesRequests contract (bootstrap/app.php prependToPriorityList). Laravel's priority sort otherwise hoists auth:tenant ahead of the tenant resolver, so auth would run before the tenant is bound. Anchored to the contract, not concrete Authenticate, because the default priority list references the interface.
     - redirectGuestsTo: unauthenticated tenant routes → that tenant's login (detected via bound current_tenant, not path re-parsing); falls back to '/' when no tenant bound
   - [Verified] Pest/PHPUnit feature suite tests/Feature/TenantAuthTest.php (DatabaseTransactions — NOT RefreshDatabase, never migrate:fresh): same email in 2 tenants = 2 distinct users; login to own tenant; tenant A creds REJECTED at tenant B login; session persists (re-resolved from session store via forgetGuards between requests); tenant A session does NOT authenticate on tenant B (redirects to B login); logout; guest→login redirect; rate limit on 6th attempt. 8 tests / full suite green.
-  - [ ] Onboarding controller + routes (not built — services/models only)
+  - [Done] Public tenant self-registration (pre-tenant signup; NO billing/plan-selection UI yet):
+    - TenantRegistrationRequest — company_name/email/password(min 8, confirmed)/plan_id(nullable, exists); IP-only throttle 3/hour (ensureIsNotRateLimited + hitRateLimiter, hits every attempt so spam signups count too)
+    - TenantOnboardingService EXTENDED: now also creates the first admin TenantUser (role tenant_admin + Spatie assignRole) INSIDE the same DB::transaction as Tenant + Subscription — user/role failure rolls the whole onboarding back. tenant_id set explicitly (no bound tenant during onboarding; INSERT skips TenantScope). Requires tenant_admin role under guard 'tenant' (TenantRolesSeeder). execute() return type unchanged (Tenant). company_name doubles as first admin's display name (no user-name field at signup yet)
+    - TenantOnboardingDTO::fromRequest now maps form 'company_name' → tenant `name`
+    - TenantRegistrationController: showRegister + register. register() order is LOAD-BEARING — (1) service->execute, (2) bind current_tenant FIRST, (3) scoped TenantUser query AFTER bind, (4) Auth::guard('tenant')->login; any other 2/3 order throws TenantNotResolvedException. try/catch → report() + friendly back()->withErrors (never leaks stack trace; txn already rolled back). session regenerate + redirect to tenant.dashboard
+    - routes/web.php: GET/POST /register (web group, NO tenant middleware, NOT under app/{slug}); guarded by 'guest.tenant'
+    - guest.tenant = RedirectIfTenantAuthenticated (app/Http/Middleware): "guest only" for pre-tenant routes by tenant-guard SESSION-KEY presence ONLY (no model resolution) → can't use stock guest:tenant which would trip TenantScope on these unbound routes; redirects to '/' when a tenant session exists. Alias registered in bootstrap/app.php
+    - Vue Pages/Tenant/Register.vue (PublicLayout, useForm, posts /register) — FUNCTIONAL ONLY; i18n keys added to en.json (auth.register/company_name/confirm_password/create_account) + lang/en/common.php (register.failed/throttle)
+  - [Done] Tenant Dashboard (functional):
+    - TenantDashboardController@index — resolves current_tenant, reads activeSubscription.plan, computes trialDaysRemaining (only while trialing + not lapsed); props planName/subscriptionStatus/trialDaysRemaining (tenant name from shared 'tenant' prop). Replaced the placeholder closure route in routes/tenant.php (still behind auth:tenant)
+    - Pages/Tenant/Dashboard.vue enhanced (AppLayout) to show tenant name, plan, subscription status, trial days; i18n keys dashboard.plan/subscription_status/trial_days_remaining/no_plan
+  - [Verified] tests/Feature/TenantRegistrationTest.php (DatabaseTransactions; seeds TenantRolesSeeder): tenant+admin user+trialing subscription created together; auto-login on tenant guard; failed onboarding (no active plan) rolls everything back + guest + no tenant row; password confirmation enforced; /register redirects to '/' when already tenant-authenticated (and does NOT throw TenantNotResolved). 5 tests; full suite 15 green; npm build green.
+  - [ ] Email verification, password reset, plan-selection UI
   - [ ] Stripe/PayPal subscription billing
   - [ ] Super admin plan management UI
 - [ ] Super Admin Panel
@@ -71,3 +83,5 @@
 - [ ] Reporting & Analytics
 - [ ] Landing Website + CMS
 
+# Under deployment requirements:
+# - Run php artisan db:seed --class=TenantRolesSeeder before first registration
