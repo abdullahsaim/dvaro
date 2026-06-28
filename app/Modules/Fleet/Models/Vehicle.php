@@ -3,10 +3,12 @@
 namespace App\Modules\Fleet\Models;
 
 use App\Modules\Agreement\Models\Agreement;
+use App\Modules\Workshop\Models\ServiceLog;
 use App\Traits\HasTenant;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -81,6 +83,23 @@ class Vehicle extends Model
     public function agreements(): HasMany
     {
         return $this->hasMany(Agreement::class);
+    }
+
+    /**
+     * Workshop service logs for this vehicle (newest first when iterated via the
+     * lastServiceLog convenience below).
+     */
+    public function serviceLogs(): HasMany
+    {
+        return $this->hasMany(ServiceLog::class);
+    }
+
+    /**
+     * The most recent service log, if any.
+     */
+    public function lastServiceLog(): HasOne
+    {
+        return $this->hasOne(ServiceLog::class)->latestOfMany();
     }
 
     public function scopeAvailable(Builder $query): Builder

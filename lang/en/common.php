@@ -30,6 +30,13 @@ return [
         'updated'        => 'Vehicle updated.',
         'deleted'        => 'Vehicle removed from your fleet.',
         'status_changed' => 'Vehicle status updated.',
+        'qr_generated'   => 'QR code generated.',
+    ],
+
+    'workshop' => [
+        'log_created'    => 'Service log created. The vehicle is now in maintenance.',
+        'status_changed' => 'Service log status updated.',
+        'part_added'     => 'Part added to the service log.',
     ],
 
     'customer' => [

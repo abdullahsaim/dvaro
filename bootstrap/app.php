@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Middleware\RedirectIfTenantAuthenticated;
+use App\Http\Middleware\ResolveTenantForMechanic;
 use App\Http\Middleware\TenantMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -33,7 +35,10 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->group(base_path('routes/customer.php'));
 
             // Mechanic portal — /mechanic/{tenant_slug}/...
-            Route::middleware('web')
+            // 'mechanic.tenant' binds the tenant from the slug (the Mechanic
+            // model is tenant-scoped) WITHOUT sharing the tenant-guard user —
+            // the mechanic guard stays isolated. See ResolveTenantForMechanic.
+            Route::middleware(['web', 'mechanic.tenant'])
                 ->prefix('mechanic/{tenant_slug}')
                 ->name('mechanic.')
                 ->group(base_path('routes/mechanic.php'));
@@ -44,6 +49,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // once the resolver is implemented:  ->middleware('tenant')
         $middleware->alias([
             'tenant' => TenantMiddleware::class,
+            // Mechanic portal tenant resolver (mechanic-guard isolated).
+            'mechanic.tenant' => ResolveTenantForMechanic::class,
             // "Guest only" for pre-tenant public routes (e.g. /register).
             // Session-key check only — never resolves the tenant user, which
             // would trip TenantScope on these unbound routes. See the class.
@@ -70,13 +77,28 @@ return Application::configure(basePath: dirname(__DIR__))
             prepend: TenantMiddleware::class,
         );
 
+        // Same pin for the mechanic portal: ResolveTenantForMechanic must bind
+        // the tenant before 'auth:mechanic' loads the (tenant-scoped) Mechanic.
+        $middleware->prependToPriorityList(
+            before: \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
+            prepend: ResolveTenantForMechanic::class,
+        );
+
         // Where 'auth:tenant' sends unauthenticated guests. TenantMiddleware
         // runs earlier in the pipeline and binds 'current_tenant', so we detect
         // tenant context from that single source of truth rather than re-parsing
         // the path. No tenant bound (other route groups) → fall back to root.
-        $middleware->redirectGuestsTo(function () {
+        $middleware->redirectGuestsTo(function (Request $request) {
             if (app()->bound('current_tenant')) {
-                return route('tenant.login', ['tenant_slug' => app('current_tenant')->slug]);
+                $slug = app('current_tenant')->slug;
+
+                // Mechanic portal routes have their own login — never bounce a
+                // guest mechanic to the tenant login.
+                if ($request->is('mechanic/*')) {
+                    return route('mechanic.login', ['tenant_slug' => $slug]);
+                }
+
+                return route('tenant.login', ['tenant_slug' => $slug]);
             }
 
             return '/';

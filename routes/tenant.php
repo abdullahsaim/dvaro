@@ -8,6 +8,7 @@ use App\Modules\Invoice\Http\Controllers\InvoiceController;
 use App\Modules\Notification\Http\Controllers\NotificationSettingsController;
 use App\Modules\SaasCore\Http\Controllers\TenantAuthController;
 use App\Modules\SaasCore\Http\Controllers\TenantDashboardController;
+use App\Modules\Workshop\Http\Controllers\WorkshopController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -43,6 +44,13 @@ Route::middleware('auth:tenant')->group(function () {
     // Status transitions go through their own endpoint → ChangeVehicleStatusAction.
     Route::post('fleet/{vehicle}/status', [FleetController::class, 'changeStatus'])
         ->name('fleet.status');
+
+    // QR code — generate/regenerate (deterministic token) + inline stream of the
+    // stored SVG (admin-only display). Generation lives in GenerateVehicleQrAction.
+    Route::post('fleet/{vehicle}/qr', [FleetController::class, 'generateQr'])
+        ->name('fleet.qr.generate');
+    Route::get('fleet/{vehicle}/qr', [FleetController::class, 'qr'])
+        ->name('fleet.qr');
 
     // Customers — {customer} binds through TenantScope (cross-tenant id => 404).
     Route::resource('customers', CustomerController::class);
@@ -104,4 +112,11 @@ Route::middleware('auth:tenant')->group(function () {
         ->name('notifications.settings');
     Route::put('notifications/settings', [NotificationSettingsController::class, 'update'])
         ->name('notifications.settings.update');
+
+    // Workshop (admin oversight, read-only). Service logs are created/mutated only
+    // from the mechanic portal. {log}/{vehicle} bind through TenantScope (404).
+    Route::get('workshop', [WorkshopController::class, 'index'])->name('workshop.index');
+    Route::get('workshop/vehicle/{vehicle}', [WorkshopController::class, 'vehicleHistory'])
+        ->name('workshop.vehicle');
+    Route::get('workshop/{log}', [WorkshopController::class, 'show'])->name('workshop.show');
 });

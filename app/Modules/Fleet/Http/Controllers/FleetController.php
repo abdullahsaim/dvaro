@@ -12,11 +12,14 @@ use App\Modules\Fleet\Http\Requests\ChangeStatusRequest;
 use App\Modules\Fleet\Http\Requests\StoreVehicleRequest;
 use App\Modules\Fleet\Http\Requests\UpdateVehicleRequest;
 use App\Modules\Fleet\Models\Vehicle;
+use App\Modules\Workshop\Actions\GenerateVehicleQrAction;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Fleet vehicle management (tenant app). Thin controller: validate → Action →
@@ -99,9 +102,19 @@ class FleetController extends Controller
     {
         Gate::forUser(auth('tenant')->user())->authorize('view', $vehicle);
 
+        // Recent workshop history for the service-history section.
+        $serviceLogs = $vehicle->serviceLogs()
+            ->with('mechanic:id,name')
+            ->latest()
+            ->limit(10)
+            ->get();
+
         return Inertia::render('Fleet/Show', [
             'vehicle' => $vehicle,
             'statuses' => Vehicle::STATUSES,
+            // QR is rendered via the stream endpoint only when a token exists.
+            'hasQr' => $vehicle->qr_code_token !== null,
+            'serviceLogs' => $serviceLogs,
         ]);
     }
 
@@ -156,5 +169,35 @@ class FleetController extends Controller
         $action->execute($vehicle, $request->string('status')->toString());
 
         return back()->with('success', __('common.fleet.status_changed'));
+    }
+
+    /**
+     * Generate (or regenerate) the vehicle's QR code. The token is deterministic,
+     * so regenerating is idempotent and never invalidates a printed sticker.
+     */
+    public function generateQr(Vehicle $vehicle, GenerateVehicleQrAction $action): RedirectResponse
+    {
+        Gate::forUser(auth('tenant')->user())->authorize('update', $vehicle);
+
+        $action->execute($vehicle);
+
+        return back()->with('success', __('common.fleet.qr_generated'));
+    }
+
+    /**
+     * Stream the vehicle's stored QR (SVG) from S3 for inline display. Admin-only
+     * (behind auth:tenant); 404 until a QR has been generated.
+     */
+    public function qr(Vehicle $vehicle): StreamedResponse
+    {
+        Gate::forUser(auth('tenant')->user())->authorize('view', $vehicle);
+
+        abort_if($vehicle->qr_code_token === null, 404);
+
+        return Storage::disk('s3')->response(
+            GenerateVehicleQrAction::qrPath($vehicle),
+            'qr.svg',
+            ['Content-Type' => 'image/svg+xml'],
+        );
     }
 }

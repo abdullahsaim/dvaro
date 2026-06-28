@@ -13,7 +13,10 @@
         "company_name": "Company name",
         "confirm_password": "Confirm password",
         "create_account": "Create account",
-        "have_account": "Already have an account?"
+        "have_account": "Already have an account?",
+        "pin": "PIN",
+        "use_pin": "Use PIN",
+        "use_password": "Use password"
     },
     "dashboard": {
         "welcome": "Welcome, {name}",
@@ -309,6 +312,61 @@
             "log": "Log only (no real sending)",
             "clicksend": "ClickSend",
             "cellcast": "Cellcast"
+        }
+    },
+    "workshop": {
+        "title": "Workshop",
+        "portal_title": "Mechanic portal",
+        "sign_in": "Sign in",
+        "dashboard": "Dashboard",
+        "active_jobs": "Active jobs",
+        "recent_completed": "Recently completed",
+        "no_active_jobs": "No active jobs.",
+        "no_completed": "No completed jobs yet.",
+        "empty": "No service logs yet.",
+        "service_history": "Service history",
+        "no_history": "No service history for this vehicle.",
+        "new_log": "Log new service",
+        "log_details": "Service log",
+        "vehicle": "Vehicle",
+        "mechanic": "Mechanic",
+        "filter_vehicle": "Vehicle",
+        "all_vehicles": "All vehicles",
+        "view": "View",
+        "add_part": "Add part",
+        "parts": "Parts",
+        "no_parts": "No parts recorded.",
+        "labour": "Labour",
+        "parts_total": "Parts total",
+        "total": "Total",
+        "odometer": "Odometer (km)",
+        "update_status": "Update status",
+        "change_status": "Change status",
+        "started_at": "Started",
+        "completed_at": "Completed",
+        "open_qr": "Open vehicle",
+        "fields": {
+            "title": "Title",
+            "description": "Description",
+            "odometer_reading": "Odometer (km)",
+            "labour_cost": "Labour cost (AUD)",
+            "part_name": "Part name",
+            "quantity": "Quantity",
+            "unit_cost": "Unit cost (AUD)"
+        },
+        "statuses": {
+            "pending": "Pending",
+            "in_progress": "In progress",
+            "completed": "Completed",
+            "waiting_for_parts": "Waiting for parts",
+            "re_inspection_required": "Re-inspection required"
+        },
+        "qr": {
+            "title": "QR code",
+            "generate": "Generate QR code",
+            "regenerate": "Regenerate",
+            "hint": "Print this and stick it on the vehicle. Mechanics scan it to log work.",
+            "none": "No QR code generated yet."
         }
     }
 }

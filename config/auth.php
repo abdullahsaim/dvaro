@@ -88,11 +88,11 @@ return [
             'model' => env('AUTH_MODEL', App\Models\User::class),
         ],
 
-        // DVARO portal providers. The tenant guard is now backed by its
-        // dedicated, tenant-scoped model. The remaining three still map to
+        // DVARO portal providers. The tenant and mechanic guards are backed by
+        // their dedicated, tenant-scoped models. The remaining two still map to
         // App\Models\User during scaffold;
         // TODO: point each to its dedicated model once those modules are built
-        // (e.g. SuperAdmin, Customer, Workshop\Mechanic).
+        // (e.g. SuperAdmin, Customer).
         'tenant_users' => [
             'driver' => 'eloquent',
             'model' => App\Modules\SaasCore\Models\TenantUser::class,
@@ -110,7 +110,7 @@ return [
 
         'mechanics' => [
             'driver' => 'eloquent',
-            'model' => App\Models\User::class,
+            'model' => App\Modules\Workshop\Models\Mechanic::class,
         ],
     ],
 

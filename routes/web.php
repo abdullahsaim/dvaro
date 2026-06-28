@@ -2,6 +2,7 @@
 
 use App\Modules\CRM\Http\Controllers\IntakeFormController;
 use App\Modules\SaasCore\Http\Controllers\TenantRegistrationController;
+use App\Modules\Workshop\Http\Controllers\QrScanController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -43,3 +44,19 @@ Route::middleware('guest.tenant')->group(function () {
     Route::post('register', [TenantRegistrationController::class, 'register'])
         ->name('register.store');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Public vehicle QR scan
+|--------------------------------------------------------------------------
+|
+| PUBLIC: the URL encoded in every vehicle's QR sticker. No auth and NO tenant
+| middleware — the tenant is NOT bound on entry. QrScanController resolves the
+| tenant from {tenant_slug}, binds it, then finds the vehicle scope-free with an
+| explicit tenant_id (the {token} is an unguessable HMAC). It exposes no data:
+| an authenticated mechanic is redirected to the vehicle service page, a guest
+| to the mechanic login (with the token stashed to return afterwards).
+|
+*/
+Route::get('mechanic/{tenant_slug}/scan/{token}', [QrScanController::class, 'scan'])
+    ->name('mechanic.scan');
