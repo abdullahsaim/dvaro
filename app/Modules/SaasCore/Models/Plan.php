@@ -16,6 +16,38 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Plan extends Model
 {
+    /**
+     * Module keys a plan may enable (the modules_enabled[] set). Mirrors the
+     * app/Modules folder structure. Used by the super admin plan form's module
+     * checklist and to validate the submitted module list.
+     */
+    public const MODULE_KEYS = [
+        'fleet',
+        'rental',
+        'agreement',
+        'invoice',
+        'finance',
+        'workshop',
+        'crm',
+        'customer',
+        'reporting',
+        'ai',
+        'notification',
+        'cms',
+    ];
+
+    /**
+     * Hard numeric limit keys a plan may define. Enforced by
+     * PlanEnforcementService (an absent key => -1 => unlimited).
+     */
+    public const LIMIT_KEYS = [
+        'max_vehicles',
+        'max_staff_users',
+        'max_customers',
+        'max_storage_gb',
+        'max_file_size_mb',
+    ];
+
     protected $fillable = [
         'name',
         'slug',

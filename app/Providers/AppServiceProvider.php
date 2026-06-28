@@ -12,6 +12,7 @@ use App\Modules\Fleet\Models\Vehicle;
 use App\Modules\Fleet\Policies\VehiclePolicy;
 use App\Modules\Invoice\Models\Invoice;
 use App\Modules\Invoice\Policies\InvoicePolicy;
+use App\Modules\SuperAdmin\Policies\SuperAdminPolicy;
 use App\Modules\Workshop\Models\ServiceLog;
 use App\Modules\Workshop\Policies\MechanicPolicy;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -45,6 +46,15 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Invoice::class, InvoicePolicy::class);
         // Workshop service logs are authorized against the MECHANIC guard.
         Gate::policy(ServiceLog::class, MechanicPolicy::class);
+
+        // Super admin role gates. These are role checks (no model argument), so
+        // they are registered as Gates delegating to SuperAdminPolicy methods —
+        // not via Gate::policy, which would expect a model instance. Controllers
+        // call Gate::forUser(auth('superadmin')->user())->authorize('<ability>').
+        Gate::define('platformOwner', [SuperAdminPolicy::class, 'platformOwner']);
+        Gate::define('billingAccess', [SuperAdminPolicy::class, 'billingAccess']);
+        Gate::define('supportAccess', [SuperAdminPolicy::class, 'supportAccess']);
+        Gate::define('contentAccess', [SuperAdminPolicy::class, 'contentAccess']);
 
         // Public intake-form submissions: 5 per hour PER TOKEN (the {token} route
         // segment), not per IP — many customers may legitimately share one IP

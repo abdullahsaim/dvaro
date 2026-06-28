@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Middleware\CheckImpersonation;
 use App\Http\Middleware\RedirectIfTenantAuthenticated;
 use App\Http\Middleware\ResolveTenantForMechanic;
+use App\Http\Middleware\SuperAdminMiddleware;
 use App\Http\Middleware\TenantMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -16,13 +18,17 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
         then: function () {
             // Tenant app — path-based multi-tenancy: /app/{tenant_slug}/...
-            // 'tenant' middleware resolves + binds the tenant from the slug.
-            Route::middleware(['web', 'tenant'])
+            // 'tenant' middleware resolves + binds the tenant from the slug;
+            // 'check.impersonation' shares the super admin impersonation banner
+            // state (session-only) into the tenant UI.
+            Route::middleware(['web', 'tenant', 'check.impersonation'])
                 ->prefix('app/{tenant_slug}')
                 ->name('tenant.')
                 ->group(base_path('routes/tenant.php'));
 
-            // Super admin panel — /superadmin/...
+            // Super admin panel — /superadmin/...  (superadmin guard; separate
+            // from every tenant guard). Per-route 'superadmin.auth' gates the
+            // authenticated area inside routes/superadmin.php.
             Route::middleware('web')
                 ->prefix('superadmin')
                 ->name('superadmin.')
@@ -55,6 +61,10 @@ return Application::configure(basePath: dirname(__DIR__))
             // Session-key check only — never resolves the tenant user, which
             // would trip TenantScope on these unbound routes. See the class.
             'guest.tenant' => RedirectIfTenantAuthenticated::class,
+            // Super admin panel gate (superadmin guard + active check).
+            'superadmin.auth' => SuperAdminMiddleware::class,
+            // Shares super admin impersonation banner state into the tenant UI.
+            'check.impersonation' => CheckImpersonation::class,
         ]);
 
         // Register Inertia's server-side middleware on the web group. Required so

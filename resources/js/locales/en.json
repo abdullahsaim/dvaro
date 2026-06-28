@@ -314,6 +314,148 @@
             "cellcast": "Cellcast"
         }
     },
+    "superadmin": {
+        "panel": "Super Admin",
+        "sign_in": "Sign in to the panel",
+        "nav": {
+            "dashboard": "Dashboard",
+            "tenants": "Tenants",
+            "plans": "Plans",
+            "subscriptions": "Subscriptions",
+            "settings": "Settings"
+        },
+        "dashboard": {
+            "title": "Platform overview",
+            "total_tenants": "Total tenants",
+            "active_tenants": "Active tenants",
+            "trial_tenants": "Trial tenants",
+            "new_this_month": "New this month",
+            "recurring_revenue": "Active recurring revenue",
+            "recurring_revenue_hint": "Sum of each active/trialing subscription's plan price for its billing cycle.",
+            "recent_signups": "Recent signups",
+            "no_tenants": "No tenants yet."
+        },
+        "tenants": {
+            "title": "Tenants",
+            "search_placeholder": "Search by name, slug or admin email",
+            "empty": "No tenants found.",
+            "plan": "Plan",
+            "signed_up": "Signed up",
+            "view": "View",
+            "suspend": "Suspend",
+            "activate": "Activate",
+            "impersonate": "Impersonate",
+            "confirm_suspend": "Suspend this tenant? Their users will be blocked until reactivated.",
+            "confirm_impersonate": "Open this tenant's dashboard as their admin?",
+            "detail_title": "Tenant detail",
+            "counts": {
+                "users": "Users",
+                "vehicles": "Vehicles",
+                "invoices": "Invoices"
+            },
+            "subscription_history": "Subscription history",
+            "no_subscriptions": "No subscriptions.",
+            "trial_ends": "Trial ends",
+            "period": "Current period"
+        },
+        "plans": {
+            "title": "Plans",
+            "new_plan": "New plan",
+            "edit_plan": "Edit plan",
+            "empty": "No plans yet.",
+            "name": "Name",
+            "description": "Description",
+            "price_monthly_aud": "Monthly price (AUD)",
+            "price_annual_aud": "Annual price (AUD)",
+            "monthly": "Monthly",
+            "annual": "Annual",
+            "trial_days": "Trial days",
+            "sort_order": "Sort order",
+            "is_active": "Active (available for signup)",
+            "is_free": "Free / freemium plan",
+            "modules": "Enabled modules",
+            "limits": "Plan limits",
+            "limit_hint": "Leave blank or -1 for unlimited.",
+            "subscriptions_count": "{count} subscription(s)",
+            "active_badge": "Active",
+            "inactive_badge": "Inactive",
+            "toggle": "Toggle active",
+            "edit": "Edit",
+            "module_keys": {
+                "fleet": "Fleet",
+                "rental": "Rental",
+                "agreement": "Agreement",
+                "invoice": "Invoice",
+                "finance": "Finance",
+                "workshop": "Workshop",
+                "crm": "CRM",
+                "customer": "Customer",
+                "reporting": "Reporting",
+                "ai": "AI Assistant",
+                "notification": "Notifications",
+                "cms": "CMS"
+            },
+            "limit_keys": {
+                "max_vehicles": "Max vehicles",
+                "max_staff_users": "Max staff users",
+                "max_customers": "Max customers",
+                "max_storage_gb": "Max storage (GB)",
+                "max_file_size_mb": "Max file size (MB)"
+            }
+        },
+        "subscriptions": {
+            "title": "Subscriptions",
+            "empty": "No subscriptions found.",
+            "tenant": "Tenant",
+            "plan": "Plan",
+            "billing_cycle": "Billing cycle",
+            "period_end": "Period end",
+            "created": "Created",
+            "all_plans": "All plans",
+            "view": "View",
+            "detail_title": "Subscription detail",
+            "gateway": "Gateway",
+            "gateway_id": "Gateway ID",
+            "period_start": "Period start",
+            "trial_ends": "Trial ends",
+            "cancelled_at": "Cancelled at",
+            "payments": "Payments",
+            "no_payments": "No platform billing records yet."
+        },
+        "settings": {
+            "title": "Platform settings",
+            "general": "General",
+            "platform_name": "Platform name",
+            "support_email": "Support email",
+            "signups": "Signups & trials",
+            "manual_tenant_approval": "Require manual approval of new tenants",
+            "free_trial_enabled": "Offer a free trial",
+            "free_trial_days": "Free trial length (days)",
+            "freemium_enabled": "Allow a permanent free tier",
+            "default_plan_id": "Default fallback plan",
+            "no_default_plan": "None",
+            "limits": "Limits & maintenance",
+            "max_tenants": "Max tenants (blank = unlimited)",
+            "maintenance_mode": "Platform maintenance mode"
+        },
+        "statuses": {
+            "active": "Active",
+            "trial": "Trial",
+            "trialing": "Trialing",
+            "suspended": "Suspended",
+            "cancelled": "Cancelled",
+            "past_due": "Past due",
+            "paused": "Paused"
+        },
+        "impersonation": {
+            "banner": "You are impersonating this tenant.",
+            "stop": "Stop impersonating"
+        },
+        "billing_cycles": {
+            "monthly": "Monthly",
+            "annual": "Annual"
+        }
+    },
     "workshop": {
         "title": "Workshop",
         "portal_title": "Mechanic portal",

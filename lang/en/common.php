@@ -69,4 +69,15 @@ return [
     'notifications' => [
         'saved' => 'Notification settings saved.',
     ],
+
+    'superadmin' => [
+        'tenant_suspended'        => 'Tenant suspended.',
+        'tenant_activated'        => 'Tenant activated.',
+        'no_admin_to_impersonate' => 'This tenant has no admin user to impersonate.',
+        'impersonation_stopped'   => 'Stopped impersonating.',
+        'plan_created'            => 'Plan created.',
+        'plan_updated'            => 'Plan updated.',
+        'plan_toggled'            => 'Plan availability updated.',
+        'settings_saved'          => 'Platform settings saved.',
+    ],
 ];

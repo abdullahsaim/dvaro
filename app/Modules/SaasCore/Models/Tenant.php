@@ -4,6 +4,7 @@ namespace App\Modules\SaasCore\Models;
 
 use App\Scopes\TenantScope;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 
@@ -76,6 +77,30 @@ class Tenant extends Model
     public function hasSubscription(): bool
     {
         return $this->activeSubscription()->exists();
+    }
+
+    /**
+     * All subscriptions for this tenant, newest first (history view).
+     *
+     * TenantUser/Subscription are tenant-scoped; the global scope is dropped so
+     * this resolves in any context (e.g. the super admin panel, where no tenant
+     * is bound).
+     */
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(Subscription::class)
+            ->withoutGlobalScope(TenantScope::class)
+            ->latest();
+    }
+
+    /**
+     * Staff/admin logins belonging to this tenant. Scope dropped for the same
+     * reason as subscriptions() — usable from the unbound super admin context.
+     */
+    public function users(): HasMany
+    {
+        return $this->hasMany(TenantUser::class)
+            ->withoutGlobalScope(TenantScope::class);
     }
 
     /**

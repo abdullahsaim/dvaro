@@ -88,19 +88,22 @@ return [
             'model' => env('AUTH_MODEL', App\Models\User::class),
         ],
 
-        // DVARO portal providers. The tenant and mechanic guards are backed by
-        // their dedicated, tenant-scoped models. The remaining two still map to
+        // DVARO portal providers. The tenant, mechanic and superadmin guards are
+        // backed by their dedicated models. The customer guard still maps to
         // App\Models\User during scaffold;
-        // TODO: point each to its dedicated model once those modules are built
-        // (e.g. SuperAdmin, Customer).
+        // TODO: point the customer provider to its dedicated model once the
+        // Customer Portal module is built.
         'tenant_users' => [
             'driver' => 'eloquent',
             'model' => App\Modules\SaasCore\Models\TenantUser::class,
         ],
 
+        // Platform-wide super admins. NOT tenant-scoped (no TenantScope, no
+        // tenant_id) — the superadmin guard is fully isolated from the tenant,
+        // customer and mechanic guards.
         'super_admins' => [
             'driver' => 'eloquent',
-            'model' => App\Models\User::class,
+            'model' => App\Modules\SuperAdmin\Models\SuperAdmin::class,
         ],
 
         'customers' => [

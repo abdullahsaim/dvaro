@@ -1,5 +1,11 @@
 <?php
 
+use App\Modules\SuperAdmin\Http\Controllers\PlanManagementController;
+use App\Modules\SuperAdmin\Http\Controllers\SubscriptionManagementController;
+use App\Modules\SuperAdmin\Http\Controllers\SuperAdminAuthController;
+use App\Modules\SuperAdmin\Http\Controllers\SuperAdminDashboardController;
+use App\Modules\SuperAdmin\Http\Controllers\SystemSettingsController;
+use App\Modules\SuperAdmin\Http\Controllers\TenantManagementController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -9,8 +15,52 @@ use Illuminate\Support\Facades\Route;
 |
 | Registered in bootstrap/app.php under the prefix: superadmin
 |   →  dvaro.com.au/superadmin/...
-| Guard: superadmin (separate from all tenant guards).
+| Guard: superadmin (separate from all tenant/customer/mechanic guards).
 |
-| Intentionally empty — routes added per module.
+| The authenticated area is gated by the 'superadmin.auth' middleware
+| (SuperAdminMiddleware: superadmin guard + is_active + shared auth prop).
 |
 */
+
+// Authentication — no super admin required yet.
+Route::get('login', [SuperAdminAuthController::class, 'showLogin'])->name('login');
+Route::post('login', [SuperAdminAuthController::class, 'login'])->name('login.store');
+
+// Authenticated super admin panel.
+Route::middleware('superadmin.auth')->group(function () {
+    Route::post('logout', [SuperAdminAuthController::class, 'logout'])->name('logout');
+
+    Route::get('dashboard', [SuperAdminDashboardController::class, 'index'])->name('dashboard');
+
+    // Tenants — {tenant} binds by slug (Tenant::getRouteKeyName). Tenant is NOT
+    // tenant-scoped, so implicit binding is safe here.
+    Route::get('tenants', [TenantManagementController::class, 'index'])->name('tenants.index');
+    Route::get('tenants/{tenant}', [TenantManagementController::class, 'show'])->name('tenants.show');
+    Route::post('tenants/{tenant}/suspend', [TenantManagementController::class, 'suspend'])
+        ->name('tenants.suspend');
+    Route::post('tenants/{tenant}/activate', [TenantManagementController::class, 'activate'])
+        ->name('tenants.activate');
+    Route::post('tenants/{tenant}/impersonate', [TenantManagementController::class, 'impersonate'])
+        ->name('tenants.impersonate');
+
+    // Stop impersonating — clears the tenant guard + session marker (both).
+    Route::post('stop-impersonating', [TenantManagementController::class, 'stopImpersonating'])
+        ->name('stop-impersonating');
+
+    // Plans — editable, but NO destroy (a plan with subscriptions must not be
+    // deleted; toggle is_active instead). No show route (Index lists everything).
+    Route::resource('plans', PlanManagementController::class)
+        ->except(['show', 'destroy']);
+    Route::post('plans/{plan}/toggle', [PlanManagementController::class, 'toggle'])
+        ->name('plans.toggle');
+
+    // Subscriptions — read-only oversight.
+    Route::get('subscriptions', [SubscriptionManagementController::class, 'index'])
+        ->name('subscriptions.index');
+    Route::get('subscriptions/{subscription}', [SubscriptionManagementController::class, 'show'])
+        ->name('subscriptions.show');
+
+    // Platform settings.
+    Route::get('settings', [SystemSettingsController::class, 'show'])->name('settings');
+    Route::put('settings', [SystemSettingsController::class, 'update'])->name('settings.update');
+});
