@@ -58,4 +58,8 @@ return [
         'marked_overdue'   => 'Invoice marked as overdue.',
         'vehicle_changed'  => 'Vehicle changed. Two prorated invoices were raised and a new agreement version created for re-signing.',
     ],
+
+    'notifications' => [
+        'saved' => 'Notification settings saved.',
+    ],
 ];

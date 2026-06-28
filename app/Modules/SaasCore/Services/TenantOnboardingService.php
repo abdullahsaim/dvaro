@@ -36,6 +36,18 @@ class TenantOnboardingService extends BaseService
                 'status' => Tenant::STATUS_TRIAL,
                 'plan_id' => $plan->id,
                 'trial_ends_at' => $trialEndsAt,
+                // Notification defaults: 'log' providers + email-only channel.
+                // A new tenant sends nothing real until it picks a provider and
+                // .env credentials land (NotificationProviderFactory falls back
+                // to Log otherwise). SMS/WhatsApp start OFF so we never attempt
+                // an unconfigured paid gateway. Editable via notification settings.
+                'settings' => [
+                    'email_provider' => 'log',
+                    'sms_provider' => 'log',
+                    'notify_email_enabled' => true,
+                    'notify_sms_enabled' => false,
+                    'notify_whatsapp_enabled' => false,
+                ],
             ]);
 
             // Subscription uses HasTenant; tenant_id is set explicitly because

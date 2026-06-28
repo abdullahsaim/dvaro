@@ -287,5 +287,28 @@
             "stripe": "Stripe",
             "paypal": "PayPal"
         }
+    },
+    "notifications": {
+        "title": "Notification settings",
+        "intro": "Choose how your company sends emails and text messages to customers.",
+        "providers": "Providers",
+        "email_provider": "Email provider",
+        "sms_provider": "SMS provider",
+        "whatsapp_note": "WhatsApp is sent platform-wide via ClickSend when configured.",
+        "channels": "Channels",
+        "channel_email": "Send notifications by email",
+        "channel_sms": "Send notifications by SMS",
+        "channel_whatsapp": "Send notifications by WhatsApp",
+        "email_providers": {
+            "log": "Log only (no real sending)",
+            "mailgun": "Mailgun",
+            "resend": "Resend",
+            "smtp": "SMTP"
+        },
+        "sms_providers": {
+            "log": "Log only (no real sending)",
+            "clicksend": "ClickSend",
+            "cellcast": "Cellcast"
+        }
     }
 }

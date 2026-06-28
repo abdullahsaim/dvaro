@@ -5,6 +5,7 @@ use App\Modules\CRM\Http\Controllers\LeadController;
 use App\Modules\Customer\Http\Controllers\CustomerController;
 use App\Modules\Fleet\Http\Controllers\FleetController;
 use App\Modules\Invoice\Http\Controllers\InvoiceController;
+use App\Modules\Notification\Http\Controllers\NotificationSettingsController;
 use App\Modules\SaasCore\Http\Controllers\TenantAuthController;
 use App\Modules\SaasCore\Http\Controllers\TenantDashboardController;
 use Illuminate\Support\Facades\Route;
@@ -96,4 +97,11 @@ Route::middleware('auth:tenant')->group(function () {
         ->name('invoices.overdue');
     Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])
         ->name('invoices.pdf');
+
+    // Notification settings — tenant-wide provider selection + channel toggles.
+    // Not a resource (single settings page); tenant_admin-gated in the controller.
+    Route::get('notifications/settings', [NotificationSettingsController::class, 'edit'])
+        ->name('notifications.settings');
+    Route::put('notifications/settings', [NotificationSettingsController::class, 'update'])
+        ->name('notifications.settings.update');
 });

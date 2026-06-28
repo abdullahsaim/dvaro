@@ -34,6 +34,8 @@ class NotificationLog extends Model
     /** Loose notifiable type tags (notifiable_type column). */
     public const TYPE_CUSTOMER = 'customer';
     public const TYPE_TENANT_USER = 'tenant_user';
+    public const TYPE_VEHICLE = 'vehicle';
+    public const TYPE_AGREEMENT = 'agreement';
 
     protected $fillable = [
         'tenant_id',
