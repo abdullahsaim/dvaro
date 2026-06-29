@@ -40,11 +40,16 @@ return [
     ],
 
     'customer' => [
-        'created'       => 'Customer added.',
-        'updated'       => 'Customer updated.',
-        'deleted'       => 'Customer removed.',
-        'blacklisted'   => 'Customer blacklisted.',
-        'unblacklisted' => 'Customer removed from the blacklist.',
+        'created'                 => 'Customer added.',
+        'updated'                 => 'Customer updated.',
+        'deleted'                 => 'Customer removed.',
+        'blacklisted'             => 'Customer blacklisted.',
+        'unblacklisted'           => 'Customer removed from the blacklist.',
+        'portal_invited'          => 'Portal access sent.',
+        'portal_already'          => 'This customer already has portal access.',
+        'portal_payment_recorded' => 'Payment recorded. Thank you.',
+        'portal_invite_used'      => 'This invitation has already been used. Please log in.',
+        'portal_invite_expired'   => 'This invitation has expired. Please ask for a new one.',
     ],
 
     'crm' => [

@@ -10,6 +10,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 const props = defineProps({
     customer: { type: Object, required: true },
     outstandingBalance: { type: Number, required: true }, // cents; positive = owes
+    hasPortalAccess: { type: Boolean, default: false },
     rentalHistory: { type: Array, default: () => [] },
 });
 
@@ -17,6 +18,13 @@ const { t } = useI18n();
 const page = usePage();
 const base = computed(() => `/app/${page.props.tenant.slug}/customers`);
 const flash = computed(() => page.props.flash?.success);
+const flashError = computed(() => page.props.flash?.error);
+
+const inviteForm = useForm({});
+
+function invitePortal() {
+    inviteForm.post(`${base.value}/${props.customer.id}/invite-portal`, { preserveScroll: true });
+}
 
 // cents → "$1,234.56"
 const formattedBalance = computed(() =>
@@ -96,6 +104,12 @@ function unblacklist() {
             >
                 {{ flash }}
             </p>
+            <p
+                v-if="flashError"
+                class="mt-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900 dark:bg-red-900/30 dark:text-red-300"
+            >
+                {{ flashError }}
+            </p>
 
             <!-- Outstanding balance -->
             <div class="mt-6 flex max-w-2xl items-center justify-between rounded border border-slate-200 p-4 dark:border-slate-800">
@@ -106,6 +120,31 @@ function unblacklist() {
                 >
                     {{ formattedBalance }}
                 </span>
+            </div>
+
+            <!-- Customer portal access -->
+            <div class="mt-6 flex max-w-2xl items-center justify-between rounded border border-slate-200 p-4 dark:border-slate-800">
+                <div>
+                    <p class="text-sm font-medium text-slate-700 dark:text-slate-200">{{ t('customer.portal_access') }}</p>
+                    <p class="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+                        {{ hasPortalAccess ? t('customer.has_portal_access') : t('customer.portal_access_hint') }}
+                    </p>
+                </div>
+                <span
+                    v-if="hasPortalAccess"
+                    class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/40 dark:text-green-300"
+                >
+                    {{ t('customer.active_badge') }}
+                </span>
+                <button
+                    v-else
+                    type="button"
+                    :disabled="inviteForm.processing"
+                    class="rounded bg-indigo-600 px-3 py-2 text-sm text-white disabled:opacity-50 hover:bg-indigo-700"
+                    @click="invitePortal"
+                >
+                    {{ t('customer.invite_portal') }}
+                </button>
             </div>
 
             <!-- Blacklist control -->

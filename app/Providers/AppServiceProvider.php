@@ -8,6 +8,7 @@ use App\Modules\CRM\Models\Lead;
 use App\Modules\CRM\Policies\LeadPolicy;
 use App\Modules\Customer\Models\Customer;
 use App\Modules\Customer\Policies\CustomerPolicy;
+use App\Modules\Customer\Policies\CustomerPortalPolicy;
 use App\Modules\Fleet\Models\Vehicle;
 use App\Modules\Fleet\Policies\VehiclePolicy;
 use App\Modules\Invoice\Models\Invoice;
@@ -55,6 +56,14 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('billingAccess', [SuperAdminPolicy::class, 'billingAccess']);
         Gate::define('supportAccess', [SuperAdminPolicy::class, 'supportAccess']);
         Gate::define('contentAccess', [SuperAdminPolicy::class, 'contentAccess']);
+
+        // Customer Portal abilities (customer guard). Registered as Gates rather
+        // than Gate::policy because Invoice/Agreement already map to their own
+        // policies. Controllers call
+        // Gate::forUser(auth('customer')->user())->authorize('viewPortalInvoice'…).
+        Gate::define('viewPortalInvoice', [CustomerPortalPolicy::class, 'viewInvoice']);
+        Gate::define('viewPortalAgreement', [CustomerPortalPolicy::class, 'viewAgreement']);
+        Gate::define('makePortalPayment', [CustomerPortalPolicy::class, 'makePayment']);
 
         // Public intake-form submissions: 5 per hour PER TOKEN (the {token} route
         // segment), not per IP — many customers may legitimately share one IP

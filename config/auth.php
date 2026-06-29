@@ -88,11 +88,9 @@ return [
             'model' => env('AUTH_MODEL', App\Models\User::class),
         ],
 
-        // DVARO portal providers. The tenant, mechanic and superadmin guards are
-        // backed by their dedicated models. The customer guard still maps to
-        // App\Models\User during scaffold;
-        // TODO: point the customer provider to its dedicated model once the
-        // Customer Portal module is built.
+        // DVARO portal providers. The tenant, customer, mechanic and superadmin
+        // guards are each backed by their own dedicated model — fully isolated,
+        // never sharing session/provider state with one another.
         'tenant_users' => [
             'driver' => 'eloquent',
             'model' => App\Modules\SaasCore\Models\TenantUser::class,
@@ -106,9 +104,12 @@ return [
             'model' => App\Modules\SuperAdmin\Models\SuperAdmin::class,
         ],
 
+        // Customer portal — the FIFTH guard. Backed by CustomerUser (the auth
+        // account), tenant-scoped via HasTenant. Separate from the Customer model
+        // (the profile/ledger record). Never mixed with any other guard.
         'customers' => [
             'driver' => 'eloquent',
-            'model' => App\Models\User::class,
+            'model' => App\Modules\Customer\Models\CustomerUser::class,
         ],
 
         'mechanics' => [

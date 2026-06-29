@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\CRM\Http\Controllers\IntakeFormController;
+use App\Modules\Customer\Http\Controllers\CustomerPortalController;
 use App\Modules\SaasCore\Http\Controllers\TenantRegistrationController;
 use App\Modules\Workshop\Http\Controllers\QrScanController;
 use Illuminate\Support\Facades\Route;
@@ -60,3 +61,21 @@ Route::middleware('guest.tenant')->group(function () {
 */
 Route::get('mechanic/{tenant_slug}/scan/{token}', [QrScanController::class, 'scan'])
     ->name('mechanic.scan');
+
+/*
+|--------------------------------------------------------------------------
+| Public Customer Portal invitation acceptance
+|--------------------------------------------------------------------------
+|
+| PUBLIC: no auth and NO customer.tenant middleware — the tenant is NOT bound
+| on entry. CustomerPortalController resolves the tenant from {tenant_slug} and
+| looks the invitation up scope-free by token AND explicit tenant_id (a token
+| from tenant A can never be redeemed on tenant B). Accepting creates the
+| CustomerUser, marks the invite used, and logs the customer in. Live portal
+| routes (login/dashboard/...) live in routes/customer.php.
+|
+*/
+Route::get('portal/{tenant_slug}/invite/{token}', [CustomerPortalController::class, 'showAcceptInvitation'])
+    ->name('customer.portal.invite');
+Route::post('portal/{tenant_slug}/invite/{token}', [CustomerPortalController::class, 'acceptInvitation'])
+    ->name('customer.portal.invite.accept');

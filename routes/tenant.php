@@ -62,6 +62,11 @@ Route::middleware('auth:tenant')->group(function () {
     Route::post('customers/{customer}/unblacklist', [CustomerController::class, 'unblacklist'])
         ->name('customers.unblacklist');
 
+    // Invite a customer to the Customer Portal (creates a 7-day invitation +
+    // fires CustomerPortalInvitationSent). Idempotent — see the controller.
+    Route::post('customers/{customer}/invite-portal', [CustomerController::class, 'invitePortal'])
+        ->name('customers.invite-portal');
+
     // CRM leads — {lead} binds through TenantScope (cross-tenant id => 404).
     // No edit/update: a lead is captured, shared, then converted/expired — it is
     // not an editable record (the customer edits via the public intake form).

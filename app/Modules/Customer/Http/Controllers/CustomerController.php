@@ -5,6 +5,7 @@ namespace App\Modules\Customer\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Customer\Actions\BlacklistCustomerAction;
 use App\Modules\Customer\Actions\CreateCustomerAction;
+use App\Modules\Customer\Actions\InviteCustomerToPortalAction;
 use App\Modules\Customer\Actions\UnblacklistCustomerAction;
 use App\Modules\Customer\Actions\UpdateCustomerAction;
 use App\Modules\Customer\DTOs\CreateCustomerDTO;
@@ -13,6 +14,7 @@ use App\Modules\Customer\Http\Requests\BlacklistRequest;
 use App\Modules\Customer\Http\Requests\StoreCustomerRequest;
 use App\Modules\Customer\Http\Requests\UpdateCustomerRequest;
 use App\Modules\Customer\Models\Customer;
+use App\Modules\Customer\Models\CustomerUser;
 use App\Modules\Finance\Models\LedgerEntry;
 use App\Modules\Finance\Services\LedgerService;
 use Illuminate\Http\RedirectResponse;
@@ -117,9 +119,31 @@ class CustomerController extends Controller
             // Cents; positive = owes. Web request has current_tenant bound, so
             // LedgerService (TenantScope) is safe here.
             'outstandingBalance' => $ledger->getBalance($customer->id),
+            // Drives the portal button state ("Invite" vs "Already has access").
+            'hasPortalAccess' => CustomerUser::where('customer_id', $customer->id)->exists(),
             // Rentals module not built yet — placeholder rendered by the page.
             'rentalHistory' => [],
         ]);
+    }
+
+    /**
+     * Invite this customer to the Customer Portal. Idempotent: if they already
+     * have a portal login we surface that rather than issuing another invite.
+     * Authorized as a customer-management action (the 'update' ability).
+     */
+    public function invitePortal(
+        Customer $customer,
+        InviteCustomerToPortalAction $action,
+    ): RedirectResponse {
+        Gate::forUser(auth('tenant')->user())->authorize('update', $customer);
+
+        if (CustomerUser::where('customer_id', $customer->id)->exists()) {
+            return back()->with('error', __('common.customer.portal_already'));
+        }
+
+        $action->execute($customer);
+
+        return back()->with('success', __('common.customer.portal_invited'));
     }
 
     public function edit(Customer $customer): Response
