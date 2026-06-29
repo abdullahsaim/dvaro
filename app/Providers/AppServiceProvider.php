@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Modules\AI\Models\AiConversation;
+use App\Modules\AI\Policies\AiPolicy;
 use App\Modules\Agreement\Models\Agreement;
 use App\Modules\Agreement\Policies\AgreementPolicy;
 use App\Modules\CRM\Models\Lead;
@@ -47,6 +49,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Invoice::class, InvoicePolicy::class);
         // Workshop service logs are authorized against the MECHANIC guard.
         Gate::policy(ServiceLog::class, MechanicPolicy::class);
+        // AI conversations: own-conversation ownership (within tenant) — AiPolicy.
+        Gate::policy(AiConversation::class, AiPolicy::class);
 
         // Super admin role gates. These are role checks (no model argument), so
         // they are registered as Gates delegating to SuperAdminPolicy methods —
@@ -71,6 +75,19 @@ class AppServiceProvider extends ServiceProvider
         // without an authenticated user to throttle on.
         RateLimiter::for('crm-intake', function (Request $request) {
             return Limit::perHour(5)->by((string) $request->route('token'));
+        });
+
+        // AI chat: 20 requests per minute PER TENANT USER. AI calls cost money,
+        // so this is throttled aggressively. Keyed by tenant + tenant-guard user
+        // so one tenant's usage never eats into another's bucket. Falls back to
+        // the request IP if (unexpectedly) unauthenticated.
+        RateLimiter::for('ai-chat', function (Request $request) {
+            $userId = auth('tenant')->id();
+            $tenantId = app()->bound('current_tenant') ? app('current_tenant')->id : 'none';
+
+            $key = $userId !== null ? "{$tenantId}:{$userId}" : $request->ip();
+
+            return Limit::perMinute(20)->by((string) $key);
         });
 
         // Reusable migration helper: add a tenant_id column + index in one line.

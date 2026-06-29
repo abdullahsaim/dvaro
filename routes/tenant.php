@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\AI\Http\Controllers\AiController;
 use App\Modules\Agreement\Http\Controllers\AgreementController;
 use App\Modules\CRM\Http\Controllers\LeadController;
 use App\Modules\Customer\Http\Controllers\CustomerController;
@@ -124,4 +125,26 @@ Route::middleware('auth:tenant')->group(function () {
     Route::get('workshop/vehicle/{vehicle}', [WorkshopController::class, 'vehicleHistory'])
         ->name('workshop.vehicle');
     Route::get('workshop/{log}', [WorkshopController::class, 'show'])->name('workshop.show');
+
+    // AI Assistant — tenant-restricted; HARD-GATED on the 'ai' plan module
+    // (tenant.module:ai → 403 if the plan excludes it). Conversations are scoped
+    // to the current tenant AND the current user (AiPolicy). {conversation} binds
+    // through TenantScope (cross-tenant id => 404).
+    //
+    // The module middleware is applied PER ROUTE (not via a nested group): a
+    // nested ->middleware()->group() here left implicit route-model binding for
+    // {conversation} unsubstituted, so the leading {tenant_slug} shifted into the
+    // controller's model argument (TypeError). Flat routes bind correctly.
+    Route::get('ai', [AiController::class, 'index'])
+        ->middleware('tenant.module:ai')->name('ai.index');
+    Route::post('ai/new', [AiController::class, 'newConversation'])
+        ->middleware('tenant.module:ai')->name('ai.new');
+    // chat is async (axios) and returns JSON, not Inertia. Throttled hard —
+    // 20/min per tenant user — because AI calls cost money (ai-chat limiter).
+    Route::post('ai/chat', [AiController::class, 'chat'])
+        ->middleware(['tenant.module:ai', 'throttle:ai-chat'])->name('ai.chat');
+    Route::get('ai/{conversation}', [AiController::class, 'show'])
+        ->middleware('tenant.module:ai')->name('ai.show');
+    Route::delete('ai/{conversation}', [AiController::class, 'destroy'])
+        ->middleware('tenant.module:ai')->name('ai.destroy');
 });

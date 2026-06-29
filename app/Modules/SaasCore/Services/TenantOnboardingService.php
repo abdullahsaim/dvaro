@@ -47,6 +47,10 @@ class TenantOnboardingService extends BaseService
                     'notify_email_enabled' => true,
                     'notify_sms_enabled' => false,
                     'notify_whatsapp_enabled' => false,
+                    // AI provider starts on 'log' (fixed "not configured" reply)
+                    // until the tenant selects one AND its key lands in .env
+                    // (AiProviderFactory gates on credentials). See the AI module.
+                    'ai_provider' => 'log',
                 ],
             ]);
 

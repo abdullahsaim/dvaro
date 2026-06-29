@@ -49,6 +49,20 @@ return [
         'api_key' => env('CELLCAST_API_KEY'),
     ],
 
+    // AI providers (tenant selects via settings['ai_provider']). AiProviderFactory
+    // only returns a real provider when its key is present, else LogAiProvider.
+    'groq' => [
+        'key' => env('GROQ_API_KEY'),
+    ],
+
+    'qwen' => [
+        'key' => env('QWEN_API_KEY'),
+    ],
+
+    'deepseek' => [
+        'key' => env('DEEPSEEK_API_KEY'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

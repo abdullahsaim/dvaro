@@ -75,6 +75,10 @@ return [
         'saved' => 'Notification settings saved.',
     ],
 
+    'ai' => [
+        'conversation_deleted' => 'Conversation deleted.',
+    ],
+
     'superadmin' => [
         'tenant_suspended'        => 'Tenant suspended.',
         'tenant_activated'        => 'Tenant activated.',

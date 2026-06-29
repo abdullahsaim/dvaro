@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\CheckImpersonation;
+use App\Http\Middleware\EnsureTenantHasModule;
 use App\Http\Middleware\RedirectIfTenantAuthenticated;
 use App\Http\Middleware\ResolveTenantForCustomer;
 use App\Http\Middleware\ResolveTenantForMechanic;
@@ -71,6 +72,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'superadmin.auth' => SuperAdminMiddleware::class,
             // Shares super admin impersonation banner state into the tenant UI.
             'check.impersonation' => CheckImpersonation::class,
+            // Hard-blocks a tenant route group unless its plan includes a module:
+            // ->middleware('tenant.module:ai'). Runs after the tenant is bound.
+            'tenant.module' => EnsureTenantHasModule::class,
         ]);
 
         // Register Inertia's server-side middleware on the web group. Required so

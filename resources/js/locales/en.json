@@ -569,5 +569,28 @@
             "hint": "Print this and stick it on the vehicle. Mechanics scan it to log work.",
             "none": "No QR code generated yet."
         }
+    },
+    "ai": {
+        "title": "AI Assistant",
+        "subtitle": "Ask how DVARO works, or get insights from your own data.",
+        "new_help_chat": "New Help chat",
+        "new_intelligence_chat": "New Intelligence chat",
+        "no_conversations": "No conversations yet. Start one above.",
+        "mode": {
+            "help": "Help",
+            "intelligence": "Intelligence"
+        },
+        "mode_help_hint": "Explains DVARO's features and how to use them. No access to your data.",
+        "mode_intelligence_hint": "Answers questions using your company's own data only.",
+        "placeholder": "Type your message…",
+        "send": "Send",
+        "thinking": "Thinking…",
+        "error": "Something went wrong. Please try again.",
+        "rate_limited": "You're sending messages too quickly. Please wait a moment and try again.",
+        "empty_thread": "Send a message to start the conversation.",
+        "untitled": "New conversation",
+        "delete_confirm": "Delete this conversation?",
+        "you": "You",
+        "assistant": "Assistant"
     }
 }
