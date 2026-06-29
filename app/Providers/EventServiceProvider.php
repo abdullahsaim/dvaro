@@ -13,6 +13,7 @@ use App\Modules\Notification\Listeners\SendInvoiceGeneratedNotification;
 use App\Modules\Notification\Listeners\SendLateFeeNotification;
 use App\Modules\Notification\Listeners\SendLeadSubmittedNotification;
 use App\Modules\Notification\Listeners\SendPaymentReceivedNotification;
+use App\Modules\Reporting\Listeners\ReportCacheInvalidationListener;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
 /**
@@ -39,6 +40,8 @@ class EventServiceProvider extends ServiceProvider
         ],
         PaymentReceived::class => [
             SendPaymentReceivedNotification::class,
+            // Sync — busts the revenue + overdue report caches for the tenant.
+            ReportCacheInvalidationListener::class,
         ],
         LateFeeApplied::class => [
             SendLateFeeNotification::class,

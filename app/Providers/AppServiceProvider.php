@@ -15,6 +15,8 @@ use App\Modules\Fleet\Models\Vehicle;
 use App\Modules\Fleet\Policies\VehiclePolicy;
 use App\Modules\Invoice\Models\Invoice;
 use App\Modules\Invoice\Policies\InvoicePolicy;
+use App\Modules\Reporting\Models\ReportExport;
+use App\Modules\Reporting\Policies\ReportingPolicy;
 use App\Modules\SuperAdmin\Policies\SuperAdminPolicy;
 use App\Modules\Workshop\Models\ServiceLog;
 use App\Modules\Workshop\Policies\MechanicPolicy;
@@ -51,6 +53,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(ServiceLog::class, MechanicPolicy::class);
         // AI conversations: own-conversation ownership (within tenant) — AiPolicy.
         Gate::policy(AiConversation::class, AiPolicy::class);
+        // Reporting: viewAny/export role-free + download own-tenant export.
+        Gate::policy(ReportExport::class, ReportingPolicy::class);
 
         // Super admin role gates. These are role checks (no model argument), so
         // they are registered as Gates delegating to SuperAdminPolicy methods —
@@ -88,6 +92,16 @@ class AppServiceProvider extends ServiceProvider
             $key = $userId !== null ? "{$tenantId}:{$userId}" : $request->ip();
 
             return Limit::perMinute(20)->by((string) $key);
+        });
+
+        // Report exports: 5 per hour PER TENANT. Generating a report file (PDF or
+        // Excel, queued) is expensive on the VPS, so the export endpoint is capped
+        // per tenant — keyed by the bound tenant id so one tenant's exports never
+        // eat into another's bucket. IP fallback if (unexpectedly) unbound.
+        RateLimiter::for('report-export', function (Request $request) {
+            $tenantId = app()->bound('current_tenant') ? app('current_tenant')->id : null;
+
+            return Limit::perHour(5)->by($tenantId !== null ? "tenant:{$tenantId}" : $request->ip());
         });
 
         // Reusable migration helper: add a tenant_id column + index in one line.

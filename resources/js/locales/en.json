@@ -23,7 +23,11 @@
         "plan": "Plan",
         "subscription_status": "Subscription",
         "trial_days_remaining": "Trial days remaining",
-        "no_plan": "No active plan"
+        "no_plan": "No active plan",
+        "outstanding_balance": "Outstanding balance",
+        "active_rentals": "Active rentals",
+        "vehicles_available": "Vehicles available",
+        "view_reports": "View reports"
     },
     "common": {
         "save": "Save",
@@ -592,5 +596,90 @@
         "delete_confirm": "Delete this conversation?",
         "you": "You",
         "assistant": "Assistant"
+    },
+    "reporting": {
+        "title": "Reports & Analytics",
+        "subtitle": "Revenue, fleet, payments and workshop insights.",
+        "nav": {
+            "dashboard": "Overview",
+            "revenue": "Revenue",
+            "fleet": "Fleet utilisation",
+            "overdue": "Overdue payments",
+            "workshop": "Workshop",
+            "customers": "Customer growth",
+            "maintenance": "Maintenance costs"
+        },
+        "kpi": {
+            "revenue_this_month": "Revenue this month",
+            "active_rentals": "Active rentals",
+            "overdue": "Overdue invoices",
+            "fleet_utilisation": "Fleet utilisation",
+            "vehicles_due_service": "Vehicles due for service"
+        },
+        "date_from": "From",
+        "date_to": "To",
+        "apply": "Apply",
+        "financial_year_hint": "Defaults to the current Australian financial year (1 Jul – 30 Jun).",
+        "export_pdf": "Export PDF",
+        "export_excel": "Export Excel",
+        "export_queued": "Export queued — you will be notified when it is ready.",
+        "recent_exports": "Recent exports",
+        "download": "Download",
+        "no_exports": "No exports yet.",
+        "status": {
+            "pending": "Preparing…",
+            "ready": "Ready",
+            "failed": "Failed"
+        },
+        "revenue": {
+            "by_month": "Revenue by month",
+            "by_vehicle": "Revenue by vehicle",
+            "month": "Month",
+            "amount": "Revenue",
+            "vehicle": "Vehicle",
+            "days_rented": "Days rented",
+            "empty": "No revenue in this period."
+        },
+        "fleet": {
+            "vehicle": "Vehicle",
+            "total_days": "Total days",
+            "days_rented": "Days rented",
+            "utilisation": "Utilisation",
+            "empty": "No vehicles in the fleet."
+        },
+        "overdue": {
+            "customer": "Customer",
+            "total": "Invoice total",
+            "outstanding": "Outstanding",
+            "days_overdue": "Days overdue",
+            "empty": "No overdue payments."
+        },
+        "workshop": {
+            "total_jobs": "Jobs completed",
+            "total_labour": "Total labour",
+            "total_parts": "Total parts",
+            "avg_duration": "Average duration",
+            "hours": "hrs",
+            "by_mechanic": "By mechanic",
+            "mechanic": "Mechanic",
+            "jobs": "Jobs",
+            "labour": "Labour",
+            "parts": "Parts",
+            "total": "Total",
+            "empty": "No completed jobs in this period."
+        },
+        "customers": {
+            "month": "Month",
+            "new_customers": "New customers",
+            "empty": "No new customers in this period."
+        },
+        "maintenance": {
+            "vehicle": "Vehicle",
+            "jobs": "Jobs",
+            "labour": "Labour",
+            "parts": "Parts",
+            "total": "Total",
+            "empty": "No maintenance costs in this period."
+        }
     }
 }

@@ -3,22 +3,26 @@
 // Tenant name comes from the shared 'tenant' prop (TenantMiddleware); plan /
 // subscription summary comes from TenantDashboardController.
 import { computed } from 'vue';
-import { Head, router, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import { useCurrency } from '@/composables/useCurrency';
 
 const props = defineProps({
     planName: { type: String, default: null },
     subscriptionStatus: { type: String, default: null },
     trialDaysRemaining: { type: Number, default: null },
+    summary: { type: Object, default: () => ({ outstanding_balance: 0, active_rentals: 0, vehicles_available: 0 }) },
 });
 
 const { t } = useI18n();
+const { formatAUD } = useCurrency();
 const page = usePage();
 
 const user = computed(() => page.props.auth.user);
 const tenant = computed(() => page.props.tenant);
 const logoutUrl = computed(() => `/app/${tenant.value.slug}/logout`);
+const reportsUrl = computed(() => `/app/${tenant.value.slug}/reports`);
 
 function logout() {
     router.post(logoutUrl.value);
@@ -54,6 +58,28 @@ function logout() {
                     <dd class="mt-1 font-medium">{{ props.trialDaysRemaining }}</dd>
                 </div>
             </dl>
+
+            <dl class="mt-6 grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-3">
+                <div class="rounded border border-slate-200 p-4 dark:border-slate-800">
+                    <dt class="text-sm text-slate-500 dark:text-slate-400">{{ t('dashboard.outstanding_balance') }}</dt>
+                    <dd class="mt-1 font-medium">{{ formatAUD(props.summary.outstanding_balance) }}</dd>
+                </div>
+                <div class="rounded border border-slate-200 p-4 dark:border-slate-800">
+                    <dt class="text-sm text-slate-500 dark:text-slate-400">{{ t('dashboard.active_rentals') }}</dt>
+                    <dd class="mt-1 font-medium">{{ props.summary.active_rentals }}</dd>
+                </div>
+                <div class="rounded border border-slate-200 p-4 dark:border-slate-800">
+                    <dt class="text-sm text-slate-500 dark:text-slate-400">{{ t('dashboard.vehicles_available') }}</dt>
+                    <dd class="mt-1 font-medium">{{ props.summary.vehicles_available }}</dd>
+                </div>
+            </dl>
+
+            <Link
+                :href="reportsUrl"
+                class="mt-6 inline-block rounded border border-slate-300 px-3 py-2 text-sm dark:border-slate-700"
+            >
+                {{ t('dashboard.view_reports') }}
+            </Link>
 
             <button
                 type="button"

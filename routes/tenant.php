@@ -7,6 +7,7 @@ use App\Modules\Customer\Http\Controllers\CustomerController;
 use App\Modules\Fleet\Http\Controllers\FleetController;
 use App\Modules\Invoice\Http\Controllers\InvoiceController;
 use App\Modules\Notification\Http\Controllers\NotificationSettingsController;
+use App\Modules\Reporting\Http\Controllers\ReportingController;
 use App\Modules\SaasCore\Http\Controllers\TenantAuthController;
 use App\Modules\SaasCore\Http\Controllers\TenantDashboardController;
 use App\Modules\Workshop\Http\Controllers\WorkshopController;
@@ -147,4 +148,24 @@ Route::middleware('auth:tenant')->group(function () {
         ->middleware('tenant.module:ai')->name('ai.show');
     Route::delete('ai/{conversation}', [AiController::class, 'destroy'])
         ->middleware('tenant.module:ai')->name('ai.destroy');
+
+    // Reporting & Analytics. All reads go through ReportCacheService (Redis) so
+    // the DB is only hit on a cache miss. Exports are queued; their files expire
+    // after 24h and download via short-lived signed S3 URLs.
+    Route::get('reports', [ReportingController::class, 'dashboard'])->name('reports.index');
+    Route::get('reports/revenue', [ReportingController::class, 'revenue'])->name('reports.revenue');
+    Route::get('reports/fleet', [ReportingController::class, 'fleet'])->name('reports.fleet');
+    Route::get('reports/overdue', [ReportingController::class, 'overdue'])->name('reports.overdue');
+    Route::get('reports/workshop', [ReportingController::class, 'workshop'])->name('reports.workshop');
+    Route::get('reports/customers', [ReportingController::class, 'customers'])->name('reports.customers');
+    Route::get('reports/maintenance', [ReportingController::class, 'maintenance'])->name('reports.maintenance');
+
+    // Queue an export — 5/hour per tenant (report-export limiter; expensive).
+    Route::post('reports/export', [ReportingController::class, 'export'])
+        ->middleware('throttle:report-export')->name('reports.export');
+
+    // Download a generated export. {export} binds via TenantScope (cross-tenant
+    // id => 404). Declared after the literal report routes to avoid shadowing.
+    Route::get('reports/exports/{export}', [ReportingController::class, 'downloadExport'])
+        ->name('reports.exports.download');
 });

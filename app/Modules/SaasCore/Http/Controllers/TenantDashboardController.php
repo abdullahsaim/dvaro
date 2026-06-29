@@ -3,6 +3,7 @@
 namespace App\Modules\SaasCore\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Reporting\Services\ReportingService;
 use App\Modules\SaasCore\Models\Tenant;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -17,7 +18,7 @@ use Inertia\Response;
  */
 class TenantDashboardController extends Controller
 {
-    public function index(): Response
+    public function index(ReportingService $reporting): Response
     {
         /** @var Tenant $tenant */
         $tenant = app('current_tenant');
@@ -37,6 +38,9 @@ class TenantDashboardController extends Controller
             'planName' => $subscription?->plan?->name,
             'subscriptionStatus' => $subscription?->status,
             'trialDaysRemaining' => $trialDaysRemaining,
+            // Operational summary (outstanding balance, active rentals, available
+            // vehicles) — cheap counts from existing queries, always read fresh.
+            'summary' => $reporting->tenantDashboardSummary(),
         ]);
     }
 }

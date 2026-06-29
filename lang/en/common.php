@@ -79,6 +79,10 @@ return [
         'conversation_deleted' => 'Conversation deleted.',
     ],
 
+    'reporting' => [
+        'export_queued' => 'Export queued — it will be ready to download shortly.',
+    ],
+
     'superadmin' => [
         'tenant_suspended'        => 'Tenant suspended.',
         'tenant_activated'        => 'Tenant activated.',
