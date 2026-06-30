@@ -17,6 +17,8 @@ const nav = [
     { key: 'tenants', href: '/superadmin/tenants', label: 'superadmin.nav.tenants' },
     { key: 'plans', href: '/superadmin/plans', label: 'superadmin.nav.plans' },
     { key: 'subscriptions', href: '/superadmin/subscriptions', label: 'superadmin.nav.subscriptions' },
+    { key: 'cms', href: '/superadmin/cms', label: 'superadmin.nav.cms' },
+    { key: 'demo-requests', href: '/superadmin/demo-requests', label: 'superadmin.nav.demo_requests' },
     { key: 'settings', href: '/superadmin/settings', label: 'superadmin.nav.settings' },
 ];
 

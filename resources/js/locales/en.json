@@ -3,6 +3,69 @@
         "name": "DVARO",
         "tagline": "Intelligent Fleet & Rental Operations"
     },
+    "public": {
+        "nav": {
+            "pricing": "Pricing",
+            "about": "About",
+            "contact": "Contact",
+            "login": "Log in",
+            "register": "Get started",
+            "menu": "Menu"
+        },
+        "footer": {
+            "tagline": "The all-in-one platform for car rental operators.",
+            "product": "Product",
+            "company": "Company",
+            "rights": "All rights reserved."
+        },
+        "features": {
+            "title": "Everything you need to run a rental business",
+            "subtitle": "One platform, from the first lead to the final invoice."
+        },
+        "pricing": {
+            "title": "Simple, transparent pricing",
+            "subtitle": "Choose the plan that fits your fleet. Upgrade anytime.",
+            "monthly": "Monthly",
+            "annual": "Annual",
+            "per_month": "/mo",
+            "per_year": "/yr",
+            "free": "Free",
+            "trial_days": "{days}-day free trial",
+            "includes": "Includes",
+            "get_started": "Get started",
+            "view_all": "View all plans",
+            "no_plans": "Plans are coming soon. Check back shortly.",
+            "limit_unlimited": "Unlimited"
+        },
+        "testimonials": {
+            "title": "Loved by rental operators"
+        },
+        "demo": {
+            "title": "See DVARO in action",
+            "subtitle": "Request a demo and we'll show you around.",
+            "company_name": "Company name",
+            "contact_name": "Your name",
+            "email": "Email",
+            "phone": "Phone (optional)",
+            "message": "Message (optional)",
+            "submit": "Request a demo",
+            "submitting": "Sending…"
+        },
+        "contact": {
+            "title": "Get in touch",
+            "subtitle": "Have a question? Send us a message.",
+            "email": "Email",
+            "phone": "Phone",
+            "address": "Address",
+            "name": "Your name",
+            "message": "Message",
+            "send": "Send message",
+            "sending": "Sending…"
+        },
+        "about": {
+            "title": "About DVARO"
+        }
+    },
     "auth": {
         "sign_in": "Sign in",
         "email": "Email",
@@ -385,7 +448,9 @@
             "tenants": "Tenants",
             "plans": "Plans",
             "subscriptions": "Subscriptions",
-            "settings": "Settings"
+            "settings": "Settings",
+            "cms": "Landing content",
+            "demo_requests": "Demo requests"
         },
         "dashboard": {
             "title": "Platform overview",
@@ -500,6 +565,43 @@
             "limits": "Limits & maintenance",
             "max_tenants": "Max tenants (blank = unlimited)",
             "maintenance_mode": "Platform maintenance mode"
+        },
+        "cms": {
+            "title": "Landing page content",
+            "subtitle": "Edit the public website copy and images. Changes go live immediately.",
+            "empty": "No content blocks yet. Run the CMS seeder.",
+            "save": "Save",
+            "current_image": "Current image",
+            "no_image": "No image set yet.",
+            "upload_image": "Upload new image",
+            "image_hint": "JPG, PNG or WebP, up to 5MB. Swaps the image in place — the layout does not change.",
+            "sections": {
+                "hero": "Hero",
+                "features": "Features",
+                "pricing": "Pricing",
+                "about": "About",
+                "contact": "Contact",
+                "testimonials": "Testimonials"
+            }
+        },
+        "demo_requests": {
+            "title": "Demo & contact requests",
+            "subtitle": "Leads captured from the public website.",
+            "empty": "No requests yet.",
+            "company": "Company",
+            "contact": "Contact",
+            "email": "Email",
+            "phone": "Phone",
+            "message": "Message",
+            "status": "Status",
+            "received": "Received",
+            "mark_contacted": "Mark contacted",
+            "filter_all": "All",
+            "statuses": {
+                "new": "New",
+                "contacted": "Contacted",
+                "converted": "Converted"
+            }
         },
         "statuses": {
             "active": "Active",

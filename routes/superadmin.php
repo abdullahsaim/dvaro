@@ -1,5 +1,7 @@
 <?php
 
+use App\Modules\SuperAdmin\Http\Controllers\CmsContentController;
+use App\Modules\SuperAdmin\Http\Controllers\DemoRequestController;
 use App\Modules\SuperAdmin\Http\Controllers\PlanManagementController;
 use App\Modules\SuperAdmin\Http\Controllers\SubscriptionManagementController;
 use App\Modules\SuperAdmin\Http\Controllers\SuperAdminAuthController;
@@ -63,4 +65,16 @@ Route::middleware('superadmin.auth')->group(function () {
     // Platform settings.
     Route::get('settings', [SystemSettingsController::class, 'show'])->name('settings');
     Route::put('settings', [SystemSettingsController::class, 'update'])->name('settings.update');
+
+    // Landing-page CMS. {key} is the content block's unique string key (validated
+    // in the request). All actions are content-access gated.
+    Route::get('cms', [CmsContentController::class, 'index'])->name('cms.index');
+    Route::put('cms/{key}', [CmsContentController::class, 'update'])->name('cms.update');
+    Route::post('cms/{key}/image', [CmsContentController::class, 'updateImage'])->name('cms.image');
+
+    // Demo / contact requests queue. {demoRequest} binds implicitly (platform-
+    // wide model, no TenantScope).
+    Route::get('demo-requests', [DemoRequestController::class, 'index'])->name('demo-requests.index');
+    Route::post('demo-requests/{demoRequest}/contacted', [DemoRequestController::class, 'markContacted'])
+        ->name('demo-requests.contacted');
 });

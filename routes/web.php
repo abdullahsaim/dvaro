@@ -1,14 +1,36 @@
 <?php
 
+use App\Modules\CMS\Http\Controllers\DemoRequestController;
+use App\Modules\CMS\Http\Controllers\PublicLandingController;
 use App\Modules\CRM\Http\Controllers\IntakeFormController;
 use App\Modules\Customer\Http\Controllers\CustomerPortalController;
 use App\Modules\SaasCore\Http\Controllers\TenantRegistrationController;
 use App\Modules\Workshop\Http\Controllers\QrScanController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+/*
+|--------------------------------------------------------------------------
+| Public landing website + CMS-driven marketing pages
+|--------------------------------------------------------------------------
+|
+| PUBLIC: no auth, no tenant middleware. Editable copy comes from the CMS
+| (super admin controlled); the pricing section always reads live Plan data.
+| The demo-request and contact forms are throttled per IP (3/hour) to curb
+| spam, and a contact enquiry is persisted as a DemoRequest so it surfaces in
+| the same super admin queue.
+|
+*/
+Route::get('/', [PublicLandingController::class, 'index'])->name('landing');
+Route::get('pricing', [PublicLandingController::class, 'pricing'])->name('pricing');
+Route::get('about', [PublicLandingController::class, 'about'])->name('about');
+Route::get('contact', [PublicLandingController::class, 'contact'])->name('contact');
+
+Route::post('contact', [PublicLandingController::class, 'submitContact'])
+    ->middleware('throttle:public-forms')
+    ->name('contact.submit');
+Route::post('demo-request', [DemoRequestController::class, 'store'])
+    ->middleware('throttle:public-forms')
+    ->name('demo-request.store');
 
 /*
 |--------------------------------------------------------------------------

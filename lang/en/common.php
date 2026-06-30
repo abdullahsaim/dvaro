@@ -83,6 +83,14 @@ return [
         'export_queued' => 'Export queued — it will be ready to download shortly.',
     ],
 
+    'cms' => [
+        'content_updated'        => 'Content updated.',
+        'image_updated'          => 'Image updated.',
+        'demo_requested'         => 'Thanks — we will be in touch shortly.',
+        'contact_sent'           => 'Thanks for getting in touch. We will reply soon.',
+        'demo_marked_contacted'  => 'Request marked as contacted.',
+    ],
+
     'superadmin' => [
         'tenant_suspended'        => 'Tenant suspended.',
         'tenant_activated'        => 'Tenant activated.',

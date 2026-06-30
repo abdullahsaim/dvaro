@@ -104,6 +104,13 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perHour(5)->by($tenantId !== null ? "tenant:{$tenantId}" : $request->ip());
         });
 
+        // Public landing forms: 3 per hour PER IP. The demo-request and contact
+        // forms are unauthenticated and pre-tenant, so there is nothing to key on
+        // but the request IP. Curbs marketing-form spam.
+        RateLimiter::for('public-forms', function (Request $request) {
+            return Limit::perHour(3)->by($request->ip());
+        });
+
         // Reusable migration helper: add a tenant_id column + index in one line.
         //
         //   Schema::create('vehicles', function (Blueprint $table) {
