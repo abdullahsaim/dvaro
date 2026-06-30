@@ -2,7 +2,7 @@
 // Tenant-portal login. FUNCTIONAL ONLY — design pass comes in a later session.
 // Posts to /app/{tenant_slug}/login; tenant slug comes from shared props.
 import { computed } from 'vue';
-import { Head, useForm, usePage } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
 
@@ -10,6 +10,7 @@ const { t } = useI18n();
 const page = usePage();
 
 const loginUrl = computed(() => `/app/${page.props.tenant.slug}/login`);
+const forgotUrl = computed(() => `/app/${page.props.tenant.slug}/forgot-password`);
 
 const form = useForm({
     email: '',
@@ -71,6 +72,10 @@ function submit() {
                     {{ t('auth.sign_in') }}
                 </button>
             </form>
+
+            <Link :href="forgotUrl" class="mt-4 text-sm text-slate-500 hover:underline dark:text-slate-400">
+                {{ t('auth.forgot_password') }}
+            </Link>
         </div>
     </PublicLayout>
 </template>

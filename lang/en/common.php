@@ -39,6 +39,12 @@ return [
         'part_added'     => 'Part added to the service log.',
     ],
 
+    'mechanic' => [
+        'created' => 'Mechanic added.',
+        'updated' => 'Mechanic updated.',
+        'deleted' => 'Mechanic removed.',
+    ],
+
     'customer' => [
         'created'                 => 'Customer added.',
         'updated'                 => 'Customer updated.',

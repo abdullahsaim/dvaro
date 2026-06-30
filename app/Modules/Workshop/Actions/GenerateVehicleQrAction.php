@@ -5,6 +5,7 @@ namespace App\Modules\Workshop\Actions;
 use App\Actions\BaseAction;
 use App\Modules\Fleet\Models\Vehicle;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 /**
@@ -15,9 +16,16 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
  * never needs reprinting after a regenerate. The image is rendered as SVG
  * (dependency-free — no imagick/GD required, unlike PNG) and stored on S3.
  *
- * The QR encodes the PUBLIC scan URL (mechanic.scan); scanning it routes a
- * mechanic to login (then back to the vehicle) or straight to the vehicle if
- * already authenticated. No tenant data is embedded — just the slug + token.
+ * The QR encodes a Laravel SIGNED scan URL (mechanic.scan): the route is signed
+ * with a `signature` query param computed (with APP_KEY) over the slug + token,
+ * so QrScanController can reject a tampered URL (403). The signature is
+ * PERMANENT (URL::signedRoute, NOT temporarySignedRoute) — a printed sticker
+ * must not rot, and link lifetime is not a QR concern. The HMAC token is kept in
+ * addition: it remains the DB lookup key for the vehicle.
+ *
+ * Scanning it routes a mechanic to login (then back to the vehicle) or straight
+ * to the vehicle if already authenticated. No tenant data is embedded — just the
+ * slug + token + signature.
  */
 class GenerateVehicleQrAction extends BaseAction
 {
@@ -31,7 +39,8 @@ class GenerateVehicleQrAction extends BaseAction
         // resolves the slug correctly even with no current_tenant bound.
         $slug = $vehicle->tenant->slug;
 
-        $url = route('mechanic.scan', [
+        // Permanent signed URL — tamper-evident, never expires (printed sticker).
+        $url = URL::signedRoute('mechanic.scan', [
             'tenant_slug' => $slug,
             'token' => $token,
         ]);

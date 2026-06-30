@@ -10,6 +10,8 @@ use App\Modules\Notification\Http\Controllers\NotificationSettingsController;
 use App\Modules\Reporting\Http\Controllers\ReportingController;
 use App\Modules\SaasCore\Http\Controllers\TenantAuthController;
 use App\Modules\SaasCore\Http\Controllers\TenantDashboardController;
+use App\Modules\SaasCore\Http\Controllers\TenantPasswordResetController;
+use App\Modules\Workshop\Http\Controllers\MechanicController;
 use App\Modules\Workshop\Http\Controllers\WorkshopController;
 use Illuminate\Support\Facades\Route;
 
@@ -31,6 +33,18 @@ use Illuminate\Support\Facades\Route;
 // Authentication — tenant context is bound, but no user is required yet.
 Route::get('login', [TenantAuthController::class, 'showLogin'])->name('login');
 Route::post('login', [TenantAuthController::class, 'login'])->name('login.store');
+
+// Password reset (guest flow; tenant bound by TenantMiddleware so the broker's
+// user lookup is tenant-scoped). The reset link path carries {tenant_slug}.
+// sendResetLink is throttled to 3/email/hour (password-reset limiter).
+Route::get('forgot-password', [TenantPasswordResetController::class, 'showRequestForm'])
+    ->name('password.request');
+Route::post('forgot-password', [TenantPasswordResetController::class, 'sendResetLink'])
+    ->middleware('throttle:password-reset')->name('password.email');
+Route::get('reset-password/{token}', [TenantPasswordResetController::class, 'showResetForm'])
+    ->name('password.reset');
+Route::post('reset-password', [TenantPasswordResetController::class, 'reset'])
+    ->name('password.update');
 
 // Authenticated tenant area.
 Route::middleware('auth:tenant')->group(function () {
@@ -119,6 +133,13 @@ Route::middleware('auth:tenant')->group(function () {
         ->name('notifications.settings');
     Route::put('notifications/settings', [NotificationSettingsController::class, 'update'])
         ->name('notifications.settings.update');
+
+    // Mechanic accounts — tenant_admin-only CRUD (ManageMechanicPolicy). The
+    // workshop portal logins are created here (no more tinker/seeder). No show
+    // route (Index lists everything); destroy soft-deletes. {mechanic} binds
+    // through TenantScope (cross-tenant id => 404).
+    Route::resource('mechanics', MechanicController::class)
+        ->except(['show']);
 
     // Workshop (admin oversight, read-only). Service logs are created/mutated only
     // from the mechanic portal. {log}/{vehicle} bind through TenantScope (404).

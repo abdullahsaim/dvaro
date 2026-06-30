@@ -9,6 +9,8 @@ use App\Modules\Workshop\Http\Controllers\MechanicAuthController;
 use App\Scopes\TenantScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * PUBLIC QR scan landing — the URL encoded in every vehicle's QR sticker.
@@ -20,14 +22,36 @@ use Illuminate\Http\Request;
  * would throw). The vehicle is looked up scope-free + explicit tenant_id, the
  * same safe pattern as the public CRM intake form.
  *
+ * SIGNATURE: the QR encodes a Laravel signed URL (GenerateVehicleQrAction). We
+ * verify it before anything else:
+ *   - valid signature        → proceed;
+ *   - signature present but   → TAMPERED → 403;
+ *     invalid
+ *   - no signature at all     → a LEGACY (pre-signing) sticker → a friendly
+ *                               "expired, contact your rental company" page
+ *                               (410), never a raw error.
+ *
  * No tenant data is exposed: an authenticated mechanic is sent straight to the
  * vehicle's service page; a guest is sent to the mechanic login with the token
  * stashed so they return to this vehicle after signing in.
  */
 class QrScanController extends Controller
 {
-    public function scan(Request $request, string $tenant_slug, string $token): RedirectResponse
+    public function scan(Request $request, string $tenant_slug, string $token): Response
     {
+        if (! $request->hasValidSignature()) {
+            // A legacy sticker carries no `signature` param at all — treat it as
+            // an expired code with a friendly message. A present-but-wrong
+            // signature is a tampering attempt → hard 403.
+            if ($request->query('signature') === null) {
+                return Inertia::render('Workshop/QrExpired')
+                    ->toResponse($request)
+                    ->setStatusCode(410);
+            }
+
+            abort(403);
+        }
+
         $tenant = Tenant::where('slug', $tenant_slug)->first();
 
         if ($tenant === null) {

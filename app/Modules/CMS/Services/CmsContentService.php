@@ -111,6 +111,13 @@ class CmsContentService
      *
      * The object lives at cms/images/{key}.{ext}; re-uploading replaces it
      * (deterministic path keyed by the block, so old files are not orphaned).
+     *
+     * Uploaded with a PUBLIC-READ ACL: these are landing-page assets served
+     * directly from a public S3 URL (CmsContentBlock::imageUrl() → Storage::url),
+     * not through a signed/temporary URL like tenant documents. The 'public'
+     * visibility maps to the public-read ACL on S3. This requires the bucket
+     * policy to permit public reads on the cms/images/* prefix — a deployment
+     * (VPS/AWS console) task; see docs/MODULE_STATUS.md.
      */
     public function updateImage(string $key, UploadedFile $file): void
     {
@@ -121,7 +128,7 @@ class CmsContentService
         }
 
         $path = "cms/images/{$key}.".$file->getClientOriginalExtension();
-        Storage::disk('s3')->put($path, $file->get());
+        Storage::disk('s3')->put($path, $file->get(), 'public');
 
         $block->image_path = $path;
         $block->save();

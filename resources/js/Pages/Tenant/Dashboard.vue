@@ -23,6 +23,7 @@ const user = computed(() => page.props.auth.user);
 const tenant = computed(() => page.props.tenant);
 const logoutUrl = computed(() => `/app/${tenant.value.slug}/logout`);
 const reportsUrl = computed(() => `/app/${tenant.value.slug}/reports`);
+const mechanicsUrl = computed(() => `/app/${tenant.value.slug}/mechanics`);
 
 function logout() {
     router.post(logoutUrl.value);
@@ -74,12 +75,20 @@ function logout() {
                 </div>
             </dl>
 
-            <Link
-                :href="reportsUrl"
-                class="mt-6 inline-block rounded border border-slate-300 px-3 py-2 text-sm dark:border-slate-700"
-            >
-                {{ t('dashboard.view_reports') }}
-            </Link>
+            <div class="mt-6 flex flex-wrap gap-3">
+                <Link
+                    :href="reportsUrl"
+                    class="inline-block rounded border border-slate-300 px-3 py-2 text-sm dark:border-slate-700"
+                >
+                    {{ t('dashboard.view_reports') }}
+                </Link>
+                <Link
+                    :href="mechanicsUrl"
+                    class="inline-block rounded border border-slate-300 px-3 py-2 text-sm dark:border-slate-700"
+                >
+                    {{ t('dashboard.manage_mechanics') }}
+                </Link>
+            </div>
 
             <button
                 type="button"

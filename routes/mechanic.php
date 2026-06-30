@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\Workshop\Http\Controllers\MechanicAuthController;
+use App\Modules\Workshop\Http\Controllers\MechanicPasswordResetController;
 use App\Modules\Workshop\Http\Controllers\MechanicPortalController;
 use Illuminate\Support\Facades\Route;
 
@@ -23,6 +24,18 @@ use Illuminate\Support\Facades\Route;
 // Authentication — tenant context is bound, but no mechanic is required yet.
 Route::get('login', [MechanicAuthController::class, 'showLogin'])->name('login');
 Route::post('login', [MechanicAuthController::class, 'login'])->name('login.store');
+
+// Password reset (guest flow; tenant bound by ResolveTenantForMechanic). The
+// reset link path carries {tenant_slug}. sendResetLink → 3/email/hour. Resets
+// the PASSWORD only (the PIN is managed via the tenant-admin Mechanic CRUD).
+Route::get('forgot-password', [MechanicPasswordResetController::class, 'showRequestForm'])
+    ->name('password.request');
+Route::post('forgot-password', [MechanicPasswordResetController::class, 'sendResetLink'])
+    ->middleware('throttle:password-reset')->name('password.email');
+Route::get('reset-password/{token}', [MechanicPasswordResetController::class, 'showResetForm'])
+    ->name('password.reset');
+Route::post('reset-password', [MechanicPasswordResetController::class, 'reset'])
+    ->name('password.update');
 
 // Authenticated mechanic portal.
 Route::middleware('auth:mechanic')->group(function () {

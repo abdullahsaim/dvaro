@@ -40,6 +40,15 @@ class ResolveTenantForMechanic
 
         app()->instance('current_tenant', $tenant);
 
+        // Drop {tenant_slug} from the route parameters now that the tenant is
+        // bound. It is a leading prefix param that no authenticated controller
+        // method declares; left in place, Laravel's positional dependency
+        // resolution shifts it into the next argument (e.g. a route-model
+        // {log} parameter receives the slug string → TypeError). Controllers read
+        // the slug from current_tenant, never the route param, so this is safe.
+        // Mirrors TenantMiddleware / ResolveTenantForCustomer.
+        $request->route()?->forgetParameter('tenant_slug');
+
         Inertia::share('tenant', fn () => [
             'name' => $tenant->name,
             'slug' => $tenant->slug,

@@ -18,6 +18,14 @@
             "company": "Company",
             "rights": "All rights reserved."
         },
+        "find_workspace": {
+            "title": "Find your workspace",
+            "subtitle": "Enter your email and we'll take you to your company's sign-in.",
+            "submit": "Continue",
+            "choose": "We found more than one workspace for this email. Choose one:",
+            "not_found": "We couldn't find a workspace for {email}.",
+            "register_cta": "Register a new company"
+        },
         "features": {
             "title": "Everything you need to run a rental business",
             "subtitle": "One platform, from the first lead to the final invoice."
@@ -72,6 +80,16 @@
         "password": "Password",
         "remember_me": "Remember me",
         "logout": "Log out",
+        "forgot_password": "Forgot your password?",
+        "forgot_password_title": "Reset your password",
+        "forgot_password_subtitle": "Enter your email and we'll send you a reset link.",
+        "send_reset_link": "Send reset link",
+        "reset_password_title": "Choose a new password",
+        "reset_password_subtitle": "Enter and confirm your new password.",
+        "new_password": "New password",
+        "confirm_password": "Confirm password",
+        "update_password": "Update password",
+        "back_to_login": "Back to sign in",
         "register": "Create your account",
         "company_name": "Company name",
         "confirm_password": "Confirm password",
@@ -90,7 +108,8 @@
         "outstanding_balance": "Outstanding balance",
         "active_rentals": "Active rentals",
         "vehicles_available": "Vehicles available",
-        "view_reports": "View reports"
+        "view_reports": "View reports",
+        "manage_mechanics": "Manage mechanics"
     },
     "common": {
         "save": "Save",
@@ -135,6 +154,25 @@
             "suspended": "Suspended",
             "accident": "Accident",
             "reserved": "Reserved"
+        }
+    },
+    "mechanic": {
+        "title": "Mechanics",
+        "add_mechanic": "Add mechanic",
+        "new_mechanic": "New mechanic",
+        "edit_mechanic": "Edit mechanic",
+        "empty": "No mechanics yet.",
+        "confirm_delete": "Remove this mechanic?",
+        "active_badge": "Active",
+        "inactive_badge": "Inactive",
+        "credentials_hint": "Set a PIN or a password (at least one is required). When editing, leave both blank to keep the current credentials.",
+        "fields": {
+            "name": "Name",
+            "email": "Email",
+            "phone": "Phone",
+            "pin": "PIN",
+            "password": "Password",
+            "is_active": "Active"
         }
     },
     "customer": {

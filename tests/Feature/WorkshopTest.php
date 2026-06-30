@@ -7,6 +7,7 @@ use App\Modules\SaasCore\Models\Tenant;
 use App\Modules\Workshop\Models\Mechanic;
 use App\Modules\Workshop\Models\ServiceLog;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
 
 /**
@@ -46,6 +47,18 @@ class WorkshopTest extends TestCase
             'password' => 'secret123',
             'is_active' => true,
         ], $attrs));
+    }
+
+    /**
+     * The signed scan URL exactly as GenerateVehicleQrAction encodes it into the
+     * QR sticker — permanent signature over slug + token.
+     */
+    private function signedScanUrl(string $slug, string $token): string
+    {
+        return URL::signedRoute('mechanic.scan', [
+            'tenant_slug' => $slug,
+            'token' => $token,
+        ]);
     }
 
     private function makeVehicle(Tenant $tenant, string $token): Vehicle
@@ -133,7 +146,7 @@ class WorkshopTest extends TestCase
         $t = $this->makeTenant('shop-a');
         $this->makeVehicle($t, 'tok-123');
 
-        $this->get('/mechanic/shop-a/scan/tok-123')
+        $this->get($this->signedScanUrl('shop-a', 'tok-123'))
             ->assertRedirect('/mechanic/shop-a/login')
             ->assertSessionHas('mechanic.intended_vehicle_token', 'tok-123');
     }
@@ -142,7 +155,9 @@ class WorkshopTest extends TestCase
     {
         $this->makeTenant('shop-a');
 
-        $this->get('/mechanic/shop-a/scan/does-not-exist')->assertNotFound();
+        // A validly-signed URL whose token matches no vehicle → 404 (the
+        // signature check passes; the scope-free lookup finds nothing).
+        $this->get($this->signedScanUrl('shop-a', 'does-not-exist'))->assertNotFound();
     }
 
     public function test_public_scan_sends_an_authenticated_mechanic_to_the_vehicle(): void
@@ -157,8 +172,31 @@ class WorkshopTest extends TestCase
         ]);
 
         $this->forgetGuards();
-        $this->get('/mechanic/shop-a/scan/tok-123')
+        $this->get($this->signedScanUrl('shop-a', 'tok-123'))
             ->assertRedirect('/mechanic/shop-a/vehicle/tok-123');
+    }
+
+    public function test_public_scan_with_a_tampered_signature_is_forbidden(): void
+    {
+        $t = $this->makeTenant('shop-a');
+        $this->makeVehicle($t, 'tok-123');
+
+        // Sign for one token, then swap the token in the path — the signature no
+        // longer matches the URL → tampering → 403 (never reveals the vehicle).
+        $signed = $this->signedScanUrl('shop-a', 'tok-123');
+        $tampered = str_replace('scan/tok-123', 'scan/tok-evil', $signed);
+
+        $this->get($tampered)->assertForbidden();
+    }
+
+    public function test_public_scan_of_a_legacy_unsigned_qr_shows_the_expired_page(): void
+    {
+        $t = $this->makeTenant('shop-a');
+        $this->makeVehicle($t, 'tok-123');
+
+        // A pre-signing sticker carries no signature param at all → friendly
+        // "expired" page (410), not a raw error and not a 403.
+        $this->get('/mechanic/shop-a/scan/tok-123')->assertStatus(410);
     }
 
     public function test_mechanic_creating_a_log_puts_the_vehicle_into_maintenance(): void

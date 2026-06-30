@@ -1,40 +1,41 @@
 <script setup>
-// Customer-portal login. FUNCTIONAL ONLY — design pass later.
-// Posts to /portal/{tenant_slug}/login; tenant slug comes from shared props
-// (ResolveTenantForCustomer shares the slim tenant payload on this route).
+// Customer-portal reset-password form. FUNCTIONAL ONLY — design pass later.
+// Posts to /portal/{tenant_slug}/reset-password with the token + email from the link.
 import { computed } from 'vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
 
+const props = defineProps({
+    token: { type: String, required: true },
+    email: { type: String, default: '' },
+});
+
 const { t } = useI18n();
 const page = usePage();
-
-const loginUrl = computed(() => `/portal/${page.props.tenant.slug}/login`);
-const forgotUrl = computed(() => `/portal/${page.props.tenant.slug}/forgot-password`);
+const slug = computed(() => page.props.tenant.slug);
 
 const form = useForm({
-    email: '',
+    token: props.token,
+    email: props.email,
     password: '',
-    remember: false,
+    password_confirmation: '',
 });
 
 function submit() {
-    form.post(loginUrl.value, {
-        onFinish: () => form.reset('password'),
+    form.post(`/portal/${slug.value}/reset-password`, {
+        onFinish: () => form.reset('password', 'password_confirmation'),
     });
 }
 </script>
 
 <template>
     <PublicLayout>
-        <Head :title="t('customer.portal.login_title')" />
+        <Head :title="t('auth.reset_password_title')" />
 
         <div class="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-4">
-            <h1 class="text-2xl font-semibold">{{ t('customer.portal.login_title') }}</h1>
-            <p class="mb-6 mt-1 text-sm text-slate-500 dark:text-slate-400">
-                {{ t('customer.portal.login_subtitle') }}
-            </p>
+            <h1 class="mb-1 text-2xl font-semibold">{{ t('auth.reset_password_title') }}</h1>
+            <p class="mb-6 text-sm text-slate-500 dark:text-slate-400">{{ t('auth.reset_password_subtitle') }}</p>
 
             <form class="space-y-4" @submit.prevent="submit">
                 <div>
@@ -51,34 +52,41 @@ function submit() {
                 </div>
 
                 <div>
-                    <label for="password" class="block text-sm font-medium">{{ t('auth.password') }}</label>
+                    <label for="password" class="block text-sm font-medium">{{ t('auth.new_password') }}</label>
                     <input
                         id="password"
                         v-model="form.password"
                         type="password"
-                        autocomplete="current-password"
+                        autocomplete="new-password"
                         required
                         class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-900"
                     />
                     <p v-if="form.errors.password" class="mt-1 text-sm text-red-600">{{ form.errors.password }}</p>
                 </div>
 
-                <label class="flex items-center gap-2 text-sm">
-                    <input v-model="form.remember" type="checkbox" />
-                    {{ t('auth.remember_me') }}
-                </label>
+                <div>
+                    <label for="password_confirmation" class="block text-sm font-medium">{{ t('auth.confirm_password') }}</label>
+                    <input
+                        id="password_confirmation"
+                        v-model="form.password_confirmation"
+                        type="password"
+                        autocomplete="new-password"
+                        required
+                        class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-900"
+                    />
+                </div>
 
                 <button
                     type="submit"
                     :disabled="form.processing"
                     class="w-full rounded bg-indigo-600 px-3 py-2 text-white disabled:opacity-50"
                 >
-                    {{ t('auth.sign_in') }}
+                    {{ t('auth.update_password') }}
                 </button>
             </form>
 
-            <Link :href="forgotUrl" class="mt-4 text-sm text-slate-500 hover:underline dark:text-slate-400">
-                {{ t('auth.forgot_password') }}
+            <Link :href="`/portal/${slug}/login`" class="mt-6 text-sm text-slate-500 hover:underline dark:text-slate-400">
+                {{ t('auth.back_to_login') }}
             </Link>
         </div>
     </PublicLayout>

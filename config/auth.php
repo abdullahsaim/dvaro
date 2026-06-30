@@ -144,6 +144,33 @@ return [
             'expire' => 60,
             'throttle' => 60,
         ],
+
+        // Tenant-scoped portal brokers. All three share one token table — token
+        // keys are made unique per guard + tenant by each model's composite
+        // getEmailForPasswordReset() (ResetsPasswordWithinTenant), so the same
+        // address in two tenants never collides and a token is only ever valid
+        // for the exact account that requested it. User lookup is tenant-scoped
+        // via the bound current_tenant (TenantScope on the provider query).
+        'tenant' => [
+            'provider' => 'tenant_users',
+            'table' => 'portal_password_reset_tokens',
+            'expire' => 60,
+            'throttle' => 60,
+        ],
+
+        'customer' => [
+            'provider' => 'customers',
+            'table' => 'portal_password_reset_tokens',
+            'expire' => 60,
+            'throttle' => 60,
+        ],
+
+        'mechanic' => [
+            'provider' => 'mechanics',
+            'table' => 'portal_password_reset_tokens',
+            'expire' => 60,
+            'throttle' => 60,
+        ],
     ],
 
     /*

@@ -18,6 +18,8 @@ use App\Modules\Invoice\Policies\InvoicePolicy;
 use App\Modules\Reporting\Models\ReportExport;
 use App\Modules\Reporting\Policies\ReportingPolicy;
 use App\Modules\SuperAdmin\Policies\SuperAdminPolicy;
+use App\Modules\Workshop\Models\Mechanic;
+use App\Modules\Workshop\Policies\ManageMechanicPolicy;
 use App\Modules\Workshop\Models\ServiceLog;
 use App\Modules\Workshop\Policies\MechanicPolicy;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -26,6 +28,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -51,6 +54,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Invoice::class, InvoicePolicy::class);
         // Workshop service logs are authorized against the MECHANIC guard.
         Gate::policy(ServiceLog::class, MechanicPolicy::class);
+        // Mechanic ACCOUNT management is a tenant-admin-only TENANT-guard action
+        // (distinct from MechanicPolicy, which governs service logs).
+        Gate::policy(Mechanic::class, ManageMechanicPolicy::class);
         // AI conversations: own-conversation ownership (within tenant) — AiPolicy.
         Gate::policy(AiConversation::class, AiPolicy::class);
         // Reporting: viewAny/export role-free + download own-tenant export.
@@ -102,6 +108,26 @@ class AppServiceProvider extends ServiceProvider
             $tenantId = app()->bound('current_tenant') ? app('current_tenant')->id : null;
 
             return Limit::perHour(5)->by($tenantId !== null ? "tenant:{$tenantId}" : $request->ip());
+        });
+
+        // Password reset requests: 3 per hour PER EMAIL, scoped per guard +
+        // tenant. The forgot-password endpoint is unauthenticated, so it is keyed
+        // by the submitted email (lower-cased) plus the bound tenant id and the
+        // URL's first segment (app/portal/mechanic = the guard) so one tenant's
+        // resets never eat into another's bucket. Curbs reset-link spam/abuse.
+        RateLimiter::for('password-reset', function (Request $request) {
+            $email = Str::lower((string) $request->input('email'));
+            $tenantId = app()->bound('current_tenant') ? app('current_tenant')->id : 'none';
+            $scope = (string) $request->segment(1);
+
+            return Limit::perHour(3)->by($scope.':'.$tenantId.':'.$email);
+        });
+
+        // Workspace lookup: 10 per hour PER IP. The /find-workspace form is
+        // unauthenticated and reveals whether an email maps to a tenant, so it is
+        // capped per IP to curb enumeration while leaving room for honest typos.
+        RateLimiter::for('workspace-lookup', function (Request $request) {
+            return Limit::perHour(10)->by($request->ip());
         });
 
         // Public landing forms: 3 per hour PER IP. The demo-request and contact

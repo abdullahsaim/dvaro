@@ -3,6 +3,7 @@
 namespace App\Modules\SaasCore\Models;
 
 use App\Traits\HasTenant;
+use App\Traits\ResetsPasswordWithinTenant;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
@@ -24,6 +25,7 @@ class TenantUser extends Authenticatable
     use HasTenant;
     use HasRoles;
     use Notifiable;
+    use ResetsPasswordWithinTenant;
 
     public const ROLE_ADMIN = 'tenant_admin';
     public const ROLE_STAFF = 'tenant_staff';
@@ -57,4 +59,14 @@ class TenantUser extends Authenticatable
     }
 
     // The tenant() relationship is provided by the HasTenant trait.
+
+    public function passwordResetGuardKey(): string
+    {
+        return 'tenant';
+    }
+
+    public function passwordResetRouteName(): string
+    {
+        return 'tenant.password.reset';
+    }
 }

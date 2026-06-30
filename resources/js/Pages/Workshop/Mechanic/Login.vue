@@ -3,7 +3,7 @@
 // Two modes: full password, or a quick numeric PIN. Posts to
 // /mechanic/{tenant_slug}/login; tenant slug comes from shared props.
 import { computed, ref } from 'vue';
-import { Head, useForm, usePage } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
 
@@ -11,6 +11,7 @@ const { t } = useI18n();
 const page = usePage();
 
 const loginUrl = computed(() => `/mechanic/${page.props.tenant.slug}/login`);
+const forgotUrl = computed(() => `/mechanic/${page.props.tenant.slug}/forgot-password`);
 
 const usePin = ref(false);
 
@@ -95,6 +96,10 @@ function submit() {
                     {{ usePin ? t('auth.use_password') : t('auth.use_pin') }}
                 </button>
             </form>
+
+            <Link :href="forgotUrl" class="mt-4 text-sm text-slate-500 hover:underline dark:text-slate-400">
+                {{ t('auth.forgot_password') }}
+            </Link>
         </div>
     </PublicLayout>
 </template>

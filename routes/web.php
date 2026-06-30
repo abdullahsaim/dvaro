@@ -5,6 +5,7 @@ use App\Modules\CMS\Http\Controllers\PublicLandingController;
 use App\Modules\CRM\Http\Controllers\IntakeFormController;
 use App\Modules\Customer\Http\Controllers\CustomerPortalController;
 use App\Modules\SaasCore\Http\Controllers\TenantRegistrationController;
+use App\Modules\SaasCore\Http\Controllers\WorkspaceLookupController;
 use App\Modules\Workshop\Http\Controllers\QrScanController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,6 +23,15 @@ use Illuminate\Support\Facades\Route;
 */
 Route::get('/', [PublicLandingController::class, 'index'])->name('landing');
 Route::get('pricing', [PublicLandingController::class, 'pricing'])->name('pricing');
+
+// Global workspace lookup — resolves a tenant by email then forwards to its
+// path-based login. PUBLIC, pre-tenant; the POST is throttled per IP (10/hour)
+// to curb email enumeration.
+Route::get('find-workspace', [WorkspaceLookupController::class, 'show'])->name('find-workspace');
+Route::post('find-workspace', [WorkspaceLookupController::class, 'find'])
+    ->middleware('throttle:workspace-lookup')
+    ->name('find-workspace.find');
+
 Route::get('about', [PublicLandingController::class, 'about'])->name('about');
 Route::get('contact', [PublicLandingController::class, 'contact'])->name('contact');
 

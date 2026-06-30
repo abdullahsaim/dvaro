@@ -3,10 +3,10 @@
 // the public auth pages (login/register). Top nav + footer + responsive mobile
 // menu. FUNCTIONAL ONLY — design pass later.
 //
-// NOTE on auth links: tenant login is path-based (/app/{slug}/login) and has no
-// global entry yet, so both "Log in" and "Get started" route to /register (the
-// single global auth entry). A global login / workspace-resolver page is a
-// later follow-up.
+// NOTE on auth links: tenant login is path-based (/app/{slug}/login). "Log in"
+// routes to the global workspace-resolver (/find-workspace), which looks the
+// tenant up by email and forwards to that tenant's login. "Get started" routes
+// to /register (the single global signup entry).
 import { ref } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
@@ -22,7 +22,7 @@ const navLinks = [
 ];
 
 const registerHref = '/register';
-const loginHref = '/register';
+const loginHref = '/find-workspace';
 
 const year = new Date().getFullYear();
 </script>

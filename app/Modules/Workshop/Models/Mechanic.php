@@ -3,6 +3,7 @@
 namespace App\Modules\Workshop\Models;
 
 use App\Traits\HasTenant;
+use App\Traits\ResetsPasswordWithinTenant;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -26,6 +27,7 @@ class Mechanic extends Authenticatable
     use HasRoles;
     use HasTenant;
     use Notifiable;
+    use ResetsPasswordWithinTenant;
     use SoftDeletes;
 
     public const ROLE_MECHANIC = 'mechanic';
@@ -77,5 +79,15 @@ class Mechanic extends Authenticatable
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
+    }
+
+    public function passwordResetGuardKey(): string
+    {
+        return 'mechanic';
+    }
+
+    public function passwordResetRouteName(): string
+    {
+        return 'mechanic.password.reset';
     }
 }

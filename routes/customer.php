@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\Customer\Http\Controllers\CustomerAuthController;
+use App\Modules\Customer\Http\Controllers\CustomerPasswordResetController;
 use App\Modules\Customer\Http\Controllers\CustomerPortalController;
 use Illuminate\Support\Facades\Route;
 
@@ -24,6 +25,17 @@ use Illuminate\Support\Facades\Route;
 // Authentication — tenant context is bound, but no customer is required yet.
 Route::get('login', [CustomerAuthController::class, 'showLogin'])->name('login');
 Route::post('login', [CustomerAuthController::class, 'login'])->name('login.store');
+
+// Password reset (guest flow; tenant bound by ResolveTenantForCustomer). The
+// reset link path carries {tenant_slug}. sendResetLink → 3/email/hour.
+Route::get('forgot-password', [CustomerPasswordResetController::class, 'showRequestForm'])
+    ->name('password.request');
+Route::post('forgot-password', [CustomerPasswordResetController::class, 'sendResetLink'])
+    ->middleware('throttle:password-reset')->name('password.email');
+Route::get('reset-password/{token}', [CustomerPasswordResetController::class, 'showResetForm'])
+    ->name('password.reset');
+Route::post('reset-password', [CustomerPasswordResetController::class, 'reset'])
+    ->name('password.update');
 
 // Authenticated customer portal. {invoice}/{agreement} bind through TenantScope
 // (cross-tenant id => 404); per-customer scoping is enforced in the controller

@@ -3,6 +3,7 @@
 namespace App\Modules\Customer\Models;
 
 use App\Traits\HasTenant;
+use App\Traits\ResetsPasswordWithinTenant;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -26,6 +27,7 @@ class CustomerUser extends Authenticatable
 {
     use HasTenant;
     use Notifiable;
+    use ResetsPasswordWithinTenant;
 
     /**
      * The guard this account authenticates under. There is a single customer
@@ -58,5 +60,15 @@ class CustomerUser extends Authenticatable
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function passwordResetGuardKey(): string
+    {
+        return 'customer';
+    }
+
+    public function passwordResetRouteName(): string
+    {
+        return 'customer.password.reset';
     }
 }
