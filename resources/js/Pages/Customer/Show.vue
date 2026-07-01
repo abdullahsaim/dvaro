@@ -1,11 +1,15 @@
 <script setup>
-// Customer detail. FUNCTIONAL ONLY — design pass later.
-// Blacklist / unblacklist use their own endpoints (Blacklist/Unblacklist
-// CustomerAction), never the edit form.
+// Customer detail — design-system pass. Blacklist / unblacklist use their own
+// endpoints (Blacklist/UnblacklistCustomerAction), never the edit form.
 import { computed } from 'vue';
-import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
+import { Head, router, useForm, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import PageHeader from '@/Components/UI/PageHeader.vue';
+import StatusBadge from '@/Components/UI/StatusBadge.vue';
+import Button from '@/Components/UI/Button.vue';
+import Textarea from '@/Components/UI/Textarea.vue';
+import { useCurrency } from '@/composables/useCurrency';
 
 const props = defineProps({
     customer: { type: Object, required: true },
@@ -15,10 +19,9 @@ const props = defineProps({
 });
 
 const { t } = useI18n();
+const { formatAUD } = useCurrency();
 const page = usePage();
 const base = computed(() => `/app/${page.props.tenant.slug}/customers`);
-const flash = computed(() => page.props.flash?.success);
-const flashError = computed(() => page.props.flash?.error);
 
 const inviteForm = useForm({});
 
@@ -26,12 +29,7 @@ function invitePortal() {
     inviteForm.post(`${base.value}/${props.customer.id}/invite-portal`, { preserveScroll: true });
 }
 
-// cents → "$1,234.56"
-const formattedBalance = computed(() =>
-    new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(
-        (props.outstandingBalance ?? 0) / 100,
-    ),
-);
+const formattedBalance = computed(() => formatAUD(props.outstandingBalance));
 
 function toDate(value) {
     return value ? String(value).slice(0, 10) : t('common.none');
@@ -71,131 +69,83 @@ function unblacklist() {
     <AppLayout>
         <Head :title="t('customer.customer_details')" />
 
-        <div class="py-10">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <h1 class="text-2xl font-semibold">{{ customer.name }}</h1>
-                    <span
-                        v-if="customer.is_blacklisted"
-                        class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/40 dark:text-red-300"
-                    >
-                        {{ t('customer.blacklisted_badge') }}
-                    </span>
-                    <span
-                        v-else
-                        class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/40 dark:text-green-300"
-                    >
-                        {{ t('customer.active_badge') }}
-                    </span>
-                </div>
-                <div class="flex items-center gap-3">
-                    <Link :href="`${base}/${customer.id}/edit`" class="text-sm text-indigo-600 hover:underline dark:text-indigo-400">
-                        {{ t('common.edit') }}
-                    </Link>
-                    <Link :href="base" class="text-sm text-slate-500 hover:underline dark:text-slate-400">
-                        {{ t('common.back') }}
-                    </Link>
-                </div>
-            </div>
+        <PageHeader>
+            <template #title>
+                <span class="flex items-center gap-3">
+                    {{ customer.name }}
+                    <StatusBadge
+                        :variant="customer.is_blacklisted ? 'danger' : 'success'"
+                        :label="customer.is_blacklisted ? t('customer.blacklisted_badge') : t('customer.active_badge')"
+                    />
+                </span>
+            </template>
+            <template #actions>
+                <Button variant="secondary" @click="router.visit(`${base}/${customer.id}/edit`)">{{ t('common.edit') }}</Button>
+                <Button variant="ghost" @click="router.visit(base)">{{ t('common.back') }}</Button>
+            </template>
+        </PageHeader>
 
-            <p
-                v-if="flash"
-                class="mt-4 rounded border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800 dark:border-green-900 dark:bg-green-900/30 dark:text-green-300"
-            >
-                {{ flash }}
-            </p>
-            <p
-                v-if="flashError"
-                class="mt-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900 dark:bg-red-900/30 dark:text-red-300"
-            >
-                {{ flashError }}
-            </p>
-
+        <div class="grid max-w-2xl grid-cols-1 gap-6">
             <!-- Outstanding balance -->
-            <div class="mt-6 flex max-w-2xl items-center justify-between rounded border border-slate-200 p-4 dark:border-slate-800">
-                <span class="text-sm text-slate-500 dark:text-slate-400">{{ t('customer.outstanding_balance') }}</span>
+            <div class="flex items-center justify-between rounded-card border border-ink-200 bg-white p-4 shadow-subtle dark:border-ink-800 dark:bg-ink-900">
+                <span class="text-sm text-ink-500">{{ t('customer.outstanding_balance') }}</span>
                 <span
-                    class="text-lg font-semibold"
-                    :class="outstandingBalance > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-slate-700 dark:text-slate-200'"
+                    class="text-lg font-semibold tabular-nums"
+                    :class="outstandingBalance > 0 ? 'text-warning-700 dark:text-warning-500' : 'text-ink-900 dark:text-ink-50'"
                 >
                     {{ formattedBalance }}
                 </span>
             </div>
 
             <!-- Customer portal access -->
-            <div class="mt-6 flex max-w-2xl items-center justify-between rounded border border-slate-200 p-4 dark:border-slate-800">
+            <div class="flex items-center justify-between rounded-card border border-ink-200 bg-white p-4 shadow-subtle dark:border-ink-800 dark:bg-ink-900">
                 <div>
-                    <p class="text-sm font-medium text-slate-700 dark:text-slate-200">{{ t('customer.portal_access') }}</p>
-                    <p class="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+                    <p class="text-sm font-medium text-ink-900 dark:text-ink-100">{{ t('customer.portal_access') }}</p>
+                    <p class="mt-0.5 text-sm text-ink-500">
                         {{ hasPortalAccess ? t('customer.has_portal_access') : t('customer.portal_access_hint') }}
                     </p>
                 </div>
-                <span
-                    v-if="hasPortalAccess"
-                    class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/40 dark:text-green-300"
-                >
-                    {{ t('customer.active_badge') }}
-                </span>
-                <button
-                    v-else
-                    type="button"
-                    :disabled="inviteForm.processing"
-                    class="rounded bg-indigo-600 px-3 py-2 text-sm text-white disabled:opacity-50 hover:bg-indigo-700"
-                    @click="invitePortal"
-                >
-                    {{ t('customer.invite_portal') }}
-                </button>
+                <StatusBadge v-if="hasPortalAccess" variant="success" :label="t('customer.active_badge')" />
+                <Button v-else :loading="inviteForm.processing" @click="invitePortal">{{ t('customer.invite_portal') }}</Button>
             </div>
 
             <!-- Blacklist control -->
-            <div class="mt-6 max-w-2xl rounded border border-slate-200 p-4 dark:border-slate-800">
+            <div class="rounded-card border border-ink-200 bg-white p-4 shadow-subtle dark:border-ink-800 dark:bg-ink-900">
                 <div v-if="customer.is_blacklisted">
-                    <p class="text-sm text-slate-600 dark:text-slate-300">
+                    <p class="text-sm text-ink-600 dark:text-ink-300">
                         <span class="font-medium">{{ t('customer.blacklisted_reason_label') }}:</span>
                         {{ customer.blacklisted_reason }}
                     </p>
-                    <button
-                        type="button"
-                        :disabled="unblacklistForm.processing"
-                        class="mt-3 rounded bg-slate-700 px-3 py-2 text-sm text-white disabled:opacity-50 dark:bg-slate-300 dark:text-slate-900"
-                        @click="unblacklist"
-                    >
+                    <Button variant="secondary" class="mt-3" :loading="unblacklistForm.processing" @click="unblacklist">
                         {{ t('customer.unblacklist') }}
-                    </button>
+                    </Button>
                 </div>
                 <form v-else class="space-y-3" @submit.prevent="blacklist">
-                    <label class="block">
-                        <span class="text-sm text-slate-600 dark:text-slate-300">{{ t('customer.blacklist_reason') }}</span>
-                        <textarea
-                            v-model="blacklistForm.reason"
-                            rows="2"
-                            :placeholder="t('customer.blacklist_reason_placeholder')"
-                            class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-900"
-                        />
-                        <span v-if="blacklistForm.errors.reason" class="text-xs text-red-600">{{ blacklistForm.errors.reason }}</span>
-                    </label>
-                    <button
-                        type="submit"
-                        :disabled="blacklistForm.processing"
-                        class="rounded bg-red-600 px-3 py-2 text-sm text-white disabled:opacity-50 hover:bg-red-700"
-                    >
+                    <Textarea
+                        v-model="blacklistForm.reason"
+                        :rows="2"
+                        :label="t('customer.blacklist_reason')"
+                        :placeholder="t('customer.blacklist_reason_placeholder')"
+                        :error="blacklistForm.errors.reason"
+                    />
+                    <Button type="submit" variant="danger" :loading="blacklistForm.processing">
                         {{ t('customer.blacklist_action') }}
-                    </button>
+                    </Button>
                 </form>
             </div>
 
             <!-- Details -->
-            <dl class="mt-6 grid max-w-2xl grid-cols-1 gap-px overflow-hidden rounded border border-slate-200 bg-slate-200 sm:grid-cols-2 dark:border-slate-800 dark:bg-slate-800">
-                <div v-for="row in rows" :key="row.label" class="bg-white p-4 dark:bg-slate-950">
-                    <dt class="text-sm text-slate-500 dark:text-slate-400">{{ row.label }}</dt>
-                    <dd class="mt-1 font-medium">{{ row.value ?? t('common.none') }}</dd>
+            <dl class="grid grid-cols-1 gap-px overflow-hidden rounded-card border border-ink-200 bg-ink-200 sm:grid-cols-2 dark:border-ink-800 dark:bg-ink-800">
+                <div v-for="row in rows" :key="row.label" class="bg-white p-4 dark:bg-ink-900">
+                    <dt class="text-sm text-ink-500">{{ row.label }}</dt>
+                    <dd class="mt-1 font-medium text-ink-900 dark:text-ink-50">{{ row.value ?? t('common.none') }}</dd>
                 </div>
             </dl>
 
             <!-- Rental history placeholder -->
-            <div class="mt-6 max-w-2xl">
-                <h2 class="text-lg font-semibold">{{ t('customer.rental_history') }}</h2>
-                <p class="mt-2 rounded border border-dashed border-slate-300 p-4 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+            <div>
+                <h2 class="text-lg font-semibold text-ink-900 dark:text-ink-50">{{ t('customer.rental_history') }}</h2>
+                <p class="mt-2 rounded-card border border-dashed border-ink-300 p-4 text-sm text-ink-500 dark:border-ink-700">
                     {{ t('customer.rental_history_placeholder') }}
                 </p>
             </div>

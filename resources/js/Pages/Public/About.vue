@@ -25,9 +25,9 @@ const seo = useSeo({
         </Head>
 
         <section class="mx-auto w-full max-w-3xl px-4 py-20 sm:px-6 lg:px-8">
-            <h1 class="text-4xl font-bold tracking-tight">{{ about.about_heading }}</h1>
+            <h1 class="text-4xl font-bold tracking-tight text-ink-900 dark:text-ink-50">{{ about.about_heading }}</h1>
             <!-- eslint-disable-next-line vue/no-v-html -->
-            <div class="prose prose-slate mt-6 max-w-none dark:prose-invert" v-html="about.about_body"></div>
+            <div class="prose mt-6 max-w-none dark:prose-invert" v-html="about.about_body"></div>
         </section>
     </PublicLayout>
 </template>

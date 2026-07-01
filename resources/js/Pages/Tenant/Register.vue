@@ -1,10 +1,12 @@
 <script setup>
-// Public tenant self-registration. FUNCTIONAL ONLY — design pass comes later.
+// Public tenant self-registration. Design-system pass.
 // Pre-tenant route: posts to /register (no tenant slug in scope). On success
 // the server logs the new admin in and redirects to their dashboard.
 import { Head, useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
+import Button from '@/Components/UI/Button.vue';
+import Input from '@/Components/UI/Input.vue';
 
 const { t } = useI18n();
 
@@ -26,69 +28,19 @@ function submit() {
     <PublicLayout>
         <Head :title="t('auth.register')" />
 
-        <div class="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-4">
-            <h1 class="mb-6 text-2xl font-semibold">{{ t('auth.register') }}</h1>
+        <div class="mx-auto flex min-h-[70vh] max-w-sm flex-col justify-center px-4 py-16">
+            <div class="rounded-card border border-ink-200 bg-white p-6 shadow-subtle dark:border-ink-800 dark:bg-ink-900">
+                <h1 class="mb-6 text-2xl font-semibold text-ink-900 dark:text-ink-50">{{ t('auth.register') }}</h1>
 
-            <form class="space-y-4" @submit.prevent="submit">
-                <div>
-                    <label for="company_name" class="block text-sm font-medium">{{ t('auth.company_name') }}</label>
-                    <input
-                        id="company_name"
-                        v-model="form.company_name"
-                        type="text"
-                        autocomplete="organization"
-                        required
-                        class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-900"
-                    />
-                    <p v-if="form.errors.company_name" class="mt-1 text-sm text-red-600">{{ form.errors.company_name }}</p>
-                </div>
+                <form class="space-y-4" @submit.prevent="submit">
+                    <Input v-model="form.company_name" autocomplete="organization" required :label="t('auth.company_name')" :error="form.errors.company_name" />
+                    <Input v-model="form.email" type="email" autocomplete="username" required :label="t('auth.email')" :error="form.errors.email" />
+                    <Input v-model="form.password" type="password" autocomplete="new-password" required :label="t('auth.password')" :error="form.errors.password" />
+                    <Input v-model="form.password_confirmation" type="password" autocomplete="new-password" required :label="t('auth.confirm_password')" />
 
-                <div>
-                    <label for="email" class="block text-sm font-medium">{{ t('auth.email') }}</label>
-                    <input
-                        id="email"
-                        v-model="form.email"
-                        type="email"
-                        autocomplete="username"
-                        required
-                        class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-900"
-                    />
-                    <p v-if="form.errors.email" class="mt-1 text-sm text-red-600">{{ form.errors.email }}</p>
-                </div>
-
-                <div>
-                    <label for="password" class="block text-sm font-medium">{{ t('auth.password') }}</label>
-                    <input
-                        id="password"
-                        v-model="form.password"
-                        type="password"
-                        autocomplete="new-password"
-                        required
-                        class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-900"
-                    />
-                    <p v-if="form.errors.password" class="mt-1 text-sm text-red-600">{{ form.errors.password }}</p>
-                </div>
-
-                <div>
-                    <label for="password_confirmation" class="block text-sm font-medium">{{ t('auth.confirm_password') }}</label>
-                    <input
-                        id="password_confirmation"
-                        v-model="form.password_confirmation"
-                        type="password"
-                        autocomplete="new-password"
-                        required
-                        class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-900"
-                    />
-                </div>
-
-                <button
-                    type="submit"
-                    :disabled="form.processing"
-                    class="w-full rounded bg-indigo-600 px-3 py-2 text-white disabled:opacity-50"
-                >
-                    {{ t('auth.create_account') }}
-                </button>
-            </form>
+                    <Button type="submit" class="w-full" :loading="form.processing">{{ t('auth.create_account') }}</Button>
+                </form>
+            </div>
         </div>
     </PublicLayout>
 </template>

@@ -1,9 +1,13 @@
 <script setup>
-// Super admin tenant list — search, status filter, suspend/activate. FUNCTIONAL.
+// Super admin tenant list — search, status filter, suspend/activate. Design-system pass.
 import { ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import SuperAdminLayout from '@/Layouts/SuperAdminLayout.vue';
+import PageHeader from '@/Components/UI/PageHeader.vue';
+import DataTable from '@/Components/UI/DataTable.vue';
+import StatusBadge from '@/Components/UI/StatusBadge.vue';
+import Input from '@/Components/UI/Input.vue';
 
 const props = defineProps({
     tenants: { type: Object, required: true },
@@ -15,6 +19,15 @@ const props = defineProps({
 
 const { t } = useI18n();
 const searchTerm = ref(props.search);
+
+const statusVariants = {
+    active: 'success',
+    trialing: 'info',
+    trial: 'info',
+    suspended: 'danger',
+    cancelled: 'neutral',
+    past_due: 'warning',
+};
 
 function filter(params) {
     router.get('/superadmin/tenants', {
@@ -48,119 +61,78 @@ function formatDate(value) {
     <SuperAdminLayout>
         <Head :title="t('superadmin.tenants.title')" />
 
-        <div class="py-10">
-            <h1 class="text-2xl font-semibold">{{ t('superadmin.tenants.title') }}</h1>
+        <PageHeader :title="t('superadmin.tenants.title')" />
 
-            <!-- Filters -->
-            <div class="mt-6 flex flex-wrap items-center gap-4">
-                <div class="flex flex-wrap gap-2">
-                    <button
-                        type="button"
-                        class="rounded-full px-3 py-1 text-sm"
-                        :class="activeStatus === null ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800'"
-                        @click="filter({ status: null })"
-                    >
-                        {{ t('common.all') }} ({{ statusCounts.all }})
-                    </button>
-                    <button
-                        v-for="s in statuses"
-                        :key="s"
-                        type="button"
-                        class="rounded-full px-3 py-1 text-sm"
-                        :class="activeStatus === s ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800'"
-                        @click="filter({ status: s })"
-                    >
-                        {{ t(`superadmin.statuses.${s}`) }} ({{ statusCounts[s] }})
-                    </button>
-                </div>
-
-                <form class="ml-auto" @submit.prevent="filter({ search: searchTerm })">
-                    <input
-                        v-model="searchTerm"
-                        type="search"
-                        :placeholder="t('superadmin.tenants.search_placeholder')"
-                        class="w-64 rounded border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"
-                    />
-                </form>
-            </div>
-
-            <!-- Table -->
-            <p v-if="!tenants.data.length" class="mt-8 text-sm text-slate-500 dark:text-slate-400">
-                {{ t('superadmin.tenants.empty') }}
-            </p>
-            <div v-else class="mt-6 overflow-hidden rounded border border-slate-200 dark:border-slate-800">
-                <table class="w-full text-left text-sm">
-                    <thead class="bg-slate-50 text-slate-500 dark:bg-slate-900 dark:text-slate-400">
-                        <tr>
-                            <th class="px-4 py-2 font-medium">{{ t('superadmin.tenants.title') }}</th>
-                            <th class="px-4 py-2 font-medium">{{ t('superadmin.tenants.plan') }}</th>
-                            <th class="px-4 py-2 font-medium">{{ t('fleet.fields.status') }}</th>
-                            <th class="px-4 py-2 font-medium">{{ t('superadmin.tenants.signed_up') }}</th>
-                            <th class="px-4 py-2 text-right">{{ t('common.actions') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="tenant in tenants.data" :key="tenant.id" class="border-t border-slate-100 dark:border-slate-800">
-                            <td class="px-4 py-2">
-                                <p class="font-medium">{{ tenant.name }}</p>
-                                <p class="text-xs text-slate-400">{{ tenant.slug }}</p>
-                            </td>
-                            <td class="px-4 py-2 text-slate-500 dark:text-slate-400">{{ tenant.plan_name ?? '—' }}</td>
-                            <td class="px-4 py-2">
-                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs dark:bg-slate-800">
-                                    {{ t(`superadmin.statuses.${tenant.status}`) }}
-                                </span>
-                            </td>
-                            <td class="px-4 py-2 text-slate-500 dark:text-slate-400">{{ formatDate(tenant.created_at) }}</td>
-                            <td class="px-4 py-2">
-                                <div class="flex justify-end gap-3">
-                                    <Link :href="`/superadmin/tenants/${tenant.slug}`" class="text-indigo-600 hover:underline dark:text-indigo-400">
-                                        {{ t('superadmin.tenants.view') }}
-                                    </Link>
-                                    <button
-                                        v-if="tenant.status !== 'suspended'"
-                                        type="button"
-                                        class="text-red-600 hover:underline"
-                                        @click="suspend(tenant)"
-                                    >
-                                        {{ t('superadmin.tenants.suspend') }}
-                                    </button>
-                                    <button
-                                        v-else
-                                        type="button"
-                                        class="text-green-600 hover:underline"
-                                        @click="activate(tenant)"
-                                    >
-                                        {{ t('superadmin.tenants.activate') }}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        class="text-slate-600 hover:underline dark:text-slate-300"
-                                        @click="impersonate(tenant)"
-                                    >
-                                        {{ t('superadmin.tenants.impersonate') }}
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Pagination -->
-            <div v-if="tenants.links" class="mt-4 flex flex-wrap gap-1">
-                <component
-                    :is="link.url ? 'button' : 'span'"
-                    v-for="(link, i) in tenants.links"
-                    :key="i"
+        <!-- Filters -->
+        <div class="mb-4 flex flex-wrap items-center gap-4">
+            <div class="flex flex-wrap gap-2">
+                <button
                     type="button"
-                    class="rounded px-3 py-1 text-sm"
-                    :class="link.active ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900' : 'text-slate-500 dark:text-slate-400'"
-                    :disabled="!link.url"
-                    @click="link.url && router.get(link.url, {}, { preserveState: true })"
-                    v-html="link.label"
-                />
+                    class="rounded-full px-3 py-1 text-sm transition-colors"
+                    :class="activeStatus === null
+                        ? 'bg-ink-950 text-white dark:bg-ink-50 dark:text-ink-950'
+                        : 'bg-ink-100 text-ink-600 hover:bg-ink-200 dark:bg-ink-800 dark:text-ink-300 dark:hover:bg-ink-700'"
+                    @click="filter({ status: null })"
+                >
+                    {{ t('common.all') }} ({{ statusCounts.all }})
+                </button>
+                <button
+                    v-for="s in statuses"
+                    :key="s"
+                    type="button"
+                    class="rounded-full px-3 py-1 text-sm transition-colors"
+                    :class="activeStatus === s
+                        ? 'bg-ink-950 text-white dark:bg-ink-50 dark:text-ink-950'
+                        : 'bg-ink-100 text-ink-600 hover:bg-ink-200 dark:bg-ink-800 dark:text-ink-300 dark:hover:bg-ink-700'"
+                    @click="filter({ status: s })"
+                >
+                    {{ t(`superadmin.statuses.${s}`) }} ({{ statusCounts[s] }})
+                </button>
             </div>
+
+            <form class="ml-auto" @submit.prevent="filter({ search: searchTerm })">
+                <Input v-model="searchTerm" type="search" :placeholder="t('superadmin.tenants.search_placeholder')" class="w-64" />
+            </form>
         </div>
+
+        <DataTable :columns="5" :empty="!tenants.data.length" :pagination="tenants">
+            <template #head>
+                <th class="px-4 py-2">{{ t('superadmin.tenants.title') }}</th>
+                <th class="px-4 py-2">{{ t('superadmin.tenants.plan') }}</th>
+                <th class="px-4 py-2">{{ t('fleet.fields.status') }}</th>
+                <th class="px-4 py-2">{{ t('superadmin.tenants.signed_up') }}</th>
+                <th class="px-4 py-2 text-right">{{ t('common.actions') }}</th>
+            </template>
+            <tr v-for="tenant in tenants.data" :key="tenant.id" class="text-ink-700 dark:text-ink-200">
+                <td class="px-4 py-2">
+                    <p class="font-medium text-ink-900 dark:text-ink-50">{{ tenant.name }}</p>
+                    <p class="text-xs text-ink-400">{{ tenant.slug }}</p>
+                </td>
+                <td class="px-4 py-2 text-ink-500">{{ tenant.plan_name ?? '—' }}</td>
+                <td class="px-4 py-2">
+                    <StatusBadge :variant="statusVariants[tenant.status]" :label="t(`superadmin.statuses.${tenant.status}`)" />
+                </td>
+                <td class="px-4 py-2 text-ink-500">{{ formatDate(tenant.created_at) }}</td>
+                <td class="px-4 py-2">
+                    <div class="flex justify-end gap-3">
+                        <Link :href="`/superadmin/tenants/${tenant.slug}`" class="text-sm font-medium text-ink-900 hover:underline dark:text-ink-100">
+                            {{ t('superadmin.tenants.view') }}
+                        </Link>
+                        <button v-if="tenant.status !== 'suspended'" type="button" class="text-sm text-danger-600 hover:underline dark:text-danger-500" @click="suspend(tenant)">
+                            {{ t('superadmin.tenants.suspend') }}
+                        </button>
+                        <button v-else type="button" class="text-sm text-success-600 hover:underline dark:text-success-500" @click="activate(tenant)">
+                            {{ t('superadmin.tenants.activate') }}
+                        </button>
+                        <button type="button" class="text-sm text-ink-500 hover:underline" @click="impersonate(tenant)">
+                            {{ t('superadmin.tenants.impersonate') }}
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            <template #empty>
+                <div class="px-4 py-6 text-center text-sm text-ink-400">{{ t('superadmin.tenants.empty') }}</div>
+            </template>
+        </DataTable>
     </SuperAdminLayout>
 </template>

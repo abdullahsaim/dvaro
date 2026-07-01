@@ -10,12 +10,12 @@ import PublicLayout from '@/Layouts/PublicLayout.vue';
     <PublicLayout>
         <Head title="QR code expired" />
 
-        <div class="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-4 text-center">
-            <div class="flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 text-2xl text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+        <div class="mx-auto flex min-h-[70vh] max-w-md flex-col items-center justify-center px-4 py-16 text-center">
+            <div class="flex h-14 w-14 items-center justify-center rounded-full bg-warning-100 text-2xl text-warning-700 dark:bg-warning-900/40 dark:text-warning-300">
                 !
             </div>
-            <h1 class="mt-6 text-2xl font-semibold">This QR code has expired</h1>
-            <p class="mt-2 text-slate-500 dark:text-slate-400">
+            <h1 class="mt-6 text-2xl font-semibold text-ink-900 dark:text-ink-50">This QR code has expired</h1>
+            <p class="mt-2 text-ink-500">
                 This QR code is no longer valid. Please contact your rental company
                 for an up-to-date code.
             </p>

@@ -1,9 +1,10 @@
 <script setup>
-// Customer-portal agreement detail. CustomerLayout. FUNCTIONAL ONLY.
+// Customer-portal agreement detail. CustomerLayout. Design-system pass.
 import { computed } from 'vue';
 import { Head, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import CustomerLayout from '@/Layouts/CustomerLayout.vue';
+import PageHeader from '@/Components/UI/PageHeader.vue';
 import { useCurrency } from '@/composables/useCurrency';
 
 const { t } = useI18n();
@@ -38,26 +39,25 @@ const rows = computed(() => [
     <CustomerLayout>
         <Head :title="t('customer.portal.agreement_number', { id: agreement.id })" />
 
-        <div class="mb-6 flex items-center justify-between">
-            <h1 class="text-2xl font-semibold">{{ t('customer.portal.agreement_number', { id: agreement.id }) }}</h1>
-            <a
-                v-if="agreement.has_pdf"
-                :href="`${base}/agreements/${agreement.id}/pdf`"
-                class="text-sm text-indigo-600 hover:underline dark:text-indigo-400"
-            >
-                {{ t('customer.portal.download_pdf') }}
-            </a>
-        </div>
+        <PageHeader :title="t('customer.portal.agreement_number', { id: agreement.id })">
+            <template #actions>
+                <a
+                    v-if="agreement.has_pdf"
+                    :href="`${base}/agreements/${agreement.id}/pdf`"
+                    class="text-sm font-medium text-ink-900 hover:underline dark:text-ink-100"
+                >
+                    {{ t('customer.portal.download_pdf') }}
+                </a>
+            </template>
+        </PageHeader>
 
-        <dl class="grid gap-4 rounded-lg border border-slate-200 p-5 sm:grid-cols-2 dark:border-slate-800">
+        <dl class="grid gap-4 rounded-card border border-ink-200 bg-white p-5 shadow-subtle sm:grid-cols-2 dark:border-ink-800 dark:bg-ink-900">
             <div v-for="row in rows" :key="row.label">
-                <dt class="text-xs text-slate-500 dark:text-slate-400">{{ row.label }}</dt>
-                <dd class="mt-0.5 font-medium capitalize">{{ row.value }}</dd>
+                <dt class="text-xs text-ink-500">{{ row.label }}</dt>
+                <dd class="mt-0.5 font-medium capitalize text-ink-900 dark:text-ink-50">{{ row.value }}</dd>
             </div>
         </dl>
 
-        <p v-if="!agreement.has_pdf" class="mt-4 text-sm text-slate-500 dark:text-slate-400">
-            {{ t('customer.portal.no_pdf') }}
-        </p>
+        <p v-if="!agreement.has_pdf" class="mt-4 text-sm text-ink-500">{{ t('customer.portal.no_pdf') }}</p>
     </CustomerLayout>
 </template>

@@ -1,9 +1,15 @@
 <script setup>
-// Mechanic accounts list (tenant admin). FUNCTIONAL ONLY — design pass later.
+// Mechanic accounts list (tenant admin). Design-system pass.
 import { computed } from 'vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import PageHeader from '@/Components/UI/PageHeader.vue';
+import DataTable from '@/Components/UI/DataTable.vue';
+import StatusBadge from '@/Components/UI/StatusBadge.vue';
+import EmptyState from '@/Components/UI/EmptyState.vue';
+import Button from '@/Components/UI/Button.vue';
+import { IdentificationIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
     mechanics: { type: Object, required: true }, // Laravel paginator payload
@@ -14,7 +20,6 @@ const page = usePage();
 
 const slug = computed(() => page.props.tenant.slug);
 const base = computed(() => `/app/${slug.value}/mechanics`);
-const flash = computed(() => page.props.flash?.success);
 
 function destroy(mechanic) {
     if (!window.confirm(t('mechanic.confirm_delete'))) return;
@@ -26,84 +31,49 @@ function destroy(mechanic) {
     <AppLayout>
         <Head :title="t('mechanic.title')" />
 
-        <div class="py-10">
-            <div class="flex items-center justify-between">
-                <h1 class="text-2xl font-semibold">{{ t('mechanic.title') }}</h1>
-                <Link
-                    :href="`${base}/create`"
-                    class="rounded bg-slate-800 px-3 py-2 text-sm text-white dark:bg-slate-200 dark:text-slate-900"
-                >
-                    {{ t('mechanic.add_mechanic') }}
-                </Link>
-            </div>
+        <PageHeader :title="t('mechanic.title')">
+            <template #actions>
+                <Button @click="router.visit(`${base}/create`)">{{ t('mechanic.add_mechanic') }}</Button>
+            </template>
+        </PageHeader>
 
-            <p
-                v-if="flash"
-                class="mt-4 rounded border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800 dark:border-green-900 dark:bg-green-900/30 dark:text-green-300"
-            >
-                {{ flash }}
-            </p>
-
-            <div class="mt-6 overflow-x-auto rounded border border-slate-200 dark:border-slate-800">
-                <table class="min-w-full divide-y divide-slate-200 text-sm dark:divide-slate-800">
-                    <thead class="text-left text-slate-500 dark:text-slate-400">
-                        <tr>
-                            <th class="px-4 py-3 font-medium">{{ t('mechanic.fields.name') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('mechanic.fields.email') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('mechanic.fields.phone') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('mechanic.fields.is_active') }}</th>
-                            <th class="px-4 py-3 text-right font-medium">{{ t('common.actions') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-                        <tr v-if="mechanics.data.length === 0">
-                            <td colspan="5" class="px-4 py-8 text-center text-slate-500 dark:text-slate-400">
-                                {{ t('mechanic.empty') }}
-                            </td>
-                        </tr>
-                        <tr v-for="mechanic in mechanics.data" :key="mechanic.id">
-                            <td class="px-4 py-3 font-medium">{{ mechanic.name }}</td>
-                            <td class="px-4 py-3">{{ mechanic.email }}</td>
-                            <td class="px-4 py-3">{{ mechanic.phone ?? '—' }}</td>
-                            <td class="px-4 py-3">
-                                <span
-                                    class="rounded-full px-2 py-0.5 text-xs"
-                                    :class="mechanic.is_active
-                                        ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
-                                        : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'"
-                                >
-                                    {{ mechanic.is_active ? t('mechanic.active_badge') : t('mechanic.inactive_badge') }}
-                                </span>
-                            </td>
-                            <td class="px-4 py-3">
-                                <div class="flex justify-end gap-3">
-                                    <Link :href="`${base}/${mechanic.id}/edit`" class="text-slate-600 hover:underline dark:text-slate-300">
-                                        {{ t('common.edit') }}
-                                    </Link>
-                                    <button type="button" class="text-red-600 hover:underline dark:text-red-400" @click="destroy(mechanic)">
-                                        {{ t('common.delete') }}
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div v-if="mechanics.links.length > 3" class="mt-4 flex flex-wrap gap-1">
-                <component
-                    :is="link.url ? Link : 'span'"
-                    v-for="(link, i) in mechanics.links"
-                    :key="i"
-                    :href="link.url"
-                    class="rounded px-3 py-1 text-sm"
-                    :class="[
-                        link.active ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900' : 'text-slate-600 dark:text-slate-300',
-                        !link.url && 'cursor-default opacity-40',
-                    ]"
-                    v-html="link.label"
-                />
-            </div>
-        </div>
+        <DataTable :columns="5" :empty="mechanics.data.length === 0" :pagination="mechanics">
+            <template #head>
+                <th class="px-4 py-3">{{ t('mechanic.fields.name') }}</th>
+                <th class="px-4 py-3">{{ t('mechanic.fields.email') }}</th>
+                <th class="px-4 py-3">{{ t('mechanic.fields.phone') }}</th>
+                <th class="px-4 py-3">{{ t('mechanic.fields.is_active') }}</th>
+                <th class="px-4 py-3 text-right">{{ t('common.actions') }}</th>
+            </template>
+            <tr v-for="mechanic in mechanics.data" :key="mechanic.id" class="text-ink-700 dark:text-ink-200">
+                <td class="px-4 py-3 font-medium text-ink-900 dark:text-ink-50">{{ mechanic.name }}</td>
+                <td class="px-4 py-3">{{ mechanic.email }}</td>
+                <td class="px-4 py-3">{{ mechanic.phone ?? '—' }}</td>
+                <td class="px-4 py-3">
+                    <StatusBadge
+                        :variant="mechanic.is_active ? 'success' : 'neutral'"
+                        :label="mechanic.is_active ? t('mechanic.active_badge') : t('mechanic.inactive_badge')"
+                    />
+                </td>
+                <td class="px-4 py-3">
+                    <div class="flex justify-end gap-3">
+                        <Link :href="`${base}/${mechanic.id}/edit`" class="text-sm text-ink-500 hover:underline">
+                            {{ t('common.edit') }}
+                        </Link>
+                        <button type="button" class="text-sm text-danger-600 hover:underline dark:text-danger-500" @click="destroy(mechanic)">
+                            {{ t('common.delete') }}
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            <template #empty>
+                <EmptyState :title="t('mechanic.empty')" :message="t('mechanic.add_mechanic')">
+                    <template #icon><IdentificationIcon class="h-6 w-6" /></template>
+                    <template #action>
+                        <Button @click="router.visit(`${base}/create`)">{{ t('mechanic.add_mechanic') }}</Button>
+                    </template>
+                </EmptyState>
+            </template>
+        </DataTable>
     </AppLayout>
 </template>

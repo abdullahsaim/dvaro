@@ -5,6 +5,8 @@
 import { ref } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
+import Button from '@/Components/UI/Button.vue';
+import Input from '@/Components/UI/Input.vue';
 
 const props = defineProps({
     // One of: revenue | fleet | overdue | workshop (matches export types).
@@ -51,71 +53,39 @@ function downloadUrl(id) {
 </script>
 
 <template>
-    <div class="mb-6 rounded border border-slate-200 p-4 dark:border-slate-800">
+    <div class="mb-6 rounded-card border border-ink-200 bg-white p-4 shadow-subtle dark:border-ink-800 dark:bg-ink-900">
         <div class="flex flex-wrap items-end gap-4">
             <template v-if="withDateRange">
-                <div>
-                    <label class="block text-xs text-slate-500 dark:text-slate-400">{{ t('reporting.date_from') }}</label>
-                    <input
-                        v-model="from"
-                        type="date"
-                        class="mt-1 rounded border border-slate-300 bg-transparent px-2 py-1 text-sm dark:border-slate-700"
-                    >
-                </div>
-                <div>
-                    <label class="block text-xs text-slate-500 dark:text-slate-400">{{ t('reporting.date_to') }}</label>
-                    <input
-                        v-model="to"
-                        type="date"
-                        class="mt-1 rounded border border-slate-300 bg-transparent px-2 py-1 text-sm dark:border-slate-700"
-                    >
-                </div>
-                <button
-                    type="button"
-                    class="rounded bg-slate-800 px-3 py-1.5 text-sm text-white dark:bg-slate-200 dark:text-slate-900"
-                    @click="applyRange"
-                >
-                    {{ t('reporting.apply') }}
-                </button>
+                <Input v-model="from" type="date" :label="t('reporting.date_from')" />
+                <Input v-model="to" type="date" :label="t('reporting.date_to')" />
+                <Button @click="applyRange">{{ t('reporting.apply') }}</Button>
             </template>
 
             <div class="ml-auto flex gap-2">
-                <button
-                    type="button"
-                    class="rounded border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-700"
-                    @click="exportFile('pdf')"
-                >
-                    {{ t('reporting.export_pdf') }}
-                </button>
-                <button
-                    type="button"
-                    class="rounded border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-700"
-                    @click="exportFile('excel')"
-                >
-                    {{ t('reporting.export_excel') }}
-                </button>
+                <Button variant="secondary" @click="exportFile('pdf')">{{ t('reporting.export_pdf') }}</Button>
+                <Button variant="secondary" @click="exportFile('excel')">{{ t('reporting.export_excel') }}</Button>
             </div>
         </div>
 
-        <p v-if="withDateRange" class="mt-2 text-xs text-slate-400">{{ t('reporting.financial_year_hint') }}</p>
+        <p v-if="withDateRange" class="mt-2 text-xs text-ink-400">{{ t('reporting.financial_year_hint') }}</p>
 
         <div class="mt-4">
-            <p class="text-xs font-medium text-slate-500 dark:text-slate-400">{{ t('reporting.recent_exports') }}</p>
+            <p class="text-xs font-medium text-ink-500">{{ t('reporting.recent_exports') }}</p>
             <ul v-if="exports.length" class="mt-2 space-y-1 text-sm">
                 <li v-for="ex in exports" :key="ex.id" class="flex items-center gap-3">
-                    <span class="uppercase text-slate-400">{{ ex.format }}</span>
+                    <span class="uppercase text-ink-400">{{ ex.format }}</span>
                     <a
                         v-if="ex.downloadable"
                         :href="downloadUrl(ex.id)"
-                        class="text-indigo-600 hover:underline dark:text-indigo-400"
+                        class="font-medium text-ink-900 hover:underline dark:text-ink-100"
                     >
                         {{ t('reporting.download') }}
                     </a>
-                    <span v-else class="text-slate-400">{{ t(`reporting.status.${ex.status}`) }}</span>
-                    <span class="text-xs text-slate-400">{{ new Date(ex.created_at).toLocaleString() }}</span>
+                    <span v-else class="text-ink-400">{{ t(`reporting.status.${ex.status}`) }}</span>
+                    <span class="text-xs text-ink-400">{{ new Date(ex.created_at).toLocaleString() }}</span>
                 </li>
             </ul>
-            <p v-else class="mt-1 text-sm text-slate-400">{{ t('reporting.no_exports') }}</p>
+            <p v-else class="mt-1 text-sm text-ink-400">{{ t('reporting.no_exports') }}</p>
         </div>
     </div>
 </template>

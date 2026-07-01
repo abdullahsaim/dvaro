@@ -1,9 +1,11 @@
 <script setup>
 // Create a plan. Prices entered in AUD, converted to cents on submit.
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import SuperAdminLayout from '@/Layouts/SuperAdminLayout.vue';
 import PlanForm from '@/Components/PlanForm.vue';
+import PageHeader from '@/Components/UI/PageHeader.vue';
+import Button from '@/Components/UI/Button.vue';
 
 const props = defineProps({
     moduleKeys: { type: Array, required: true },
@@ -52,28 +54,18 @@ function cleanLimits(limits) {
     <SuperAdminLayout>
         <Head :title="t('superadmin.plans.new_plan')" />
 
-        <div class="py-10">
-            <Link href="/superadmin/plans" class="text-sm text-indigo-600 hover:underline dark:text-indigo-400">
-                ← {{ t('superadmin.plans.title') }}
-            </Link>
-            <h1 class="mt-4 text-2xl font-semibold">{{ t('superadmin.plans.new_plan') }}</h1>
+        <Link href="/superadmin/plans" class="text-sm font-medium text-ink-500 hover:underline">
+            ← {{ t('superadmin.plans.title') }}
+        </Link>
+        <PageHeader class="mt-4" :title="t('superadmin.plans.new_plan')" />
 
-            <form class="mt-6 max-w-3xl" @submit.prevent="submit">
-                <PlanForm :form="form" :module-keys="moduleKeys" :limit-keys="limitKeys" />
+        <form class="max-w-3xl" @submit.prevent="submit">
+            <PlanForm :form="form" :module-keys="moduleKeys" :limit-keys="limitKeys" />
 
-                <div class="mt-8 flex gap-3">
-                    <button
-                        type="submit"
-                        :disabled="form.processing"
-                        class="rounded bg-indigo-600 px-4 py-2 text-white disabled:opacity-50"
-                    >
-                        {{ t('common.save') }}
-                    </button>
-                    <Link href="/superadmin/plans" class="rounded border border-slate-300 px-4 py-2 dark:border-slate-700">
-                        {{ t('common.cancel') }}
-                    </Link>
-                </div>
-            </form>
-        </div>
+            <div class="mt-8 flex gap-3">
+                <Button type="submit" :loading="form.processing">{{ t('common.save') }}</Button>
+                <Button variant="secondary" @click="router.visit('/superadmin/plans')">{{ t('common.cancel') }}</Button>
+            </div>
+        </form>
     </SuperAdminLayout>
 </template>

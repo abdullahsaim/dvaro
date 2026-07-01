@@ -12,6 +12,14 @@ const props = defineProps({
     placeholder: { type: String, default: '' },
     disabled: { type: Boolean, default: false },
     required: { type: Boolean, default: false },
+    readonly: { type: Boolean, default: false },
+    // Optional passthroughs for numeric inputs (kept explicit so wrapper-level
+    // `class` fallthrough on the root div still works as before).
+    step: { type: [String, Number], default: undefined },
+    min: { type: [String, Number], default: undefined },
+    max: { type: [String, Number], default: undefined },
+    autocomplete: { type: String, default: undefined },
+    inputmode: { type: String, default: undefined },
 });
 
 defineEmits(['update:modelValue']);
@@ -42,6 +50,12 @@ const fieldClasses = computed(() => [
             :placeholder="placeholder"
             :disabled="disabled"
             :required="required"
+            :readonly="readonly"
+            :step="step"
+            :min="min"
+            :max="max"
+            :autocomplete="autocomplete"
+            :inputmode="inputmode"
             :aria-invalid="error ? 'true' : undefined"
             :aria-describedby="describedBy"
             :class="fieldClasses"

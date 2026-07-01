@@ -1,11 +1,16 @@
 <script setup>
-// Fleet list. FUNCTIONAL ONLY — design pass comes in a later session.
-// Status filter tabs (All + 6 statuses, with counts), paginated table.
+// Fleet list — design-system pass. Status filter tabs (All + 6 statuses with
+// counts), paginated DataTable, generic StatusBadge, EmptyState.
 import { computed } from 'vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import AppLayout from '@/Layouts/AppLayout.vue';
-import StatusBadge from '@/Components/StatusBadge.vue';
+import PageHeader from '@/Components/UI/PageHeader.vue';
+import DataTable from '@/Components/UI/DataTable.vue';
+import StatusBadge from '@/Components/UI/StatusBadge.vue';
+import EmptyState from '@/Components/UI/EmptyState.vue';
+import Button from '@/Components/UI/Button.vue';
+import { TruckIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
     vehicles: { type: Object, required: true }, // Laravel paginator payload
@@ -19,7 +24,16 @@ const page = usePage();
 
 const slug = computed(() => page.props.tenant.slug);
 const base = computed(() => `/app/${slug.value}/fleet`);
-const flash = computed(() => page.props.flash?.success);
+
+// vehicle status enum → generic StatusBadge variant.
+const statusVariants = {
+    available: 'success',
+    rented: 'info',
+    maintenance: 'warning',
+    suspended: 'neutral',
+    accident: 'danger',
+    reserved: 'neutral',
+};
 
 // Tabs: 'all' first, then each status.
 const tabs = computed(() => [
@@ -53,98 +67,69 @@ function destroy(vehicle) {
     <AppLayout>
         <Head :title="t('fleet.title')" />
 
-        <div class="py-10">
-            <div class="flex items-center justify-between">
-                <h1 class="text-2xl font-semibold">{{ t('fleet.title') }}</h1>
-                <Link
-                    :href="`${base}/create`"
-                    class="rounded bg-slate-800 px-3 py-2 text-sm text-white dark:bg-slate-200 dark:text-slate-900"
-                >
-                    {{ t('fleet.add_vehicle') }}
-                </Link>
-            </div>
+        <PageHeader :title="t('fleet.title')">
+            <template #actions>
+                <Button @click="router.visit(`${base}/create`)">{{ t('fleet.add_vehicle') }}</Button>
+            </template>
+        </PageHeader>
 
-            <p
-                v-if="flash"
-                class="mt-4 rounded border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800 dark:border-green-900 dark:bg-green-900/30 dark:text-green-300"
+        <!-- Status filter tabs -->
+        <div class="mb-4 flex flex-wrap gap-2">
+            <button
+                v-for="tab in tabs"
+                :key="tab.key"
+                type="button"
+                class="rounded-full px-3 py-1 text-sm transition-colors"
+                :class="isActive(tab.key)
+                    ? 'bg-ink-950 text-white dark:bg-ink-50 dark:text-ink-950'
+                    : 'bg-ink-100 text-ink-600 hover:bg-ink-200 dark:bg-ink-800 dark:text-ink-300 dark:hover:bg-ink-700'"
+                @click="filterBy(tab.key)"
             >
-                {{ flash }}
-            </p>
-
-            <!-- Status filter tabs -->
-            <div class="mt-6 flex flex-wrap gap-2">
-                <button
-                    v-for="tab in tabs"
-                    :key="tab.key"
-                    type="button"
-                    class="rounded-full px-3 py-1 text-sm transition-colors"
-                    :class="isActive(tab.key)
-                        ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'"
-                    @click="filterBy(tab.key)"
-                >
-                    {{ tab.label }} ({{ tab.count }})
-                </button>
-            </div>
-
-            <!-- Table -->
-            <div class="mt-6 overflow-x-auto rounded border border-slate-200 dark:border-slate-800">
-                <table class="min-w-full divide-y divide-slate-200 text-sm dark:divide-slate-800">
-                    <thead class="text-left text-slate-500 dark:text-slate-400">
-                        <tr>
-                            <th class="px-4 py-3 font-medium">{{ t('fleet.fields.registration_number') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('fleet.fields.make') }} / {{ t('fleet.fields.model') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('fleet.fields.year') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('fleet.fields.status') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('fleet.fields.daily_rate') }}</th>
-                            <th class="px-4 py-3 text-right font-medium">{{ t('common.actions') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-                        <tr v-if="vehicles.data.length === 0">
-                            <td colspan="6" class="px-4 py-8 text-center text-slate-500 dark:text-slate-400">
-                                {{ t('fleet.empty') }}
-                            </td>
-                        </tr>
-                        <tr v-for="vehicle in vehicles.data" :key="vehicle.id">
-                            <td class="px-4 py-3 font-medium">{{ vehicle.registration_number }}</td>
-                            <td class="px-4 py-3">{{ vehicle.make }} {{ vehicle.model }}</td>
-                            <td class="px-4 py-3">{{ vehicle.year }}</td>
-                            <td class="px-4 py-3"><StatusBadge :status="vehicle.status" /></td>
-                            <td class="px-4 py-3">{{ vehicle.daily_rate }}</td>
-                            <td class="px-4 py-3">
-                                <div class="flex justify-end gap-3">
-                                    <Link :href="`${base}/${vehicle.id}`" class="text-indigo-600 hover:underline dark:text-indigo-400">
-                                        {{ t('fleet.vehicle_details') }}
-                                    </Link>
-                                    <Link :href="`${base}/${vehicle.id}/edit`" class="text-slate-600 hover:underline dark:text-slate-300">
-                                        {{ t('common.edit') }}
-                                    </Link>
-                                    <button type="button" class="text-red-600 hover:underline dark:text-red-400" @click="destroy(vehicle)">
-                                        {{ t('common.delete') }}
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Pagination -->
-            <div v-if="vehicles.links.length > 3" class="mt-4 flex flex-wrap gap-1">
-                <component
-                    :is="link.url ? Link : 'span'"
-                    v-for="(link, i) in vehicles.links"
-                    :key="i"
-                    :href="link.url"
-                    class="rounded px-3 py-1 text-sm"
-                    :class="[
-                        link.active ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900' : 'text-slate-600 dark:text-slate-300',
-                        !link.url && 'cursor-default opacity-40',
-                    ]"
-                    v-html="link.label"
-                />
-            </div>
+                {{ tab.label }} ({{ tab.count }})
+            </button>
         </div>
+
+        <DataTable :columns="6" :empty="vehicles.data.length === 0" :pagination="vehicles">
+            <template #head>
+                <th class="px-4 py-3">{{ t('fleet.fields.registration_number') }}</th>
+                <th class="px-4 py-3">{{ t('fleet.fields.make') }} / {{ t('fleet.fields.model') }}</th>
+                <th class="px-4 py-3">{{ t('fleet.fields.year') }}</th>
+                <th class="px-4 py-3">{{ t('fleet.fields.status') }}</th>
+                <th class="px-4 py-3 text-right">{{ t('fleet.fields.daily_rate') }}</th>
+                <th class="px-4 py-3 text-right">{{ t('common.actions') }}</th>
+            </template>
+
+            <tr v-for="vehicle in vehicles.data" :key="vehicle.id" class="text-ink-700 dark:text-ink-200">
+                <td class="px-4 py-3 font-medium text-ink-900 dark:text-ink-50">{{ vehicle.registration_number }}</td>
+                <td class="px-4 py-3">{{ vehicle.make }} {{ vehicle.model }}</td>
+                <td class="px-4 py-3">{{ vehicle.year }}</td>
+                <td class="px-4 py-3">
+                    <StatusBadge :variant="statusVariants[vehicle.status]" :label="t(`fleet.statuses.${vehicle.status}`)" />
+                </td>
+                <td class="px-4 py-3 text-right tabular-nums">{{ vehicle.daily_rate }}</td>
+                <td class="px-4 py-3">
+                    <div class="flex justify-end gap-3">
+                        <Link :href="`${base}/${vehicle.id}`" class="text-sm font-medium text-ink-900 hover:underline dark:text-ink-100">
+                            {{ t('fleet.vehicle_details') }}
+                        </Link>
+                        <Link :href="`${base}/${vehicle.id}/edit`" class="text-sm text-ink-500 hover:underline">
+                            {{ t('common.edit') }}
+                        </Link>
+                        <button type="button" class="text-sm text-danger-600 hover:underline dark:text-danger-500" @click="destroy(vehicle)">
+                            {{ t('common.delete') }}
+                        </button>
+                    </div>
+                </td>
+            </tr>
+
+            <template #empty>
+                <EmptyState :title="t('fleet.empty')" :message="t('fleet.add_vehicle')">
+                    <template #icon><TruckIcon class="h-6 w-6" /></template>
+                    <template #action>
+                        <Button @click="router.visit(`${base}/create`)">{{ t('fleet.add_vehicle') }}</Button>
+                    </template>
+                </EmptyState>
+            </template>
+        </DataTable>
     </AppLayout>
 </template>

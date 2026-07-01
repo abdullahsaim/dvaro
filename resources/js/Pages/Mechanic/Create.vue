@@ -1,13 +1,18 @@
 <script setup>
-// New mechanic form (tenant admin). FUNCTIONAL ONLY — design pass later.
+// New mechanic form (tenant admin). Design-system pass.
 import { computed } from 'vue';
-import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
+import { Head, router, useForm, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import PageHeader from '@/Components/UI/PageHeader.vue';
+import Button from '@/Components/UI/Button.vue';
+import Input from '@/Components/UI/Input.vue';
 
 const { t } = useI18n();
 const page = usePage();
 const base = computed(() => `/app/${page.props.tenant.slug}/mechanics`);
+
+const checkbox = 'h-4 w-4 rounded border-ink-300 accent-ink-900 dark:border-ink-700 dark:accent-ink-100';
 
 const form = useForm({
     name: '',
@@ -27,62 +32,30 @@ function submit() {
     <AppLayout>
         <Head :title="t('mechanic.new_mechanic')" />
 
-        <div class="py-10">
-            <div class="flex items-center justify-between">
-                <h1 class="text-2xl font-semibold">{{ t('mechanic.new_mechanic') }}</h1>
-                <Link :href="base" class="text-sm text-slate-500 hover:underline dark:text-slate-400">
-                    {{ t('common.back') }}
-                </Link>
+        <PageHeader :title="t('mechanic.new_mechanic')">
+            <template #actions>
+                <Button variant="ghost" @click="router.visit(base)">{{ t('common.back') }}</Button>
+            </template>
+        </PageHeader>
+
+        <form class="grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-2" @submit.prevent="submit">
+            <Input v-model="form.name" :label="t('mechanic.fields.name')" :error="form.errors.name" />
+            <Input v-model="form.email" type="email" :label="t('mechanic.fields.email')" :error="form.errors.email" />
+            <Input v-model="form.phone" :label="t('mechanic.fields.phone')" :error="form.errors.phone" />
+
+            <label class="flex items-center gap-2 sm:col-span-2">
+                <input v-model="form.is_active" type="checkbox" :class="checkbox" />
+                <span class="text-sm text-ink-600 dark:text-ink-300">{{ t('mechanic.fields.is_active') }}</span>
+            </label>
+
+            <p class="text-xs text-ink-500 sm:col-span-2">{{ t('mechanic.credentials_hint') }}</p>
+
+            <Input v-model="form.pin" autocomplete="off" :label="t('mechanic.fields.pin')" :error="form.errors.pin" />
+            <Input v-model="form.password" type="password" autocomplete="new-password" :label="t('mechanic.fields.password')" :error="form.errors.password" />
+
+            <div class="sm:col-span-2">
+                <Button type="submit" :loading="form.processing">{{ t('common.save') }}</Button>
             </div>
-
-            <form class="mt-6 grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-2" @submit.prevent="submit">
-                <label class="block">
-                    <span class="text-sm text-slate-600 dark:text-slate-300">{{ t('mechanic.fields.name') }}</span>
-                    <input v-model="form.name" type="text" class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-900" />
-                    <span v-if="form.errors.name" class="text-xs text-red-600">{{ form.errors.name }}</span>
-                </label>
-
-                <label class="block">
-                    <span class="text-sm text-slate-600 dark:text-slate-300">{{ t('mechanic.fields.email') }}</span>
-                    <input v-model="form.email" type="email" class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-900" />
-                    <span v-if="form.errors.email" class="text-xs text-red-600">{{ form.errors.email }}</span>
-                </label>
-
-                <label class="block">
-                    <span class="text-sm text-slate-600 dark:text-slate-300">{{ t('mechanic.fields.phone') }}</span>
-                    <input v-model="form.phone" type="text" class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-900" />
-                    <span v-if="form.errors.phone" class="text-xs text-red-600">{{ form.errors.phone }}</span>
-                </label>
-
-                <label class="flex items-center gap-2 sm:col-span-2">
-                    <input v-model="form.is_active" type="checkbox" class="rounded border-slate-300 dark:border-slate-700" />
-                    <span class="text-sm text-slate-600 dark:text-slate-300">{{ t('mechanic.fields.is_active') }}</span>
-                </label>
-
-                <p class="text-xs text-slate-500 dark:text-slate-400 sm:col-span-2">{{ t('mechanic.credentials_hint') }}</p>
-
-                <label class="block">
-                    <span class="text-sm text-slate-600 dark:text-slate-300">{{ t('mechanic.fields.pin') }}</span>
-                    <input v-model="form.pin" type="text" autocomplete="off" class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-900" />
-                    <span v-if="form.errors.pin" class="text-xs text-red-600">{{ form.errors.pin }}</span>
-                </label>
-
-                <label class="block">
-                    <span class="text-sm text-slate-600 dark:text-slate-300">{{ t('mechanic.fields.password') }}</span>
-                    <input v-model="form.password" type="password" autocomplete="new-password" class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-900" />
-                    <span v-if="form.errors.password" class="text-xs text-red-600">{{ form.errors.password }}</span>
-                </label>
-
-                <div class="sm:col-span-2">
-                    <button
-                        type="submit"
-                        :disabled="form.processing"
-                        class="rounded bg-slate-800 px-4 py-2 text-white disabled:opacity-50 dark:bg-slate-200 dark:text-slate-900"
-                    >
-                        {{ t('common.save') }}
-                    </button>
-                </div>
-            </form>
-        </div>
+        </form>
     </AppLayout>
 </template>

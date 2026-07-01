@@ -1,8 +1,12 @@
 <script setup>
-// Super admin dashboard — platform KPIs + recent signups. FUNCTIONAL ONLY.
+// Super admin dashboard — platform KPIs + recent signups. Design-system pass.
 import { Head, Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import SuperAdminLayout from '@/Layouts/SuperAdminLayout.vue';
+import PageHeader from '@/Components/UI/PageHeader.vue';
+import StatCard from '@/Components/UI/StatCard.vue';
+import DataTable from '@/Components/UI/DataTable.vue';
+import StatusBadge from '@/Components/UI/StatusBadge.vue';
 import { useCurrency } from '@/composables/useCurrency';
 
 const props = defineProps({
@@ -12,6 +16,15 @@ const props = defineProps({
 
 const { t } = useI18n();
 const { formatAUD } = useCurrency();
+
+const statusVariants = {
+    active: 'success',
+    trialing: 'info',
+    trial: 'info',
+    suspended: 'danger',
+    cancelled: 'neutral',
+    past_due: 'warning',
+};
 
 const cards = [
     { key: 'total_tenants', label: 'superadmin.dashboard.total_tenants' },
@@ -29,67 +42,44 @@ function formatDate(value) {
     <SuperAdminLayout>
         <Head :title="t('superadmin.dashboard.title')" />
 
-        <div class="py-10">
-            <h1 class="text-2xl font-semibold">{{ t('superadmin.dashboard.title') }}</h1>
+        <PageHeader :title="t('superadmin.dashboard.title')" />
 
-            <!-- KPI cards -->
-            <div class="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-5">
-                <div
-                    v-for="card in cards"
-                    :key="card.key"
-                    class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
-                >
-                    <p class="text-sm text-slate-500 dark:text-slate-400">{{ t(card.label) }}</p>
-                    <p class="mt-1 text-2xl font-semibold">{{ stats[card.key] }}</p>
-                </div>
+        <!-- KPI cards -->
+        <div class="grid grid-cols-2 gap-4 lg:grid-cols-5">
+            <StatCard v-for="card in cards" :key="card.key" :label="t(card.label)" :value="stats[card.key]" />
+            <StatCard :label="t('superadmin.dashboard.recurring_revenue')" :value="formatAUD(stats.recurring_revenue)">
+                <template #description>{{ t('superadmin.dashboard.recurring_revenue_hint') }}</template>
+            </StatCard>
+        </div>
 
-                <div class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                    <p class="text-sm text-slate-500 dark:text-slate-400">
-                        {{ t('superadmin.dashboard.recurring_revenue') }}
-                    </p>
-                    <p class="mt-1 text-2xl font-semibold">{{ formatAUD(stats.recurring_revenue) }}</p>
-                    <p class="mt-1 text-xs text-slate-400">{{ t('superadmin.dashboard.recurring_revenue_hint') }}</p>
-                </div>
-            </div>
-
-            <!-- Recent signups -->
-            <h2 class="mt-10 text-lg font-semibold">{{ t('superadmin.dashboard.recent_signups') }}</h2>
-            <p v-if="!recentTenants.length" class="mt-4 text-sm text-slate-500 dark:text-slate-400">
-                {{ t('superadmin.dashboard.no_tenants') }}
-            </p>
-            <div v-else class="mt-4 overflow-hidden rounded border border-slate-200 dark:border-slate-800">
-                <table class="w-full text-left text-sm">
-                    <thead class="bg-slate-50 text-slate-500 dark:bg-slate-900 dark:text-slate-400">
-                        <tr>
-                            <th class="px-4 py-2 font-medium">{{ t('superadmin.tenants.title') }}</th>
-                            <th class="px-4 py-2 font-medium">{{ t('superadmin.tenants.plan') }}</th>
-                            <th class="px-4 py-2 font-medium">{{ t('fleet.fields.status') }}</th>
-                            <th class="px-4 py-2 font-medium">{{ t('superadmin.tenants.signed_up') }}</th>
-                            <th class="px-4 py-2"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="tenant in recentTenants" :key="tenant.id" class="border-t border-slate-100 dark:border-slate-800">
-                            <td class="px-4 py-2 font-medium">{{ tenant.name }}</td>
-                            <td class="px-4 py-2 text-slate-500 dark:text-slate-400">{{ tenant.plan_name ?? '—' }}</td>
-                            <td class="px-4 py-2">
-                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs dark:bg-slate-800">
-                                    {{ t(`superadmin.statuses.${tenant.status}`) }}
-                                </span>
-                            </td>
-                            <td class="px-4 py-2 text-slate-500 dark:text-slate-400">{{ formatDate(tenant.created_at) }}</td>
-                            <td class="px-4 py-2 text-right">
-                                <Link
-                                    :href="`/superadmin/tenants/${tenant.slug}`"
-                                    class="text-indigo-600 hover:underline dark:text-indigo-400"
-                                >
-                                    {{ t('superadmin.tenants.view') }}
-                                </Link>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+        <!-- Recent signups -->
+        <h2 class="mt-10 text-lg font-semibold text-ink-900 dark:text-ink-50">{{ t('superadmin.dashboard.recent_signups') }}</h2>
+        <div class="mt-4">
+            <DataTable :columns="5" :empty="!recentTenants.length">
+                <template #head>
+                    <th class="px-4 py-2">{{ t('superadmin.tenants.title') }}</th>
+                    <th class="px-4 py-2">{{ t('superadmin.tenants.plan') }}</th>
+                    <th class="px-4 py-2">{{ t('fleet.fields.status') }}</th>
+                    <th class="px-4 py-2">{{ t('superadmin.tenants.signed_up') }}</th>
+                    <th class="px-4 py-2 text-right">{{ t('common.actions') }}</th>
+                </template>
+                <tr v-for="tenant in recentTenants" :key="tenant.id" class="text-ink-700 dark:text-ink-200">
+                    <td class="px-4 py-2 font-medium text-ink-900 dark:text-ink-50">{{ tenant.name }}</td>
+                    <td class="px-4 py-2 text-ink-500">{{ tenant.plan_name ?? '—' }}</td>
+                    <td class="px-4 py-2">
+                        <StatusBadge :variant="statusVariants[tenant.status]" :label="t(`superadmin.statuses.${tenant.status}`)" />
+                    </td>
+                    <td class="px-4 py-2 text-ink-500">{{ formatDate(tenant.created_at) }}</td>
+                    <td class="px-4 py-2 text-right">
+                        <Link :href="`/superadmin/tenants/${tenant.slug}`" class="text-sm font-medium text-ink-900 hover:underline dark:text-ink-100">
+                            {{ t('superadmin.tenants.view') }}
+                        </Link>
+                    </td>
+                </tr>
+                <template #empty>
+                    <div class="px-4 py-6 text-center text-sm text-ink-400">{{ t('superadmin.dashboard.no_tenants') }}</div>
+                </template>
+            </DataTable>
         </div>
     </SuperAdminLayout>
 </template>

@@ -1,11 +1,14 @@
 <script setup>
-// Tenant dashboard. FUNCTIONAL ONLY — design pass comes in a later session.
+// Tenant dashboard. Design-system pass: PageHeader + StatCard KPI grid.
 // Tenant name comes from the shared 'tenant' prop (TenantMiddleware); plan /
 // subscription summary comes from TenantDashboardController.
 import { computed } from 'vue';
-import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { Head, router, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import PageHeader from '@/Components/UI/PageHeader.vue';
+import StatCard from '@/Components/UI/StatCard.vue';
+import Button from '@/Components/UI/Button.vue';
 import { useCurrency } from '@/composables/useCurrency';
 
 const props = defineProps({
@@ -21,82 +24,46 @@ const page = usePage();
 
 const user = computed(() => page.props.auth.user);
 const tenant = computed(() => page.props.tenant);
-const logoutUrl = computed(() => `/app/${tenant.value.slug}/logout`);
 const reportsUrl = computed(() => `/app/${tenant.value.slug}/reports`);
 const mechanicsUrl = computed(() => `/app/${tenant.value.slug}/mechanics`);
-
-function logout() {
-    router.post(logoutUrl.value);
-}
 </script>
 
 <template>
     <AppLayout>
         <Head title="Dashboard" />
 
-        <div class="py-10">
-            <h1 class="text-2xl font-semibold">
-                {{ t('dashboard.welcome', { name: user.name }) }}
-            </h1>
-            <p class="mt-1 text-slate-500 dark:text-slate-400">{{ tenant.name }}</p>
-
-            <dl class="mt-6 grid max-w-md grid-cols-1 gap-4 sm:grid-cols-2">
-                <div class="rounded border border-slate-200 p-4 dark:border-slate-800">
-                    <dt class="text-sm text-slate-500 dark:text-slate-400">{{ t('dashboard.plan') }}</dt>
-                    <dd class="mt-1 font-medium">{{ props.planName ?? t('dashboard.no_plan') }}</dd>
-                </div>
-
-                <div class="rounded border border-slate-200 p-4 dark:border-slate-800">
-                    <dt class="text-sm text-slate-500 dark:text-slate-400">{{ t('dashboard.subscription_status') }}</dt>
-                    <dd class="mt-1 font-medium capitalize">{{ props.subscriptionStatus ?? '—' }}</dd>
-                </div>
-
-                <div
-                    v-if="props.trialDaysRemaining !== null"
-                    class="rounded border border-slate-200 p-4 dark:border-slate-800"
-                >
-                    <dt class="text-sm text-slate-500 dark:text-slate-400">{{ t('dashboard.trial_days_remaining') }}</dt>
-                    <dd class="mt-1 font-medium">{{ props.trialDaysRemaining }}</dd>
-                </div>
-            </dl>
-
-            <dl class="mt-6 grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-3">
-                <div class="rounded border border-slate-200 p-4 dark:border-slate-800">
-                    <dt class="text-sm text-slate-500 dark:text-slate-400">{{ t('dashboard.outstanding_balance') }}</dt>
-                    <dd class="mt-1 font-medium">{{ formatAUD(props.summary.outstanding_balance) }}</dd>
-                </div>
-                <div class="rounded border border-slate-200 p-4 dark:border-slate-800">
-                    <dt class="text-sm text-slate-500 dark:text-slate-400">{{ t('dashboard.active_rentals') }}</dt>
-                    <dd class="mt-1 font-medium">{{ props.summary.active_rentals }}</dd>
-                </div>
-                <div class="rounded border border-slate-200 p-4 dark:border-slate-800">
-                    <dt class="text-sm text-slate-500 dark:text-slate-400">{{ t('dashboard.vehicles_available') }}</dt>
-                    <dd class="mt-1 font-medium">{{ props.summary.vehicles_available }}</dd>
-                </div>
-            </dl>
-
-            <div class="mt-6 flex flex-wrap gap-3">
-                <Link
-                    :href="reportsUrl"
-                    class="inline-block rounded border border-slate-300 px-3 py-2 text-sm dark:border-slate-700"
-                >
+        <PageHeader
+            :title="t('dashboard.welcome', { name: user.name })"
+            :description="tenant.name"
+        >
+            <template #actions>
+                <Button variant="secondary" @click="router.visit(reportsUrl)">
                     {{ t('dashboard.view_reports') }}
-                </Link>
-                <Link
-                    :href="mechanicsUrl"
-                    class="inline-block rounded border border-slate-300 px-3 py-2 text-sm dark:border-slate-700"
-                >
+                </Button>
+                <Button variant="secondary" @click="router.visit(mechanicsUrl)">
                     {{ t('dashboard.manage_mechanics') }}
-                </Link>
-            </div>
+                </Button>
+            </template>
+        </PageHeader>
 
-            <button
-                type="button"
-                class="mt-6 rounded bg-slate-800 px-3 py-2 text-white dark:bg-slate-200 dark:text-slate-900"
-                @click="logout"
-            >
-                {{ t('auth.logout') }}
-            </button>
+        <!-- Operational KPIs -->
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <StatCard :label="t('dashboard.outstanding_balance')" :value="formatAUD(props.summary.outstanding_balance)" />
+            <StatCard :label="t('dashboard.active_rentals')" :value="props.summary.active_rentals" />
+            <StatCard :label="t('dashboard.vehicles_available')" :value="props.summary.vehicles_available" />
+        </div>
+
+        <!-- Subscription summary -->
+        <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <StatCard :label="t('dashboard.plan')" :value="props.planName ?? t('dashboard.no_plan')" />
+            <StatCard :label="t('dashboard.subscription_status')">
+                <span class="capitalize">{{ props.subscriptionStatus ?? '—' }}</span>
+            </StatCard>
+            <StatCard
+                v-if="props.trialDaysRemaining !== null"
+                :label="t('dashboard.trial_days_remaining')"
+                :value="props.trialDaysRemaining"
+            />
         </div>
     </AppLayout>
 </template>

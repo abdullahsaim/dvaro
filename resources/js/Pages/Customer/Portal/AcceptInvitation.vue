@@ -3,11 +3,13 @@
 // tenant) — slug/name/token/email come as explicit props from the controller.
 // Posts the new password to /portal/{slug}/invite/{token}; on success the
 // controller creates the CustomerUser, logs them in and redirects to the
-// dashboard. FUNCTIONAL ONLY — design pass later.
+// dashboard. Design-system pass.
 import { computed } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
+import Button from '@/Components/UI/Button.vue';
+import Input from '@/Components/UI/Input.vue';
 
 const { t } = useI18n();
 
@@ -36,57 +38,20 @@ function submit() {
     <PublicLayout>
         <Head :title="t('customer.portal.accept_title')" />
 
-        <div class="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-4">
-            <p class="text-sm text-slate-500 dark:text-slate-400">{{ tenantName }}</p>
-            <h1 class="text-2xl font-semibold">{{ t('customer.portal.accept_title') }}</h1>
-            <p class="mb-6 mt-1 text-sm text-slate-500 dark:text-slate-400">
-                {{ t('customer.portal.accept_subtitle') }}
-            </p>
+        <div class="mx-auto flex min-h-[70vh] max-w-sm flex-col justify-center px-4 py-16">
+            <div class="rounded-card border border-ink-200 bg-white p-6 shadow-subtle dark:border-ink-800 dark:bg-ink-900">
+                <p class="text-sm text-ink-500">{{ tenantName }}</p>
+                <h1 class="text-2xl font-semibold text-ink-900 dark:text-ink-50">{{ t('customer.portal.accept_title') }}</h1>
+                <p class="mb-6 mt-1 text-sm text-ink-500">{{ t('customer.portal.accept_subtitle') }}</p>
 
-            <form class="space-y-4" @submit.prevent="submit">
-                <div>
-                    <label class="block text-sm font-medium">{{ t('auth.email') }}</label>
-                    <input
-                        :value="email"
-                        type="email"
-                        disabled
-                        class="mt-1 w-full rounded border border-slate-200 bg-slate-50 px-3 py-2 text-slate-500 dark:border-slate-800 dark:bg-slate-900"
-                    />
-                </div>
+                <form class="space-y-4" @submit.prevent="submit">
+                    <Input :model-value="email" type="email" disabled :label="t('auth.email')" />
+                    <Input v-model="form.password" type="password" autocomplete="new-password" required :label="t('auth.password')" :error="form.errors.password" />
+                    <Input v-model="form.password_confirmation" type="password" autocomplete="new-password" required :label="t('auth.confirm_password')" />
 
-                <div>
-                    <label for="password" class="block text-sm font-medium">{{ t('auth.password') }}</label>
-                    <input
-                        id="password"
-                        v-model="form.password"
-                        type="password"
-                        autocomplete="new-password"
-                        required
-                        class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-900"
-                    />
-                    <p v-if="form.errors.password" class="mt-1 text-sm text-red-600">{{ form.errors.password }}</p>
-                </div>
-
-                <div>
-                    <label for="password_confirmation" class="block text-sm font-medium">{{ t('auth.confirm_password') }}</label>
-                    <input
-                        id="password_confirmation"
-                        v-model="form.password_confirmation"
-                        type="password"
-                        autocomplete="new-password"
-                        required
-                        class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-900"
-                    />
-                </div>
-
-                <button
-                    type="submit"
-                    :disabled="form.processing"
-                    class="w-full rounded bg-indigo-600 px-3 py-2 text-white disabled:opacity-50"
-                >
-                    {{ t('customer.portal.set_password') }}
-                </button>
-            </form>
+                    <Button type="submit" class="w-full" :loading="form.processing">{{ t('customer.portal.set_password') }}</Button>
+                </form>
+            </div>
         </div>
     </PublicLayout>
 </template>

@@ -1,8 +1,12 @@
 <script setup>
-// Platform-wide subscriptions — status + plan filters. Read-only. FUNCTIONAL.
+// Platform-wide subscriptions — status + plan filters. Read-only. Design-system pass.
 import { Head, Link, router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import SuperAdminLayout from '@/Layouts/SuperAdminLayout.vue';
+import PageHeader from '@/Components/UI/PageHeader.vue';
+import DataTable from '@/Components/UI/DataTable.vue';
+import StatusBadge from '@/Components/UI/StatusBadge.vue';
+import Select from '@/Components/UI/Select.vue';
 
 const props = defineProps({
     subscriptions: { type: Object, required: true },
@@ -13,6 +17,15 @@ const props = defineProps({
 });
 
 const { t } = useI18n();
+
+const statusVariants = {
+    active: 'success',
+    trialing: 'info',
+    trial: 'info',
+    suspended: 'danger',
+    cancelled: 'neutral',
+    past_due: 'warning',
+};
 
 function filter(params) {
     router.get('/superadmin/subscriptions', {
@@ -35,96 +48,67 @@ function formatDate(value) {
     <SuperAdminLayout>
         <Head :title="t('superadmin.subscriptions.title')" />
 
-        <div class="py-10">
-            <h1 class="text-2xl font-semibold">{{ t('superadmin.subscriptions.title') }}</h1>
+        <PageHeader :title="t('superadmin.subscriptions.title')" />
 
-            <!-- Filters -->
-            <div class="mt-6 flex flex-wrap items-center gap-4">
-                <div class="flex flex-wrap gap-2">
-                    <button
-                        type="button"
-                        class="rounded-full px-3 py-1 text-sm"
-                        :class="activeStatus === null ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800'"
-                        @click="filter({ status: null })"
-                    >
-                        {{ t('common.all') }}
-                    </button>
-                    <button
-                        v-for="s in statuses"
-                        :key="s"
-                        type="button"
-                        class="rounded-full px-3 py-1 text-sm"
-                        :class="activeStatus === s ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800'"
-                        @click="filter({ status: s })"
-                    >
-                        {{ t(`superadmin.statuses.${s}`) }}
-                    </button>
-                </div>
-
-                <label class="ml-auto block">
-                    <span class="sr-only">{{ t('superadmin.subscriptions.plan') }}</span>
-                    <select
-                        class="rounded border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"
-                        :value="activePlanId ?? ''"
-                        @change="onPlanChange"
-                    >
-                        <option value="">{{ t('superadmin.subscriptions.all_plans') }}</option>
-                        <option v-for="p in plans" :key="p.id" :value="p.id">{{ p.name }}</option>
-                    </select>
-                </label>
-            </div>
-
-            <!-- Table -->
-            <p v-if="!subscriptions.data.length" class="mt-8 text-sm text-slate-500 dark:text-slate-400">
-                {{ t('superadmin.subscriptions.empty') }}
-            </p>
-            <div v-else class="mt-6 overflow-hidden rounded border border-slate-200 dark:border-slate-800">
-                <table class="w-full text-left text-sm">
-                    <thead class="bg-slate-50 text-slate-500 dark:bg-slate-900 dark:text-slate-400">
-                        <tr>
-                            <th class="px-4 py-2 font-medium">{{ t('superadmin.subscriptions.tenant') }}</th>
-                            <th class="px-4 py-2 font-medium">{{ t('superadmin.subscriptions.plan') }}</th>
-                            <th class="px-4 py-2 font-medium">{{ t('fleet.fields.status') }}</th>
-                            <th class="px-4 py-2 font-medium">{{ t('superadmin.subscriptions.billing_cycle') }}</th>
-                            <th class="px-4 py-2 font-medium">{{ t('superadmin.subscriptions.period_end') }}</th>
-                            <th class="px-4 py-2"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="sub in subscriptions.data" :key="sub.id" class="border-t border-slate-100 dark:border-slate-800">
-                            <td class="px-4 py-2 font-medium">{{ sub.tenant_name ?? '—' }}</td>
-                            <td class="px-4 py-2 text-slate-500 dark:text-slate-400">{{ sub.plan_name ?? '—' }}</td>
-                            <td class="px-4 py-2">
-                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs dark:bg-slate-800">
-                                    {{ t(`superadmin.statuses.${sub.status}`) }}
-                                </span>
-                            </td>
-                            <td class="px-4 py-2 text-slate-500 dark:text-slate-400">{{ sub.billing_cycle }}</td>
-                            <td class="px-4 py-2 text-slate-500 dark:text-slate-400">{{ formatDate(sub.current_period_end) }}</td>
-                            <td class="px-4 py-2 text-right">
-                                <Link :href="`/superadmin/subscriptions/${sub.id}`" class="text-indigo-600 hover:underline dark:text-indigo-400">
-                                    {{ t('superadmin.subscriptions.view') }}
-                                </Link>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Pagination -->
-            <div v-if="subscriptions.links" class="mt-4 flex flex-wrap gap-1">
-                <component
-                    :is="link.url ? 'button' : 'span'"
-                    v-for="(link, i) in subscriptions.links"
-                    :key="i"
+        <!-- Filters -->
+        <div class="mb-4 flex flex-wrap items-center gap-4">
+            <div class="flex flex-wrap gap-2">
+                <button
                     type="button"
-                    class="rounded px-3 py-1 text-sm"
-                    :class="link.active ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900' : 'text-slate-500 dark:text-slate-400'"
-                    :disabled="!link.url"
-                    @click="link.url && router.get(link.url, {}, { preserveState: true })"
-                    v-html="link.label"
-                />
+                    class="rounded-full px-3 py-1 text-sm transition-colors"
+                    :class="activeStatus === null
+                        ? 'bg-ink-950 text-white dark:bg-ink-50 dark:text-ink-950'
+                        : 'bg-ink-100 text-ink-600 hover:bg-ink-200 dark:bg-ink-800 dark:text-ink-300 dark:hover:bg-ink-700'"
+                    @click="filter({ status: null })"
+                >
+                    {{ t('common.all') }}
+                </button>
+                <button
+                    v-for="s in statuses"
+                    :key="s"
+                    type="button"
+                    class="rounded-full px-3 py-1 text-sm transition-colors"
+                    :class="activeStatus === s
+                        ? 'bg-ink-950 text-white dark:bg-ink-50 dark:text-ink-950'
+                        : 'bg-ink-100 text-ink-600 hover:bg-ink-200 dark:bg-ink-800 dark:text-ink-300 dark:hover:bg-ink-700'"
+                    @click="filter({ status: s })"
+                >
+                    {{ t(`superadmin.statuses.${s}`) }}
+                </button>
             </div>
+
+            <Select :model-value="activePlanId ?? ''" class="ml-auto w-56" @change="onPlanChange">
+                <option value="">{{ t('superadmin.subscriptions.all_plans') }}</option>
+                <option v-for="p in plans" :key="p.id" :value="p.id">{{ p.name }}</option>
+            </Select>
         </div>
+
+        <DataTable :columns="6" :empty="!subscriptions.data.length" :pagination="subscriptions">
+            <template #head>
+                <th class="px-4 py-2">{{ t('superadmin.subscriptions.tenant') }}</th>
+                <th class="px-4 py-2">{{ t('superadmin.subscriptions.plan') }}</th>
+                <th class="px-4 py-2">{{ t('fleet.fields.status') }}</th>
+                <th class="px-4 py-2">{{ t('superadmin.subscriptions.billing_cycle') }}</th>
+                <th class="px-4 py-2">{{ t('superadmin.subscriptions.period_end') }}</th>
+                <th class="px-4 py-2 text-right">{{ t('common.actions') }}</th>
+            </template>
+            <tr v-for="sub in subscriptions.data" :key="sub.id" class="text-ink-700 dark:text-ink-200">
+                <td class="px-4 py-2 font-medium text-ink-900 dark:text-ink-50">{{ sub.tenant_name ?? '—' }}</td>
+                <td class="px-4 py-2 text-ink-500">{{ sub.plan_name ?? '—' }}</td>
+                <td class="px-4 py-2">
+                    <StatusBadge :variant="statusVariants[sub.status]" :label="t(`superadmin.statuses.${sub.status}`)" />
+                </td>
+                <td class="px-4 py-2 text-ink-500">{{ sub.billing_cycle }}</td>
+                <td class="px-4 py-2 text-ink-500">{{ formatDate(sub.current_period_end) }}</td>
+                <td class="px-4 py-2 text-right">
+                    <Link :href="`/superadmin/subscriptions/${sub.id}`" class="text-sm font-medium text-ink-900 hover:underline dark:text-ink-100">
+                        {{ t('superadmin.subscriptions.view') }}
+                    </Link>
+                </td>
+            </tr>
+            <template #empty>
+                <div class="px-4 py-6 text-center text-sm text-ink-400">{{ t('superadmin.subscriptions.empty') }}</div>
+            </template>
+        </DataTable>
     </SuperAdminLayout>
 </template>

@@ -1,5 +1,5 @@
 <script setup>
-// AI Assistant — chat thread. FUNCTIONAL ONLY — design pass later.
+// AI Assistant — chat thread. Design-system pass.
 // Async chat: posts to /ai/chat via axios (NOT Inertia) and appends the reply
 // without a page reload. Handles loading, error and rate-limit states, and
 // auto-scrolls to the latest message.
@@ -7,6 +7,9 @@ import { computed, nextTick, onMounted, ref } from 'vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import StatusBadge from '@/Components/UI/StatusBadge.vue';
+import Button from '@/Components/UI/Button.vue';
+import Input from '@/Components/UI/Input.vue';
 
 const props = defineProps({
     conversation: { type: Object, required: true }, // { id, mode, title }
@@ -27,9 +30,9 @@ const threadEl = ref(null);
 
 let tempId = -1;
 
-const modeColors = {
-    help: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
-    intelligence: 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300',
+const modeVariants = {
+    help: 'info',
+    intelligence: 'neutral',
 };
 
 function scrollToBottom() {
@@ -80,19 +83,14 @@ async function send() {
     <AppLayout>
         <Head :title="conversation.title || t('ai.title')" />
 
-        <div class="flex h-[calc(100vh-8rem)] flex-col py-6">
+        <div class="flex h-[calc(100vh-8rem)] flex-col">
             <!-- Header -->
             <div class="mb-4 flex items-center gap-3">
-                <Link :href="base" class="text-sm text-slate-500 hover:underline dark:text-slate-400">
+                <Link :href="base" class="text-sm font-medium text-ink-500 hover:underline">
                     ← {{ t('ai.title') }}
                 </Link>
-                <span
-                    class="rounded-full px-2 py-0.5 text-xs font-medium"
-                    :class="modeColors[conversation.mode]"
-                >
-                    {{ t(`ai.mode.${conversation.mode}`) }}
-                </span>
-                <h1 class="truncate text-lg font-semibold">
+                <StatusBadge :variant="modeVariants[conversation.mode]" :label="t(`ai.mode.${conversation.mode}`)" />
+                <h1 class="truncate text-lg font-semibold text-ink-900 dark:text-ink-50">
                     {{ conversation.title || t('ai.untitled') }}
                 </h1>
             </div>
@@ -100,12 +98,9 @@ async function send() {
             <!-- Messages -->
             <div
                 ref="threadEl"
-                class="flex-1 space-y-4 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/50"
+                class="flex-1 space-y-4 overflow-y-auto rounded-card border border-ink-200 bg-ink-50 p-4 dark:border-ink-800 dark:bg-ink-900/50"
             >
-                <p
-                    v-if="thread.length === 0"
-                    class="py-8 text-center text-sm text-slate-500 dark:text-slate-400"
-                >
+                <p v-if="thread.length === 0" class="py-8 text-center text-sm text-ink-500">
                     {{ t('ai.empty_thread') }}
                 </p>
 
@@ -118,8 +113,8 @@ async function send() {
                     <div
                         class="max-w-[80%] whitespace-pre-wrap rounded-2xl px-4 py-2 text-sm"
                         :class="message.role === 'user'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-white text-slate-900 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-700'"
+                            ? 'bg-ink-950 text-white dark:bg-ink-50 dark:text-ink-950'
+                            : 'bg-white text-ink-900 ring-1 ring-ink-200 dark:bg-ink-800 dark:text-ink-100 dark:ring-ink-700'"
                     >
                         <span class="mb-0.5 block text-[10px] font-medium uppercase tracking-wide opacity-60">
                             {{ message.role === 'user' ? t('ai.you') : t('ai.assistant') }}
@@ -130,31 +125,24 @@ async function send() {
 
                 <!-- Loading indicator -->
                 <div v-if="loading" class="flex justify-start">
-                    <div class="rounded-2xl bg-white px-4 py-2 text-sm text-slate-500 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:ring-slate-700">
+                    <div class="rounded-2xl bg-white px-4 py-2 text-sm text-ink-500 ring-1 ring-ink-200 dark:bg-ink-800 dark:text-ink-400 dark:ring-ink-700">
                         {{ t('ai.thinking') }}
                     </div>
                 </div>
             </div>
 
             <!-- Error -->
-            <p v-if="error" class="mt-2 text-sm text-red-600 dark:text-red-400">{{ error }}</p>
+            <p v-if="error" class="mt-2 text-sm text-danger-600 dark:text-danger-500">{{ error }}</p>
 
             <!-- Composer -->
-            <form class="mt-3 flex gap-2" @submit.prevent="send">
-                <input
+            <form class="mt-3 flex items-end gap-2" @submit.prevent="send">
+                <Input
                     v-model="input"
-                    type="text"
                     :placeholder="t('ai.placeholder')"
                     :disabled="loading"
-                    class="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900"
+                    class="flex-1"
                 />
-                <button
-                    type="submit"
-                    :disabled="loading || !input.trim()"
-                    class="rounded-xl bg-blue-600 px-5 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                    {{ t('ai.send') }}
-                </button>
+                <Button type="submit" :loading="loading" :disabled="!input.trim()">{{ t('ai.send') }}</Button>
             </form>
         </div>
     </AppLayout>

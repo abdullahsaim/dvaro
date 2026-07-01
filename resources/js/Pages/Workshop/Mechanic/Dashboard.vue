@@ -1,10 +1,11 @@
 <script setup>
 // Mechanic dashboard — this mechanic's open jobs + recently completed.
-// FUNCTIONAL ONLY — design pass later.
+// Design-system pass; mobile-first job list.
 import { computed } from 'vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import MechanicLayout from '@/Layouts/MechanicLayout.vue';
+import StatusBadge from '@/Components/UI/StatusBadge.vue';
 
 const props = defineProps({
     activeJobs: { type: Array, required: true },
@@ -14,6 +15,14 @@ const props = defineProps({
 const { t } = useI18n();
 const page = usePage();
 const base = computed(() => `/mechanic/${page.props.tenant.slug}`);
+
+const statusVariants = {
+    pending: 'neutral',
+    in_progress: 'info',
+    completed: 'success',
+    waiting_for_parts: 'warning',
+    re_inspection_required: 'danger',
+};
 
 function vehicleUrl(job) {
     return job.vehicle?.qr_code_token
@@ -31,35 +40,29 @@ function vehicleLabel(job) {
     <MechanicLayout>
         <Head :title="t('workshop.dashboard')" />
 
-        <h1 class="text-2xl font-semibold">{{ t('workshop.dashboard') }}</h1>
+        <h1 class="text-2xl font-semibold tracking-tight text-ink-900 dark:text-ink-50">{{ t('workshop.dashboard') }}</h1>
 
         <!-- Active jobs -->
         <section class="mt-6">
-            <h2 class="text-sm font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                {{ t('workshop.active_jobs') }}
-            </h2>
-            <p v-if="!activeJobs.length" class="mt-3 text-sm text-slate-500 dark:text-slate-400">
-                {{ t('workshop.no_active_jobs') }}
-            </p>
+            <h2 class="text-xs font-medium uppercase tracking-wide text-ink-500">{{ t('workshop.active_jobs') }}</h2>
+            <p v-if="!activeJobs.length" class="mt-3 text-sm text-ink-500">{{ t('workshop.no_active_jobs') }}</p>
             <ul v-else class="mt-3 space-y-2">
                 <li
                     v-for="job in activeJobs"
                     :key="job.id"
-                    class="rounded border border-slate-200 p-4 dark:border-slate-800"
+                    class="rounded-card border border-ink-200 bg-white p-4 shadow-subtle dark:border-ink-800 dark:bg-ink-900"
                 >
                     <div class="flex items-center justify-between gap-3">
                         <div>
-                            <p class="font-medium">{{ job.title }}</p>
-                            <p class="text-sm text-slate-500 dark:text-slate-400">{{ vehicleLabel(job) }}</p>
+                            <p class="font-medium text-ink-900 dark:text-ink-50">{{ job.title }}</p>
+                            <p class="text-sm text-ink-500">{{ vehicleLabel(job) }}</p>
                         </div>
                         <div class="flex items-center gap-3">
-                            <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs dark:bg-slate-800">
-                                {{ t(`workshop.statuses.${job.status}`) }}
-                            </span>
+                            <StatusBadge :variant="statusVariants[job.status]" :label="t(`workshop.statuses.${job.status}`)" />
                             <Link
                                 v-if="vehicleUrl(job)"
                                 :href="vehicleUrl(job)"
-                                class="text-sm text-indigo-600 hover:underline dark:text-indigo-400"
+                                class="text-sm font-medium text-ink-900 hover:underline dark:text-ink-100"
                             >
                                 {{ t('workshop.open_qr') }}
                             </Link>
@@ -71,20 +74,16 @@ function vehicleLabel(job) {
 
         <!-- Recently completed -->
         <section class="mt-8">
-            <h2 class="text-sm font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                {{ t('workshop.recent_completed') }}
-            </h2>
-            <p v-if="!recentCompleted.length" class="mt-3 text-sm text-slate-500 dark:text-slate-400">
-                {{ t('workshop.no_completed') }}
-            </p>
+            <h2 class="text-xs font-medium uppercase tracking-wide text-ink-500">{{ t('workshop.recent_completed') }}</h2>
+            <p v-if="!recentCompleted.length" class="mt-3 text-sm text-ink-500">{{ t('workshop.no_completed') }}</p>
             <ul v-else class="mt-3 space-y-2">
                 <li
                     v-for="job in recentCompleted"
                     :key="job.id"
-                    class="flex items-center justify-between rounded border border-slate-200 p-4 text-sm dark:border-slate-800"
+                    class="flex items-center justify-between rounded-card border border-ink-200 bg-white p-4 text-sm shadow-subtle dark:border-ink-800 dark:bg-ink-900"
                 >
-                    <span>{{ job.title }}</span>
-                    <span class="text-slate-500 dark:text-slate-400">{{ vehicleLabel(job) }}</span>
+                    <span class="text-ink-900 dark:text-ink-50">{{ job.title }}</span>
+                    <span class="text-ink-500">{{ vehicleLabel(job) }}</span>
                 </li>
             </ul>
         </section>

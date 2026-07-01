@@ -1,8 +1,14 @@
 <script setup>
 // Super admin tenant detail — counts, subscription history, lifecycle actions.
+// Design-system pass.
 import { Head, Link, router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import SuperAdminLayout from '@/Layouts/SuperAdminLayout.vue';
+import PageHeader from '@/Components/UI/PageHeader.vue';
+import StatCard from '@/Components/UI/StatCard.vue';
+import DataTable from '@/Components/UI/DataTable.vue';
+import StatusBadge from '@/Components/UI/StatusBadge.vue';
+import Button from '@/Components/UI/Button.vue';
 
 const props = defineProps({
     tenant: { type: Object, required: true },
@@ -11,6 +17,15 @@ const props = defineProps({
 });
 
 const { t } = useI18n();
+
+const statusVariants = {
+    active: 'success',
+    trialing: 'info',
+    trial: 'info',
+    suspended: 'danger',
+    cancelled: 'neutral',
+    past_due: 'warning',
+};
 
 function suspend() {
     if (confirm(t('superadmin.tenants.confirm_suspend'))) {
@@ -37,94 +52,56 @@ function formatDate(value) {
     <SuperAdminLayout>
         <Head :title="tenant.name" />
 
-        <div class="py-10">
-            <Link href="/superadmin/tenants" class="text-sm text-indigo-600 hover:underline dark:text-indigo-400">
-                ← {{ t('superadmin.tenants.title') }}
-            </Link>
+        <Link href="/superadmin/tenants" class="text-sm font-medium text-ink-500 hover:underline">
+            ← {{ t('superadmin.tenants.title') }}
+        </Link>
 
-            <div class="mt-4 flex flex-wrap items-start justify-between gap-4">
-                <div>
-                    <h1 class="text-2xl font-semibold">{{ tenant.name }}</h1>
-                    <p class="text-sm text-slate-500 dark:text-slate-400">{{ tenant.slug }}</p>
-                    <span class="mt-2 inline-block rounded-full bg-slate-100 px-2.5 py-0.5 text-xs dark:bg-slate-800">
-                        {{ t(`superadmin.statuses.${tenant.status}`) }}
-                    </span>
-                </div>
+        <PageHeader class="mt-4">
+            <template #title>
+                <span class="flex flex-wrap items-center gap-3">
+                    {{ tenant.name }}
+                    <StatusBadge :variant="statusVariants[tenant.status]" :label="t(`superadmin.statuses.${tenant.status}`)" />
+                </span>
+            </template>
+            <template #description>{{ tenant.slug }}</template>
+            <template #actions>
+                <Button v-if="tenant.status !== 'suspended'" variant="danger" @click="suspend">{{ t('superadmin.tenants.suspend') }}</Button>
+                <Button v-else variant="primary" @click="activate">{{ t('superadmin.tenants.activate') }}</Button>
+                <Button variant="secondary" @click="impersonate">{{ t('superadmin.tenants.impersonate') }}</Button>
+            </template>
+        </PageHeader>
 
-                <div class="flex gap-3">
-                    <button
-                        v-if="tenant.status !== 'suspended'"
-                        type="button"
-                        class="rounded border border-red-300 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-950"
-                        @click="suspend"
-                    >
-                        {{ t('superadmin.tenants.suspend') }}
-                    </button>
-                    <button
-                        v-else
-                        type="button"
-                        class="rounded border border-green-300 px-3 py-1.5 text-sm text-green-600 hover:bg-green-50 dark:border-green-800 dark:hover:bg-green-950"
-                        @click="activate"
-                    >
-                        {{ t('superadmin.tenants.activate') }}
-                    </button>
-                    <button
-                        type="button"
-                        class="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800"
-                        @click="impersonate"
-                    >
-                        {{ t('superadmin.tenants.impersonate') }}
-                    </button>
-                </div>
-            </div>
+        <!-- Counts -->
+        <div class="grid grid-cols-3 gap-4">
+            <StatCard :label="t('superadmin.tenants.counts.users')" :value="counts.users" />
+            <StatCard :label="t('superadmin.tenants.counts.vehicles')" :value="counts.vehicles" />
+            <StatCard :label="t('superadmin.tenants.counts.invoices')" :value="counts.invoices" />
+        </div>
 
-            <!-- Counts -->
-            <div class="mt-8 grid grid-cols-3 gap-4">
-                <div class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                    <p class="text-sm text-slate-500 dark:text-slate-400">{{ t('superadmin.tenants.counts.users') }}</p>
-                    <p class="mt-1 text-2xl font-semibold">{{ counts.users }}</p>
-                </div>
-                <div class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                    <p class="text-sm text-slate-500 dark:text-slate-400">{{ t('superadmin.tenants.counts.vehicles') }}</p>
-                    <p class="mt-1 text-2xl font-semibold">{{ counts.vehicles }}</p>
-                </div>
-                <div class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                    <p class="text-sm text-slate-500 dark:text-slate-400">{{ t('superadmin.tenants.counts.invoices') }}</p>
-                    <p class="mt-1 text-2xl font-semibold">{{ counts.invoices }}</p>
-                </div>
-            </div>
-
-            <!-- Subscription history -->
-            <h2 class="mt-10 text-lg font-semibold">{{ t('superadmin.tenants.subscription_history') }}</h2>
-            <p v-if="!subscriptions.length" class="mt-4 text-sm text-slate-500 dark:text-slate-400">
-                {{ t('superadmin.tenants.no_subscriptions') }}
-            </p>
-            <div v-else class="mt-4 overflow-hidden rounded border border-slate-200 dark:border-slate-800">
-                <table class="w-full text-left text-sm">
-                    <thead class="bg-slate-50 text-slate-500 dark:bg-slate-900 dark:text-slate-400">
-                        <tr>
-                            <th class="px-4 py-2 font-medium">{{ t('superadmin.tenants.plan') }}</th>
-                            <th class="px-4 py-2 font-medium">{{ t('fleet.fields.status') }}</th>
-                            <th class="px-4 py-2 font-medium">{{ t('superadmin.subscriptions.billing_cycle') }}</th>
-                            <th class="px-4 py-2 font-medium">{{ t('superadmin.tenants.period') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="sub in subscriptions" :key="sub.id" class="border-t border-slate-100 dark:border-slate-800">
-                            <td class="px-4 py-2">{{ sub.plan_name ?? '—' }}</td>
-                            <td class="px-4 py-2">
-                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs dark:bg-slate-800">
-                                    {{ t(`superadmin.statuses.${sub.status}`) }}
-                                </span>
-                            </td>
-                            <td class="px-4 py-2 text-slate-500 dark:text-slate-400">{{ sub.billing_cycle }}</td>
-                            <td class="px-4 py-2 text-slate-500 dark:text-slate-400">
-                                {{ formatDate(sub.current_period_start) }} – {{ formatDate(sub.current_period_end) }}
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+        <!-- Subscription history -->
+        <h2 class="mt-10 text-lg font-semibold text-ink-900 dark:text-ink-50">{{ t('superadmin.tenants.subscription_history') }}</h2>
+        <div class="mt-4">
+            <DataTable :columns="4" :empty="!subscriptions.length">
+                <template #head>
+                    <th class="px-4 py-2">{{ t('superadmin.tenants.plan') }}</th>
+                    <th class="px-4 py-2">{{ t('fleet.fields.status') }}</th>
+                    <th class="px-4 py-2">{{ t('superadmin.subscriptions.billing_cycle') }}</th>
+                    <th class="px-4 py-2">{{ t('superadmin.tenants.period') }}</th>
+                </template>
+                <tr v-for="sub in subscriptions" :key="sub.id" class="text-ink-700 dark:text-ink-200">
+                    <td class="px-4 py-2 text-ink-900 dark:text-ink-50">{{ sub.plan_name ?? '—' }}</td>
+                    <td class="px-4 py-2">
+                        <StatusBadge :variant="statusVariants[sub.status]" :label="t(`superadmin.statuses.${sub.status}`)" />
+                    </td>
+                    <td class="px-4 py-2 text-ink-500">{{ sub.billing_cycle }}</td>
+                    <td class="px-4 py-2 text-ink-500">
+                        {{ formatDate(sub.current_period_start) }} – {{ formatDate(sub.current_period_end) }}
+                    </td>
+                </tr>
+                <template #empty>
+                    <div class="px-4 py-6 text-center text-sm text-ink-400">{{ t('superadmin.tenants.no_subscriptions') }}</div>
+                </template>
+            </DataTable>
         </div>
     </SuperAdminLayout>
 </template>

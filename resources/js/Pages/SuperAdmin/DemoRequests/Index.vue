@@ -1,10 +1,12 @@
 <script setup>
 // Super admin demo / contact request queue. Status tabs + table + mark-as-
-// contacted action. FUNCTIONAL ONLY — design pass later.
-import { computed } from 'vue';
-import { Head, router, usePage } from '@inertiajs/vue3';
+// contacted action. Design-system pass.
+import { Head, router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import SuperAdminLayout from '@/Layouts/SuperAdminLayout.vue';
+import PageHeader from '@/Components/UI/PageHeader.vue';
+import DataTable from '@/Components/UI/DataTable.vue';
+import StatusBadge from '@/Components/UI/StatusBadge.vue';
 
 const props = defineProps({
     requests: { type: Object, required: true },
@@ -13,10 +15,14 @@ const props = defineProps({
 });
 
 const { t } = useI18n();
-const page = usePage();
 
 const statuses = ['new', 'contacted', 'converted'];
-const flash = computed(() => page.props.flash?.success ?? null);
+
+const statusVariants = {
+    new: 'info',
+    contacted: 'warning',
+    converted: 'success',
+};
 
 function filter(status) {
     router.get('/superadmin/demo-requests', { status }, { preserveState: true, replace: true });
@@ -35,104 +41,75 @@ function formatDate(value) {
     <SuperAdminLayout>
         <Head :title="t('superadmin.demo_requests.title')" />
 
-        <div class="py-8">
-            <div class="mb-6">
-                <h1 class="text-2xl font-semibold tracking-tight">{{ t('superadmin.demo_requests.title') }}</h1>
-                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ t('superadmin.demo_requests.subtitle') }}</p>
-            </div>
+        <PageHeader :title="t('superadmin.demo_requests.title')" :description="t('superadmin.demo_requests.subtitle')" />
 
-            <p v-if="flash" class="mb-4 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
-                {{ flash }}
-            </p>
-
-            <!-- Status tabs -->
-            <div class="mb-6 flex flex-wrap gap-2">
-                <button
-                    type="button"
-                    class="rounded-full px-3 py-1 text-sm"
-                    :class="filterStatus === null ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800'"
-                    @click="filter(null)"
-                >
-                    {{ t('superadmin.demo_requests.filter_all') }}
-                </button>
-                <button
-                    v-for="s in statuses"
-                    :key="s"
-                    type="button"
-                    class="rounded-full px-3 py-1 text-sm"
-                    :class="filterStatus === s ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800'"
-                    @click="filter(s)"
-                >
-                    {{ t(`superadmin.demo_requests.statuses.${s}`) }}
-                    <span class="ml-1 text-xs opacity-70">{{ counts[s] ?? 0 }}</span>
-                </button>
-            </div>
-
-            <p v-if="!requests.data.length" class="rounded-lg border border-slate-200 p-6 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
-                {{ t('superadmin.demo_requests.empty') }}
-            </p>
-
-            <div v-else class="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
-                <table class="w-full text-left text-sm">
-                    <thead class="bg-slate-50 text-slate-500 dark:bg-slate-900 dark:text-slate-400">
-                        <tr>
-                            <th class="px-4 py-2 font-medium">{{ t('superadmin.demo_requests.company') }}</th>
-                            <th class="px-4 py-2 font-medium">{{ t('superadmin.demo_requests.contact') }}</th>
-                            <th class="px-4 py-2 font-medium">{{ t('superadmin.demo_requests.email') }}</th>
-                            <th class="px-4 py-2 font-medium">{{ t('superadmin.demo_requests.message') }}</th>
-                            <th class="px-4 py-2 font-medium">{{ t('superadmin.demo_requests.status') }}</th>
-                            <th class="px-4 py-2 font-medium">{{ t('superadmin.demo_requests.received') }}</th>
-                            <th class="px-4 py-2"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="req in requests.data" :key="req.id" class="border-t border-slate-100 align-top dark:border-slate-800">
-                            <td class="px-4 py-2 font-medium">{{ req.company_name }}</td>
-                            <td class="px-4 py-2">
-                                <div>{{ req.contact_name }}</div>
-                                <div v-if="req.phone" class="text-xs text-slate-400">{{ req.phone }}</div>
-                            </td>
-                            <td class="px-4 py-2 text-slate-500 dark:text-slate-400">
-                                <a :href="`mailto:${req.email}`" class="hover:underline">{{ req.email }}</a>
-                            </td>
-                            <td class="max-w-xs px-4 py-2 text-slate-500 dark:text-slate-400">
-                                <span class="line-clamp-2">{{ req.message || '—' }}</span>
-                            </td>
-                            <td class="px-4 py-2">
-                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs dark:bg-slate-800">
-                                    {{ t(`superadmin.demo_requests.statuses.${req.status}`) }}
-                                </span>
-                            </td>
-                            <td class="px-4 py-2 text-slate-500 dark:text-slate-400">{{ formatDate(req.created_at) }}</td>
-                            <td class="px-4 py-2 text-right">
-                                <button
-                                    v-if="req.status === 'new'"
-                                    type="button"
-                                    class="text-indigo-600 hover:underline dark:text-indigo-400"
-                                    @click="markContacted(req.id)"
-                                >
-                                    {{ t('superadmin.demo_requests.mark_contacted') }}
-                                </button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Pagination -->
-            <div v-if="requests.links" class="mt-4 flex flex-wrap gap-1">
-                <component
-                    :is="link.url ? 'button' : 'span'"
-                    v-for="(link, i) in requests.links"
-                    :key="i"
-                    type="button"
-                    class="rounded px-3 py-1 text-sm"
-                    :class="link.active ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900' : 'text-slate-500 dark:text-slate-400'"
-                    :disabled="!link.url"
-                    @click="link.url && router.get(link.url, {}, { preserveState: true })"
-                    v-html="link.label"
-                />
-            </div>
+        <!-- Status tabs -->
+        <div class="mb-4 flex flex-wrap gap-2">
+            <button
+                type="button"
+                class="rounded-full px-3 py-1 text-sm transition-colors"
+                :class="filterStatus === null
+                    ? 'bg-ink-950 text-white dark:bg-ink-50 dark:text-ink-950'
+                    : 'bg-ink-100 text-ink-600 hover:bg-ink-200 dark:bg-ink-800 dark:text-ink-300 dark:hover:bg-ink-700'"
+                @click="filter(null)"
+            >
+                {{ t('superadmin.demo_requests.filter_all') }}
+            </button>
+            <button
+                v-for="s in statuses"
+                :key="s"
+                type="button"
+                class="rounded-full px-3 py-1 text-sm transition-colors"
+                :class="filterStatus === s
+                    ? 'bg-ink-950 text-white dark:bg-ink-50 dark:text-ink-950'
+                    : 'bg-ink-100 text-ink-600 hover:bg-ink-200 dark:bg-ink-800 dark:text-ink-300 dark:hover:bg-ink-700'"
+                @click="filter(s)"
+            >
+                {{ t(`superadmin.demo_requests.statuses.${s}`) }}
+                <span class="ml-1 text-xs opacity-70">{{ counts[s] ?? 0 }}</span>
+            </button>
         </div>
+
+        <DataTable :columns="7" :empty="!requests.data.length" :pagination="requests">
+            <template #head>
+                <th class="px-4 py-2">{{ t('superadmin.demo_requests.company') }}</th>
+                <th class="px-4 py-2">{{ t('superadmin.demo_requests.contact') }}</th>
+                <th class="px-4 py-2">{{ t('superadmin.demo_requests.email') }}</th>
+                <th class="px-4 py-2">{{ t('superadmin.demo_requests.message') }}</th>
+                <th class="px-4 py-2">{{ t('superadmin.demo_requests.status') }}</th>
+                <th class="px-4 py-2">{{ t('superadmin.demo_requests.received') }}</th>
+                <th class="px-4 py-2 text-right">{{ t('common.actions') }}</th>
+            </template>
+            <tr v-for="req in requests.data" :key="req.id" class="align-top text-ink-700 dark:text-ink-200">
+                <td class="px-4 py-2 font-medium text-ink-900 dark:text-ink-50">{{ req.company_name }}</td>
+                <td class="px-4 py-2">
+                    <div>{{ req.contact_name }}</div>
+                    <div v-if="req.phone" class="text-xs text-ink-400">{{ req.phone }}</div>
+                </td>
+                <td class="px-4 py-2 text-ink-500">
+                    <a :href="`mailto:${req.email}`" class="hover:underline">{{ req.email }}</a>
+                </td>
+                <td class="max-w-xs px-4 py-2 text-ink-500">
+                    <span class="line-clamp-2">{{ req.message || '—' }}</span>
+                </td>
+                <td class="px-4 py-2">
+                    <StatusBadge :variant="statusVariants[req.status]" :label="t(`superadmin.demo_requests.statuses.${req.status}`)" />
+                </td>
+                <td class="px-4 py-2 text-ink-500">{{ formatDate(req.created_at) }}</td>
+                <td class="px-4 py-2 text-right">
+                    <button
+                        v-if="req.status === 'new'"
+                        type="button"
+                        class="text-sm font-medium text-ink-900 hover:underline dark:text-ink-100"
+                        @click="markContacted(req.id)"
+                    >
+                        {{ t('superadmin.demo_requests.mark_contacted') }}
+                    </button>
+                </td>
+            </tr>
+            <template #empty>
+                <div class="px-4 py-6 text-center text-sm text-ink-400">{{ t('superadmin.demo_requests.empty') }}</div>
+            </template>
+        </DataTable>
     </SuperAdminLayout>
 </template>

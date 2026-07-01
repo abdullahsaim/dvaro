@@ -58,46 +58,46 @@ const previewPlans = computed(() => props.plans.slice(0, 3));
         <section class="relative overflow-hidden">
             <div class="mx-auto grid w-full max-w-7xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:px-8 lg:py-28">
                 <div>
-                    <h1 class="text-4xl font-bold tracking-tight sm:text-5xl">{{ hero.hero_heading }}</h1>
-                    <p class="mt-5 max-w-xl text-lg text-slate-600 dark:text-slate-300">{{ hero.hero_subheading }}</p>
+                    <h1 class="text-4xl font-bold tracking-tight text-ink-900 dark:text-ink-50 sm:text-5xl">{{ hero.hero_heading }}</h1>
+                    <p class="mt-5 max-w-xl text-lg text-ink-600 dark:text-ink-300">{{ hero.hero_subheading }}</p>
                     <div class="mt-8 flex flex-wrap gap-3">
-                        <Link href="/register" class="rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-indigo-500">
+                        <Link href="/register" class="rounded-control bg-ink-950 px-6 py-3 font-semibold text-white shadow-subtle transition hover:bg-ink-800 dark:bg-ink-50 dark:text-ink-950 dark:hover:bg-ink-200">
                             {{ hero.hero_cta_text || t('public.nav.register') }}
                         </Link>
-                        <Link href="/pricing" class="rounded-lg border border-slate-300 px-6 py-3 font-semibold text-slate-900 transition hover:bg-slate-100 dark:border-slate-700 dark:text-white dark:hover:bg-slate-800">
+                        <Link href="/pricing" class="rounded-control border border-ink-300 px-6 py-3 font-semibold text-ink-900 transition hover:bg-ink-100 dark:border-ink-700 dark:text-white dark:hover:bg-ink-800">
                             {{ t('public.pricing.view_all') }}
                         </Link>
                     </div>
                 </div>
                 <div class="relative">
-                    <img v-if="hero.hero_image" :src="hero.hero_image" alt="" class="w-full rounded-2xl border border-slate-200 object-cover shadow-lg dark:border-slate-800" />
-                    <div v-else class="aspect-[4/3] w-full rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600"></div>
+                    <img v-if="hero.hero_image" :src="hero.hero_image" alt="" class="w-full rounded-card border border-ink-200 object-cover shadow-pop dark:border-ink-800" />
+                    <div v-else class="aspect-[4/3] w-full rounded-card bg-gradient-to-br from-ink-700 to-ink-950 dark:from-ink-800 dark:to-ink-950"></div>
                 </div>
             </div>
         </section>
 
         <!-- Features -->
-        <section class="border-t border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/40">
+        <section class="border-t border-ink-200 bg-ink-50 dark:border-ink-800 dark:bg-ink-900/40">
             <div class="mx-auto w-full max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
                 <div class="mx-auto max-w-2xl text-center">
-                    <h2 class="text-3xl font-bold tracking-tight">{{ t('public.features.title') }}</h2>
-                    <p class="mt-3 text-slate-600 dark:text-slate-300">{{ t('public.features.subtitle') }}</p>
+                    <h2 class="text-3xl font-bold tracking-tight text-ink-900 dark:text-ink-50">{{ t('public.features.title') }}</h2>
+                    <p class="mt-3 text-ink-600 dark:text-ink-300">{{ t('public.features.subtitle') }}</p>
                 </div>
                 <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    <div v-for="(feature, i) in featureCards" :key="i" class="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
-                        <h3 class="text-lg font-semibold">{{ feature.title }}</h3>
-                        <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">{{ feature.description }}</p>
+                    <div v-for="(feature, i) in featureCards" :key="i" class="rounded-card border border-ink-200 bg-white p-6 shadow-subtle dark:border-ink-800 dark:bg-ink-900">
+                        <h3 class="text-lg font-semibold text-ink-900 dark:text-ink-50">{{ feature.title }}</h3>
+                        <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">{{ feature.description }}</p>
                     </div>
                 </div>
             </div>
         </section>
 
         <!-- Pricing preview -->
-        <section v-if="previewPlans.length" class="border-t border-slate-200 dark:border-slate-800">
+        <section v-if="previewPlans.length" class="border-t border-ink-200 dark:border-ink-800">
             <div class="mx-auto w-full max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
                 <div class="mx-auto max-w-2xl text-center">
-                    <h2 class="text-3xl font-bold tracking-tight">{{ t('public.pricing.title') }}</h2>
-                    <p class="mt-3 text-slate-600 dark:text-slate-300">{{ t('public.pricing.subtitle') }}</p>
+                    <h2 class="text-3xl font-bold tracking-tight text-ink-900 dark:text-ink-50">{{ t('public.pricing.title') }}</h2>
+                    <p class="mt-3 text-ink-600 dark:text-ink-300">{{ t('public.pricing.subtitle') }}</p>
                 </div>
                 <div class="mt-12 grid gap-6 md:grid-cols-3">
                     <PlanCard
@@ -109,7 +109,7 @@ const previewPlans = computed(() => props.plans.slice(0, 3));
                     />
                 </div>
                 <div class="mt-8 text-center">
-                    <Link href="/pricing" class="text-sm font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
+                    <Link href="/pricing" class="text-sm font-semibold text-ink-900 hover:underline dark:text-ink-100">
                         {{ t('public.pricing.view_all') }} →
                     </Link>
                 </div>
@@ -117,26 +117,26 @@ const previewPlans = computed(() => props.plans.slice(0, 3));
         </section>
 
         <!-- Testimonials -->
-        <section v-if="testimonialCards.length" class="border-t border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/40">
+        <section v-if="testimonialCards.length" class="border-t border-ink-200 bg-ink-50 dark:border-ink-800 dark:bg-ink-900/40">
             <div class="mx-auto w-full max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-                <h2 class="text-center text-3xl font-bold tracking-tight">{{ t('public.testimonials.title') }}</h2>
+                <h2 class="text-center text-3xl font-bold tracking-tight text-ink-900 dark:text-ink-50">{{ t('public.testimonials.title') }}</h2>
                 <div class="mt-12 grid gap-6 md:grid-cols-2">
-                    <figure v-for="(tm, i) in testimonialCards" :key="i" class="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
-                        <blockquote class="text-slate-700 dark:text-slate-200">“{{ tm.quote }}”</blockquote>
-                        <figcaption v-if="tm.author" class="mt-4 text-sm font-medium text-slate-500 dark:text-slate-400">— {{ tm.author }}</figcaption>
+                    <figure v-for="(tm, i) in testimonialCards" :key="i" class="rounded-card border border-ink-200 bg-white p-6 shadow-subtle dark:border-ink-800 dark:bg-ink-900">
+                        <blockquote class="text-ink-700 dark:text-ink-200">“{{ tm.quote }}”</blockquote>
+                        <figcaption v-if="tm.author" class="mt-4 text-sm font-medium text-ink-500">— {{ tm.author }}</figcaption>
                     </figure>
                 </div>
             </div>
         </section>
 
         <!-- Demo CTA -->
-        <section class="border-t border-slate-200 dark:border-slate-800">
+        <section class="border-t border-ink-200 dark:border-ink-800">
             <div class="mx-auto grid w-full max-w-7xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:px-8">
                 <div>
-                    <h2 class="text-3xl font-bold tracking-tight">{{ t('public.demo.title') }}</h2>
-                    <p class="mt-3 text-slate-600 dark:text-slate-300">{{ t('public.demo.subtitle') }}</p>
+                    <h2 class="text-3xl font-bold tracking-tight text-ink-900 dark:text-ink-50">{{ t('public.demo.title') }}</h2>
+                    <p class="mt-3 text-ink-600 dark:text-ink-300">{{ t('public.demo.subtitle') }}</p>
                 </div>
-                <div class="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+                <div class="rounded-card border border-ink-200 bg-white p-6 shadow-subtle dark:border-ink-800 dark:bg-ink-900">
                     <DemoRequestForm />
                 </div>
             </div>

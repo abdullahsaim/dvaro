@@ -1,10 +1,16 @@
 <script setup>
-// Tenant-admin workshop overview (read-only). Status tabs + vehicle filter.
-// FUNCTIONAL ONLY — design pass later.
+// Tenant-admin workshop overview (read-only) — design-system pass.
+// Status tabs + vehicle filter, paginated DataTable.
 import { computed } from 'vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import PageHeader from '@/Components/UI/PageHeader.vue';
+import DataTable from '@/Components/UI/DataTable.vue';
+import StatusBadge from '@/Components/UI/StatusBadge.vue';
+import EmptyState from '@/Components/UI/EmptyState.vue';
+import Select from '@/Components/UI/Select.vue';
+import { WrenchScrewdriverIcon } from '@heroicons/vue/24/outline';
 import { useCurrency } from '@/composables/useCurrency';
 
 const props = defineProps({
@@ -20,6 +26,15 @@ const { t } = useI18n();
 const { formatAUD } = useCurrency();
 const page = usePage();
 const base = computed(() => `/app/${page.props.tenant.slug}/workshop`);
+
+// maintenance status enum → generic StatusBadge variant.
+const statusVariants = {
+    pending: 'neutral',
+    in_progress: 'info',
+    completed: 'success',
+    waiting_for_parts: 'warning',
+    re_inspection_required: 'danger',
+};
 
 function filter(params) {
     router.get(base.value, {
@@ -43,98 +58,73 @@ function vehicleLabel(log) {
     <AppLayout>
         <Head :title="t('workshop.title')" />
 
-        <div class="py-10">
-            <h1 class="text-2xl font-semibold">{{ t('workshop.title') }}</h1>
+        <PageHeader :title="t('workshop.title')" />
 
-            <!-- Filters -->
-            <div class="mt-6 flex flex-wrap items-center gap-4">
-                <div class="flex flex-wrap gap-2">
-                    <button
-                        type="button"
-                        class="rounded-full px-3 py-1 text-sm"
-                        :class="activeStatus === null ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800'"
-                        @click="filter({ status: null })"
-                    >
-                        {{ t('common.all') }} ({{ statusCounts.all }})
-                    </button>
-                    <button
-                        v-for="s in statuses"
-                        :key="s"
-                        type="button"
-                        class="rounded-full px-3 py-1 text-sm"
-                        :class="activeStatus === s ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800'"
-                        @click="filter({ status: s })"
-                    >
-                        {{ t(`workshop.statuses.${s}`) }} ({{ statusCounts[s] }})
-                    </button>
-                </div>
-
-                <label class="ml-auto block">
-                    <span class="sr-only">{{ t('workshop.filter_vehicle') }}</span>
-                    <select
-                        class="rounded border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"
-                        :value="activeVehicleId ?? ''"
-                        @change="onVehicleChange"
-                    >
-                        <option value="">{{ t('workshop.all_vehicles') }}</option>
-                        <option v-for="v in vehicles" :key="v.id" :value="v.id">
-                            {{ v.make }} {{ v.model }} · {{ v.registration_number }}
-                        </option>
-                    </select>
-                </label>
-            </div>
-
-            <!-- Table -->
-            <p v-if="!logs.data.length" class="mt-8 text-sm text-slate-500 dark:text-slate-400">
-                {{ t('workshop.empty') }}
-            </p>
-            <div v-else class="mt-6 overflow-hidden rounded border border-slate-200 dark:border-slate-800">
-                <table class="w-full text-left text-sm">
-                    <thead class="bg-slate-50 text-slate-500 dark:bg-slate-900 dark:text-slate-400">
-                        <tr>
-                            <th class="px-4 py-2 font-medium">{{ t('workshop.fields.title') }}</th>
-                            <th class="px-4 py-2 font-medium">{{ t('workshop.vehicle') }}</th>
-                            <th class="px-4 py-2 font-medium">{{ t('workshop.mechanic') }}</th>
-                            <th class="px-4 py-2 font-medium">{{ t('fleet.fields.status') }}</th>
-                            <th class="px-4 py-2 text-right font-medium">{{ t('workshop.total') }}</th>
-                            <th class="px-4 py-2"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="log in logs.data" :key="log.id" class="border-t border-slate-100 dark:border-slate-800">
-                            <td class="px-4 py-2">{{ log.title }}</td>
-                            <td class="px-4 py-2 text-slate-500 dark:text-slate-400">{{ vehicleLabel(log) }}</td>
-                            <td class="px-4 py-2 text-slate-500 dark:text-slate-400">{{ log.mechanic?.name ?? '—' }}</td>
-                            <td class="px-4 py-2">
-                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs dark:bg-slate-800">
-                                    {{ t(`workshop.statuses.${log.status}`) }}
-                                </span>
-                            </td>
-                            <td class="px-4 py-2 text-right">{{ formatAUD(log.total_cost) }}</td>
-                            <td class="px-4 py-2 text-right">
-                                <Link :href="`${base}/${log.id}`" class="text-indigo-600 hover:underline dark:text-indigo-400">
-                                    {{ t('workshop.view') }}
-                                </Link>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Pagination -->
-            <div v-if="logs.links" class="mt-4 flex flex-wrap gap-1">
-                <component
-                    :is="link.url ? 'button' : 'span'"
-                    v-for="(link, i) in logs.links"
-                    :key="i"
+        <!-- Filters -->
+        <div class="mb-4 flex flex-wrap items-center gap-4">
+            <div class="flex flex-wrap gap-2">
+                <button
                     type="button"
-                    class="rounded px-3 py-1 text-sm"
-                    :class="link.active ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900' : 'text-slate-500 dark:text-slate-400'"
-                    :disabled="!link.url"
-                    @click="link.url && router.get(link.url, {}, { preserveState: true })"
-                    v-html="link.label"
-                />
+                    class="rounded-full px-3 py-1 text-sm transition-colors"
+                    :class="activeStatus === null
+                        ? 'bg-ink-950 text-white dark:bg-ink-50 dark:text-ink-950'
+                        : 'bg-ink-100 text-ink-600 hover:bg-ink-200 dark:bg-ink-800 dark:text-ink-300 dark:hover:bg-ink-700'"
+                    @click="filter({ status: null })"
+                >
+                    {{ t('common.all') }} ({{ statusCounts.all }})
+                </button>
+                <button
+                    v-for="s in statuses"
+                    :key="s"
+                    type="button"
+                    class="rounded-full px-3 py-1 text-sm transition-colors"
+                    :class="activeStatus === s
+                        ? 'bg-ink-950 text-white dark:bg-ink-50 dark:text-ink-950'
+                        : 'bg-ink-100 text-ink-600 hover:bg-ink-200 dark:bg-ink-800 dark:text-ink-300 dark:hover:bg-ink-700'"
+                    @click="filter({ status: s })"
+                >
+                    {{ t(`workshop.statuses.${s}`) }} ({{ statusCounts[s] }})
+                </button>
             </div>
+
+            <Select :model-value="activeVehicleId ?? ''" class="ml-auto w-64" @change="onVehicleChange">
+                <option value="">{{ t('workshop.all_vehicles') }}</option>
+                <option v-for="v in vehicles" :key="v.id" :value="v.id">
+                    {{ v.make }} {{ v.model }} · {{ v.registration_number }}
+                </option>
+            </Select>
         </div>
+
+        <DataTable :columns="6" :empty="!logs.data.length" :pagination="logs">
+            <template #head>
+                <th class="px-4 py-3">{{ t('workshop.fields.title') }}</th>
+                <th class="px-4 py-3">{{ t('workshop.vehicle') }}</th>
+                <th class="px-4 py-3">{{ t('workshop.mechanic') }}</th>
+                <th class="px-4 py-3">{{ t('fleet.fields.status') }}</th>
+                <th class="px-4 py-3 text-right">{{ t('workshop.total') }}</th>
+                <th class="px-4 py-3 text-right">{{ t('common.actions') }}</th>
+            </template>
+
+            <tr v-for="log in logs.data" :key="log.id" class="text-ink-700 dark:text-ink-200">
+                <td class="px-4 py-3 font-medium text-ink-900 dark:text-ink-50">{{ log.title }}</td>
+                <td class="px-4 py-3 text-ink-500">{{ vehicleLabel(log) }}</td>
+                <td class="px-4 py-3 text-ink-500">{{ log.mechanic?.name ?? '—' }}</td>
+                <td class="px-4 py-3">
+                    <StatusBadge :variant="statusVariants[log.status]" :label="t(`workshop.statuses.${log.status}`)" />
+                </td>
+                <td class="px-4 py-3 text-right tabular-nums">{{ formatAUD(log.total_cost) }}</td>
+                <td class="px-4 py-3 text-right">
+                    <Link :href="`${base}/${log.id}`" class="text-sm font-medium text-ink-900 hover:underline dark:text-ink-100">
+                        {{ t('workshop.view') }}
+                    </Link>
+                </td>
+            </tr>
+
+            <template #empty>
+                <EmptyState :title="t('workshop.empty')">
+                    <template #icon><WrenchScrewdriverIcon class="h-6 w-6" /></template>
+                </EmptyState>
+            </template>
+        </DataTable>
     </AppLayout>
 </template>

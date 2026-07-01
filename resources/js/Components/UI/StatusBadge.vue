@@ -3,9 +3,8 @@
 // invoice, agreement, lead and maintenance statuses — the page maps its own
 // status enum to a variant and passes a translated label.
 //
-// NOTE: the legacy fleet-specific Components/StatusBadge.vue is intentionally
-// left in place this session; module pages migrate to this generic one next
-// session (no page restyling now).
+// The legacy fleet-specific Components/StatusBadge.vue has been removed; every
+// module page maps its own status enum to a variant and uses this generic badge.
 import { computed } from 'vue';
 
 const props = defineProps({

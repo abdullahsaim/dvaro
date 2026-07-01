@@ -1,8 +1,10 @@
 <script setup>
-// Reporting overview — KPI cards. FUNCTIONAL ONLY, design pass later.
+// Reporting overview — KPI StatCards. Design-system pass.
 import { Head } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import PageHeader from '@/Components/UI/PageHeader.vue';
+import StatCard from '@/Components/UI/StatCard.vue';
 import ReportNav from '@/Components/Reporting/ReportNav.vue';
 import { useCurrency } from '@/composables/useCurrency';
 
@@ -18,37 +20,19 @@ const { formatAUD } = useCurrency();
     <AppLayout>
         <Head :title="t('reporting.title')" />
 
-        <div class="py-10">
-            <h1 class="text-2xl font-semibold">{{ t('reporting.title') }}</h1>
-            <p class="mt-1 text-slate-500 dark:text-slate-400">{{ t('reporting.subtitle') }}</p>
+        <PageHeader :title="t('reporting.title')" :description="t('reporting.subtitle')" />
 
-            <ReportNav active="dashboard" class="mt-6" />
+        <ReportNav active="dashboard" />
 
-            <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <div class="rounded border border-slate-200 p-4 dark:border-slate-800">
-                    <dt class="text-sm text-slate-500 dark:text-slate-400">{{ t('reporting.kpi.revenue_this_month') }}</dt>
-                    <dd class="mt-1 text-xl font-semibold">{{ formatAUD(props.stats.revenue_this_month) }}</dd>
-                </div>
-                <div class="rounded border border-slate-200 p-4 dark:border-slate-800">
-                    <dt class="text-sm text-slate-500 dark:text-slate-400">{{ t('reporting.kpi.active_rentals') }}</dt>
-                    <dd class="mt-1 text-xl font-semibold">{{ props.stats.active_rentals }}</dd>
-                </div>
-                <div class="rounded border border-slate-200 p-4 dark:border-slate-800">
-                    <dt class="text-sm text-slate-500 dark:text-slate-400">{{ t('reporting.kpi.overdue') }}</dt>
-                    <dd class="mt-1 text-xl font-semibold">
-                        {{ props.stats.overdue_count }}
-                        <span class="text-sm font-normal text-slate-400">· {{ formatAUD(props.stats.overdue_total) }}</span>
-                    </dd>
-                </div>
-                <div class="rounded border border-slate-200 p-4 dark:border-slate-800">
-                    <dt class="text-sm text-slate-500 dark:text-slate-400">{{ t('reporting.kpi.fleet_utilisation') }}</dt>
-                    <dd class="mt-1 text-xl font-semibold">{{ props.stats.fleet_utilisation }}%</dd>
-                </div>
-                <div class="rounded border border-slate-200 p-4 dark:border-slate-800">
-                    <dt class="text-sm text-slate-500 dark:text-slate-400">{{ t('reporting.kpi.vehicles_due_service') }}</dt>
-                    <dd class="mt-1 text-xl font-semibold">{{ props.stats.vehicles_due_service }}</dd>
-                </div>
-            </dl>
-        </div>
+        <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <StatCard :label="t('reporting.kpi.revenue_this_month')" :value="formatAUD(props.stats.revenue_this_month)" />
+            <StatCard :label="t('reporting.kpi.active_rentals')" :value="props.stats.active_rentals" />
+            <StatCard :label="t('reporting.kpi.overdue')">
+                {{ props.stats.overdue_count }}
+                <template #description>{{ formatAUD(props.stats.overdue_total) }}</template>
+            </StatCard>
+            <StatCard :label="t('reporting.kpi.fleet_utilisation')" :value="`${props.stats.fleet_utilisation}%`" />
+            <StatCard :label="t('reporting.kpi.vehicles_due_service')" :value="props.stats.vehicles_due_service" />
+        </dl>
     </AppLayout>
 </template>

@@ -1,11 +1,15 @@
 <script setup>
-// Edit customer. FUNCTIONAL ONLY — design pass later.
-// Blacklist state is NOT part of this form — it changes through its own
-// endpoints (Blacklist/UnblacklistCustomerAction) on the Show page.
+// Edit customer — design-system pass. Blacklist state is NOT part of this form —
+// it changes through its own endpoints (Blacklist/UnblacklistCustomerAction) on
+// the Show page.
 import { computed } from 'vue';
-import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
+import { Head, router, useForm, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import PageHeader from '@/Components/UI/PageHeader.vue';
+import Button from '@/Components/UI/Button.vue';
+import Input from '@/Components/UI/Input.vue';
+import Textarea from '@/Components/UI/Textarea.vue';
 
 const props = defineProps({
     customer: { type: Object, required: true },
@@ -44,91 +48,33 @@ function submit() {
     <AppLayout>
         <Head :title="t('customer.edit_customer')" />
 
-        <div class="py-10">
-            <div class="flex items-center justify-between">
-                <h1 class="text-2xl font-semibold">{{ t('customer.edit_customer') }}</h1>
-                <Link :href="`${base}/${customer.id}`" class="text-sm text-slate-500 hover:underline dark:text-slate-400">
-                    {{ t('common.back') }}
-                </Link>
+        <PageHeader :title="t('customer.edit_customer')">
+            <template #actions>
+                <Button variant="ghost" @click="router.visit(`${base}/${customer.id}`)">{{ t('common.back') }}</Button>
+            </template>
+        </PageHeader>
+
+        <form class="grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-2" @submit.prevent="submit">
+            <Input v-model="form.name" :label="t('customer.fields.name')" :error="form.errors.name" />
+            <Input v-model="form.email" type="email" :label="t('customer.fields.email')" :error="form.errors.email" />
+            <Input v-model="form.phone" :label="t('customer.fields.phone')" :error="form.errors.phone" />
+            <Input v-model="form.date_of_birth" type="date" :label="t('customer.fields.date_of_birth')" :error="form.errors.date_of_birth" />
+            <Input v-model="form.licence_number" :label="t('customer.fields.licence_number')" :error="form.errors.licence_number" />
+            <Input v-model="form.licence_expiry" type="date" :label="t('customer.fields.licence_expiry')" :error="form.errors.licence_expiry" />
+            <Input v-model="form.passport_number" :label="t('customer.fields.passport_number')" :error="form.errors.passport_number" />
+            <Input v-model="form.emergency_contact_name" :label="t('customer.fields.emergency_contact_name')" :error="form.errors.emergency_contact_name" />
+            <Input v-model="form.emergency_contact_phone" :label="t('customer.fields.emergency_contact_phone')" :error="form.errors.emergency_contact_phone" />
+
+            <div class="sm:col-span-2">
+                <Textarea v-model="form.address" :rows="2" :label="t('customer.fields.address')" :error="form.errors.address" />
+            </div>
+            <div class="sm:col-span-2">
+                <Textarea v-model="form.risk_notes" :rows="3" :label="t('customer.fields.risk_notes')" :error="form.errors.risk_notes" />
             </div>
 
-            <form class="mt-6 grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-2" @submit.prevent="submit">
-                <label class="block">
-                    <span class="text-sm text-slate-600 dark:text-slate-300">{{ t('customer.fields.name') }}</span>
-                    <input v-model="form.name" type="text" class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-900" />
-                    <span v-if="form.errors.name" class="text-xs text-red-600">{{ form.errors.name }}</span>
-                </label>
-
-                <label class="block">
-                    <span class="text-sm text-slate-600 dark:text-slate-300">{{ t('customer.fields.email') }}</span>
-                    <input v-model="form.email" type="email" class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-900" />
-                    <span v-if="form.errors.email" class="text-xs text-red-600">{{ form.errors.email }}</span>
-                </label>
-
-                <label class="block">
-                    <span class="text-sm text-slate-600 dark:text-slate-300">{{ t('customer.fields.phone') }}</span>
-                    <input v-model="form.phone" type="text" class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-900" />
-                    <span v-if="form.errors.phone" class="text-xs text-red-600">{{ form.errors.phone }}</span>
-                </label>
-
-                <label class="block">
-                    <span class="text-sm text-slate-600 dark:text-slate-300">{{ t('customer.fields.date_of_birth') }}</span>
-                    <input v-model="form.date_of_birth" type="date" class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-900" />
-                    <span v-if="form.errors.date_of_birth" class="text-xs text-red-600">{{ form.errors.date_of_birth }}</span>
-                </label>
-
-                <label class="block">
-                    <span class="text-sm text-slate-600 dark:text-slate-300">{{ t('customer.fields.licence_number') }}</span>
-                    <input v-model="form.licence_number" type="text" class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-900" />
-                    <span v-if="form.errors.licence_number" class="text-xs text-red-600">{{ form.errors.licence_number }}</span>
-                </label>
-
-                <label class="block">
-                    <span class="text-sm text-slate-600 dark:text-slate-300">{{ t('customer.fields.licence_expiry') }}</span>
-                    <input v-model="form.licence_expiry" type="date" class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-900" />
-                    <span v-if="form.errors.licence_expiry" class="text-xs text-red-600">{{ form.errors.licence_expiry }}</span>
-                </label>
-
-                <label class="block">
-                    <span class="text-sm text-slate-600 dark:text-slate-300">{{ t('customer.fields.passport_number') }}</span>
-                    <input v-model="form.passport_number" type="text" class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-900" />
-                    <span v-if="form.errors.passport_number" class="text-xs text-red-600">{{ form.errors.passport_number }}</span>
-                </label>
-
-                <label class="block">
-                    <span class="text-sm text-slate-600 dark:text-slate-300">{{ t('customer.fields.emergency_contact_name') }}</span>
-                    <input v-model="form.emergency_contact_name" type="text" class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-900" />
-                    <span v-if="form.errors.emergency_contact_name" class="text-xs text-red-600">{{ form.errors.emergency_contact_name }}</span>
-                </label>
-
-                <label class="block">
-                    <span class="text-sm text-slate-600 dark:text-slate-300">{{ t('customer.fields.emergency_contact_phone') }}</span>
-                    <input v-model="form.emergency_contact_phone" type="text" class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-900" />
-                    <span v-if="form.errors.emergency_contact_phone" class="text-xs text-red-600">{{ form.errors.emergency_contact_phone }}</span>
-                </label>
-
-                <label class="block sm:col-span-2">
-                    <span class="text-sm text-slate-600 dark:text-slate-300">{{ t('customer.fields.address') }}</span>
-                    <textarea v-model="form.address" rows="2" class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-900" />
-                    <span v-if="form.errors.address" class="text-xs text-red-600">{{ form.errors.address }}</span>
-                </label>
-
-                <label class="block sm:col-span-2">
-                    <span class="text-sm text-slate-600 dark:text-slate-300">{{ t('customer.fields.risk_notes') }}</span>
-                    <textarea v-model="form.risk_notes" rows="3" class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-900" />
-                    <span v-if="form.errors.risk_notes" class="text-xs text-red-600">{{ form.errors.risk_notes }}</span>
-                </label>
-
-                <div class="sm:col-span-2">
-                    <button
-                        type="submit"
-                        :disabled="form.processing"
-                        class="rounded bg-slate-800 px-4 py-2 text-white disabled:opacity-50 dark:bg-slate-200 dark:text-slate-900"
-                    >
-                        {{ t('common.save') }}
-                    </button>
-                </div>
-            </form>
-        </div>
+            <div class="sm:col-span-2">
+                <Button type="submit" :loading="form.processing">{{ t('common.save') }}</Button>
+            </div>
+        </form>
     </AppLayout>
 </template>
