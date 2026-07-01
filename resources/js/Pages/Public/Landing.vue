@@ -8,6 +8,7 @@ import PublicLayout from '@/Layouts/PublicLayout.vue';
 import DemoRequestForm from '@/Components/Public/DemoRequestForm.vue';
 import PlanCard from '@/Components/Public/PlanCard.vue';
 import { useSeo } from '@/composables/useSeo.js';
+import { cmsImage } from '@/cms/defaultImages.js';
 
 const props = defineProps({
     hero: { type: Object, default: () => ({}) },
@@ -25,12 +26,21 @@ const seo = useSeo({
     description: props.hero.hero_subheading ?? '',
 });
 
-// Build the 6 feature cards from the flat CMS map (feature_{i}_title/description).
+// Resolve the hero photo — CMS upload if set, else the bundled default photo.
+const heroImage = computed(() => cmsImage('hero_image', props.hero.hero_image));
+
+// The about-section illustration — CMS upload if set, else the bundled default.
+const aboutImage = computed(() => cmsImage('about_image', props.about.about_image));
+
+// Build the 6 feature cards from the flat CMS map
+// (feature_{i}_title/description/image). Each card's glyph is the CMS-uploaded
+// image when set, otherwise the bundled monochrome default.
 const featureCards = computed(() =>
     [1, 2, 3, 4, 5, 6]
         .map((i) => ({
             title: props.features[`feature_${i}_title`],
             description: props.features[`feature_${i}_description`],
+            image: cmsImage(`feature_${i}_image`, props.features[`feature_${i}_image`]),
         }))
         .filter((f) => f.title),
 );
@@ -70,7 +80,7 @@ const previewPlans = computed(() => props.plans.slice(0, 3));
                     </div>
                 </div>
                 <div class="relative">
-                    <img v-if="hero.hero_image" :src="hero.hero_image" alt="" class="w-full rounded-card border border-ink-200 object-cover shadow-pop dark:border-ink-800" />
+                    <img v-if="heroImage" :src="heroImage" alt="" class="aspect-[4/3] w-full rounded-card border border-ink-200 object-cover shadow-pop dark:border-ink-800" />
                     <div v-else class="aspect-[4/3] w-full rounded-card bg-gradient-to-br from-ink-700 to-ink-950 dark:from-ink-800 dark:to-ink-950"></div>
                 </div>
             </div>
@@ -84,10 +94,29 @@ const previewPlans = computed(() => props.plans.slice(0, 3));
                     <p class="mt-3 text-ink-600 dark:text-ink-300">{{ t('public.features.subtitle') }}</p>
                 </div>
                 <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    <div v-for="(feature, i) in featureCards" :key="i" class="rounded-card border border-ink-200 bg-white p-6 shadow-subtle dark:border-ink-800 dark:bg-ink-900">
+                    <div v-for="(feature, i) in featureCards" :key="i" class="rounded-card border border-ink-200 bg-white p-6 shadow-subtle transition hover:shadow-pop dark:border-ink-800 dark:bg-ink-900">
+                        <div v-if="feature.image" class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-control border border-ink-200 bg-ink-50 dark:border-ink-700 dark:bg-ink-800">
+                            <img :src="feature.image" alt="" class="h-7 w-7" />
+                        </div>
                         <h3 class="text-lg font-semibold text-ink-900 dark:text-ink-50">{{ feature.title }}</h3>
                         <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">{{ feature.description }}</p>
                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- About -->
+        <section v-if="about.about_heading || about.about_body" class="border-t border-ink-200 dark:border-ink-800">
+            <div class="mx-auto grid w-full max-w-7xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:px-8">
+                <div class="order-2 lg:order-1">
+                    <img v-if="aboutImage" :src="aboutImage" alt="" class="w-full rounded-card border border-ink-200 bg-white object-contain p-6 shadow-subtle dark:border-ink-800 dark:bg-ink-900" />
+                </div>
+                <div class="order-1 lg:order-2">
+                    <h2 v-if="about.about_heading" class="text-3xl font-bold tracking-tight text-ink-900 dark:text-ink-50">{{ about.about_heading }}</h2>
+                    <div v-if="about.about_body" class="prose prose-ink mt-4 max-w-none text-ink-600 dark:prose-invert dark:text-ink-300" v-html="about.about_body"></div>
+                    <Link href="/about" class="mt-6 inline-block text-sm font-semibold text-ink-900 hover:underline dark:text-ink-100">
+                        {{ t('public.nav.about') }} →
+                    </Link>
                 </div>
             </div>
         </section>

@@ -630,6 +630,7 @@
             "save": "Save",
             "current_image": "Current image",
             "no_image": "No image set yet.",
+            "using_default": "Showing the built-in default. Upload an image to replace it.",
             "upload_image": "Upload new image",
             "image_hint": "JPG, PNG or WebP, up to 5MB. Swaps the image in place — the layout does not change.",
             "sections": {

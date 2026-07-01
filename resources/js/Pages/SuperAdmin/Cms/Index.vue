@@ -11,6 +11,7 @@ import SuperAdminLayout from '@/Layouts/SuperAdminLayout.vue';
 import PageHeader from '@/Components/UI/PageHeader.vue';
 import Textarea from '@/Components/UI/Textarea.vue';
 import Button from '@/Components/UI/Button.vue';
+import { cmsImage } from '@/cms/defaultImages.js';
 
 const props = defineProps({
     // { section: [ { key, type, section, sort_order, content, image_url } ] }
@@ -106,10 +107,11 @@ function uploadImage(block, event) {
                         <div class="flex flex-col gap-4 sm:flex-row sm:items-start">
                             <div class="sm:w-64">
                                 <p class="mb-1 text-xs font-medium text-ink-500">{{ t('superadmin.cms.current_image') }}</p>
-                                <img v-if="block.image_url" :src="block.image_url" alt="" class="w-full rounded-control border border-ink-200 object-cover dark:border-ink-700" />
+                                <img v-if="cmsImage(block.key, block.image_url)" :src="cmsImage(block.key, block.image_url)" alt="" class="w-full rounded-control border border-ink-200 bg-white object-contain p-2 dark:border-ink-700 dark:bg-ink-800" />
                                 <p v-else class="rounded-control border border-dashed border-ink-300 p-4 text-center text-xs text-ink-400 dark:border-ink-700">
                                     {{ t('superadmin.cms.no_image') }}
                                 </p>
+                                <p v-if="!block.image_url" class="mt-1 text-xs text-ink-400">{{ t('superadmin.cms.using_default') }}</p>
                             </div>
                             <div class="flex-1">
                                 <label class="block text-sm font-medium text-ink-700 dark:text-ink-300">{{ t('superadmin.cms.upload_image') }}</label>

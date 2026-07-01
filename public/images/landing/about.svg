@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" fill="none" stroke="#71717a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- app window -->
+  <rect x="40" y="46" width="400" height="248" rx="14" />
+  <path d="M40 84h400" />
+  <circle cx="64" cy="65" r="3.5" />
+  <circle cx="80" cy="65" r="3.5" />
+  <circle cx="96" cy="65" r="3.5" />
+
+  <!-- sidebar -->
+  <path d="M132 84v210" />
+  <path d="M60 108h48" />
+  <path d="M60 128h40" />
+  <path d="M60 148h44" />
+  <path d="M60 168h36" />
+
+  <!-- KPI cards -->
+  <rect x="156" y="104" width="120" height="60" rx="8" />
+  <rect x="292" y="104" width="120" height="60" rx="8" />
+  <path d="M172 148h30" /><path d="M172 122h56" opacity=".6" />
+  <path d="M308 148h30" /><path d="M308 122h56" opacity=".6" />
+
+  <!-- chart -->
+  <rect x="156" y="180" width="256" height="90" rx="8" />
+  <path d="M172 250l40-30 34 16 40-44 44 26" />
+  <path d="M172 258h224" opacity=".5" />
+
+  <!-- car -->
+  <path d="M150 322l7-20a10 10 0 0 1 9.5-6.8h147a10 10 0 0 1 9.5 6.8l7 20" />
+  <path d="M138 322h204v14a4 4 0 0 1-4 4h-8a4 4 0 0 1-4-4v-3H154v3a4 4 0 0 1-4 4h-8a4 4 0 0 1-4-4z" />
+  <circle cx="170" cy="330" r="3" />
+  <circle cx="310" cy="330" r="3" />
+</svg>
