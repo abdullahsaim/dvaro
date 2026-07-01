@@ -64,6 +64,12 @@ class ResolveTenantForCustomer
             ] : null,
         ]);
 
+        // Per-user dark/light preference + the endpoint to persist it.
+        Inertia::share('colorMode', fn () => ($u = Auth::guard('customer')->user()) ? [
+            'value' => $u->color_mode,
+            'url' => route('customer.preferences.color-mode', ['tenant_slug' => $tenant->slug]),
+        ] : null);
+
         return $next($request);
     }
 }

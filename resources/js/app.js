@@ -22,6 +22,7 @@ createInertiaApp({
             .mount(el);
     },
     progress: {
-        color: '#4f46e5',
+        // Monochrome mid-gray (ink-500) — visible on both light and dark backgrounds.
+        color: '#71717a',
     },
 });

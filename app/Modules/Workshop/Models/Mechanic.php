@@ -48,6 +48,7 @@ class Mechanic extends Authenticatable
         'password',
         'is_active',
         'last_login_at',
+        'color_mode',
     ];
 
     protected $hidden = [

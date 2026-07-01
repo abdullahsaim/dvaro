@@ -1,48 +1,78 @@
 <script setup>
-// Mechanic portal shell. Wraps authenticated /mechanic/{tenant_slug}/ pages.
-// FUNCTIONAL ONLY — design pass later. Uses the mechanic-guard auth payload
-// shared by ResolveTenantForMechanic (auth.mechanic), never the tenant guard.
-import { computed } from 'vue';
+// Mechanic portal shell. Mobile-first (mechanics work on phones/tablets in the
+// workshop) with large touch targets. Simple top bar: prominent scan action,
+// dashboard link, color toggle, logout. Uses the mechanic-guard auth payload
+// (auth.mechanic). Deliberately separate from the other portals.
+//
+// NOTE: the "Scan" button leads to the workshop home (active jobs). The actual
+// vehicle scan is the physical QR sticker opened by the phone camera
+// (/mechanic/{slug}/scan/{token}); an in-app camera scanner is a later session.
+import { computed, onMounted } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
+import { QrCodeIcon, SunIcon, MoonIcon, ArrowRightOnRectangleIcon } from '@heroicons/vue/24/outline';
+import Toast from '@/Components/UI/Toast.vue';
+import { useColorMode } from '@/composables/useColorMode';
 
 const { t } = useI18n();
 const page = usePage();
 
 const slug = computed(() => page.props.tenant?.slug);
 const mechanic = computed(() => page.props.auth?.mechanic ?? null);
-const flash = computed(() => page.props.flash?.success);
 const base = computed(() => `/mechanic/${slug.value}`);
 
 function logout() {
     router.post(`${base.value}/logout`);
 }
+
+const { isDark, toggle: toggleColorMode, syncFromServer } = useColorMode();
+onMounted(syncFromServer);
+
+const iconBtn =
+    'inline-flex h-11 w-11 items-center justify-center rounded-control text-ink-500 transition-colors hover:bg-ink-100 hover:text-ink-900 dark:hover:bg-ink-800 dark:hover:text-ink-100';
 </script>
 
 <template>
-    <div class="min-h-screen bg-white text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
-        <header class="border-b border-slate-200 dark:border-slate-800">
-            <div class="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-                <Link :href="`${base}/dashboard`" class="text-lg font-semibold">
+    <div class="min-h-screen bg-ink-50 text-ink-900 transition-colors dark:bg-ink-950 dark:text-ink-100">
+        <header class="sticky top-0 z-30 border-b border-ink-200 bg-white/90 backdrop-blur dark:border-ink-800 dark:bg-ink-950/90">
+            <div class="mx-auto flex h-16 w-full max-w-3xl items-center gap-3 px-4">
+                <Link :href="`${base}/dashboard`" class="text-base font-semibold tracking-tight">
                     {{ t('workshop.portal_title') }}
                 </Link>
-                <div v-if="mechanic" class="flex items-center gap-4 text-sm">
-                    <span class="text-slate-500 dark:text-slate-400">{{ mechanic.name }}</span>
-                    <button type="button" class="text-slate-600 hover:underline dark:text-slate-300" @click="logout">
-                        {{ t('auth.logout') }}
+
+                <div class="ml-auto flex items-center gap-2">
+                    <button type="button" :class="iconBtn" :aria-label="t('common.toggle_theme')" @click="toggleColorMode">
+                        <SunIcon v-if="isDark" class="h-5 w-5" />
+                        <MoonIcon v-else class="h-5 w-5" />
+                    </button>
+                    <button
+                        v-if="mechanic"
+                        type="button"
+                        :class="iconBtn"
+                        :aria-label="t('common.logout')"
+                        @click="logout"
+                    >
+                        <ArrowRightOnRectangleIcon class="h-5 w-5" />
                     </button>
                 </div>
             </div>
+
+            <!-- Prominent scan action (large touch target) -->
+            <div v-if="mechanic" class="mx-auto w-full max-w-3xl px-4 pb-3">
+                <Link
+                    :href="`${base}/dashboard`"
+                    class="flex h-14 items-center justify-center gap-3 rounded-card bg-ink-950 text-base font-semibold text-white transition-colors hover:bg-ink-800 dark:bg-ink-50 dark:text-ink-950 dark:hover:bg-ink-200"
+                >
+                    <QrCodeIcon class="h-6 w-6" />
+                    {{ t('workshop.scan') }}
+                </Link>
+            </div>
         </header>
 
-        <main class="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-            <p
-                v-if="flash"
-                class="mb-6 rounded border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800 dark:border-green-900 dark:bg-green-900/30 dark:text-green-300"
-            >
-                {{ flash }}
-            </p>
+        <main class="mx-auto w-full max-w-3xl px-4 py-6">
             <slot />
         </main>
+
+        <Toast />
     </div>
 </template>

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\UserPreferenceController;
 use App\Modules\AI\Http\Controllers\AiController;
 use App\Modules\Agreement\Http\Controllers\AgreementController;
 use App\Modules\CRM\Http\Controllers\LeadController;
@@ -49,6 +50,10 @@ Route::post('reset-password', [TenantPasswordResetController::class, 'reset'])
 // Authenticated tenant area.
 Route::middleware('auth:tenant')->group(function () {
     Route::post('logout', [TenantAuthController::class, 'logout'])->name('logout');
+
+    // Per-user UI preference (dark/light) — shared controller, one per guard.
+    Route::put('preferences/color-mode', [UserPreferenceController::class, 'updateColorMode'])
+        ->name('preferences.color-mode');
 
     Route::get('dashboard', [TenantDashboardController::class, 'index'])->name('dashboard');
 

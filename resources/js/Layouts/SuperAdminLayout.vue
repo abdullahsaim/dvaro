@@ -1,97 +1,68 @@
 <script setup>
-// Super admin panel shell — wraps all /superadmin/ pages. DELIBERATELY separate
-// from AppLayout (tenant app): its own chrome, its own nav, its own guard. Never
-// share this layout with the tenant/customer/mechanic apps.
-// FUNCTIONAL ONLY — design pass later.
-import { computed } from 'vue';
-import { Link, router, usePage } from '@inertiajs/vue3';
+// Super admin panel shell. Same sidebar/topbar pattern as AppLayout but with a
+// forced-dark monochrome sidebar rail + a "Platform" context label, so a super
+// admin can never confuse this with a tenant app. Platform-wide — no slug.
+// DELIBERATELY separate from the tenant/customer/mechanic apps + guard.
+import { computed, onMounted } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
+import {
+    HomeIcon,
+    BuildingOffice2Icon,
+    Squares2X2Icon,
+    CreditCardIcon,
+    GlobeAltIcon,
+    InboxArrowDownIcon,
+    Cog6ToothIcon,
+} from '@heroicons/vue/24/outline';
+import Sidebar from '@/Components/UI/Sidebar.vue';
+import TopBar from '@/Components/UI/TopBar.vue';
+import Toast from '@/Components/UI/Toast.vue';
+import { useColorMode } from '@/composables/useColorMode';
 
 const { t } = useI18n();
 const page = usePage();
 
 const admin = computed(() => page.props.auth?.superAdmin ?? null);
+const currentPath = computed(() => (page.url || '').split('?')[0]);
 
-const nav = [
-    { key: 'dashboard', href: '/superadmin/dashboard', label: 'superadmin.nav.dashboard' },
-    { key: 'tenants', href: '/superadmin/tenants', label: 'superadmin.nav.tenants' },
-    { key: 'plans', href: '/superadmin/plans', label: 'superadmin.nav.plans' },
-    { key: 'subscriptions', href: '/superadmin/subscriptions', label: 'superadmin.nav.subscriptions' },
-    { key: 'cms', href: '/superadmin/cms', label: 'superadmin.nav.cms' },
-    { key: 'demo-requests', href: '/superadmin/demo-requests', label: 'superadmin.nav.demo_requests' },
-    { key: 'settings', href: '/superadmin/settings', label: 'superadmin.nav.settings' },
-];
-
-const currentPath = computed(() => page.url);
-
-function isActive(href) {
-    return currentPath.value.startsWith(href);
+function isActive(href, exact = false) {
+    const p = currentPath.value;
+    return exact ? p === href : p === href || p.startsWith(`${href}/`);
 }
 
-function logout() {
-    router.post('/superadmin/logout');
-}
+const navItems = computed(() =>
+    [
+        { key: 'dashboard', label: t('superadmin.nav.dashboard'), href: '/superadmin/dashboard', icon: HomeIcon, exact: true },
+        { key: 'tenants', label: t('superadmin.nav.tenants'), href: '/superadmin/tenants', icon: BuildingOffice2Icon },
+        { key: 'plans', label: t('superadmin.nav.plans'), href: '/superadmin/plans', icon: Squares2X2Icon },
+        { key: 'subscriptions', label: t('superadmin.nav.subscriptions'), href: '/superadmin/subscriptions', icon: CreditCardIcon },
+        { key: 'cms', label: t('superadmin.nav.cms'), href: '/superadmin/cms', icon: GlobeAltIcon },
+        { key: 'demo_requests', label: t('superadmin.nav.demo_requests'), href: '/superadmin/demo-requests', icon: InboxArrowDownIcon },
+        { key: 'settings', label: t('superadmin.nav.settings'), href: '/superadmin/settings', icon: Cog6ToothIcon },
+    ].map((item) => ({ ...item, active: isActive(item.href, item.exact) })),
+);
+
+const { syncFromServer } = useColorMode();
+onMounted(syncFromServer);
 </script>
 
 <template>
-    <div class="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 transition-colors">
-        <div class="flex min-h-screen">
-            <!-- Sidebar -->
-            <aside class="hidden w-60 shrink-0 border-r border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 md:block">
-                <div class="mb-6 px-2">
-                    <p class="text-sm font-semibold tracking-tight">{{ t('superadmin.panel') }}</p>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">{{ t('app.name') }}</p>
-                </div>
+    <div class="flex min-h-screen flex-col bg-ink-50 text-ink-900 dark:bg-ink-950 dark:text-ink-100">
+        <div class="flex min-h-0 flex-1">
+            <Sidebar :items="navItems" title="DVARO" :context-label="t('superadmin.panel')" variant="dark" />
 
-                <nav class="space-y-1">
-                    <Link
-                        v-for="item in nav"
-                        :key="item.key"
-                        :href="item.href"
-                        class="block rounded px-3 py-2 text-sm"
-                        :class="isActive(item.href)
-                            ? 'bg-slate-900 text-white dark:bg-slate-200 dark:text-slate-900'
-                            : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'"
-                    >
-                        {{ t(item.label) }}
-                    </Link>
-                </nav>
-            </aside>
-
-            <!-- Main -->
             <div class="flex min-w-0 flex-1 flex-col">
-                <header class="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
-                    <!-- Mobile nav (simple inline links) -->
-                    <nav class="flex flex-wrap gap-2 md:hidden">
-                        <Link
-                            v-for="item in nav"
-                            :key="item.key"
-                            :href="item.href"
-                            class="rounded px-2 py-1 text-xs"
-                            :class="isActive(item.href) ? 'bg-slate-900 text-white dark:bg-slate-200 dark:text-slate-900' : 'text-slate-600 dark:text-slate-300'"
-                        >
-                            {{ t(item.label) }}
-                        </Link>
-                    </nav>
+                <TopBar :title="t('superadmin.panel')" :user="admin" logout-href="/superadmin/logout" />
 
-                    <div class="ml-auto flex items-center gap-4">
-                        <span v-if="admin" class="text-sm text-slate-600 dark:text-slate-300">
-                            {{ admin.name }}
-                        </span>
-                        <button
-                            type="button"
-                            class="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800"
-                            @click="logout"
-                        >
-                            {{ t('auth.logout') }}
-                        </button>
+                <main class="flex-1 overflow-y-auto">
+                    <div class="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+                        <slot />
                     </div>
-                </header>
-
-                <main class="mx-auto w-full max-w-7xl flex-1 px-4 sm:px-6 lg:px-8">
-                    <slot />
                 </main>
             </div>
         </div>
+
+        <Toast />
     </div>
 </template>

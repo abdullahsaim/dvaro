@@ -49,6 +49,7 @@ class SuperAdmin extends Authenticatable
         'role',
         'is_active',
         'last_login_at',
+        'color_mode',
     ];
 
     protected $hidden = [

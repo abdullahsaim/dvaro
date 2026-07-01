@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\UserPreferenceController;
 use App\Modules\Customer\Http\Controllers\CustomerAuthController;
 use App\Modules\Customer\Http\Controllers\CustomerPasswordResetController;
 use App\Modules\Customer\Http\Controllers\CustomerPortalController;
@@ -42,6 +43,10 @@ Route::post('reset-password', [CustomerPasswordResetController::class, 'reset'])
 // + CustomerPortalPolicy (own customer_id only).
 Route::middleware('auth:customer')->group(function () {
     Route::post('logout', [CustomerAuthController::class, 'logout'])->name('logout');
+
+    // Per-user UI preference (dark/light) — shared controller, one per guard.
+    Route::put('preferences/color-mode', [UserPreferenceController::class, 'updateColorMode'])
+        ->name('preferences.color-mode');
 
     Route::get('dashboard', [CustomerPortalController::class, 'dashboard'])->name('dashboard');
 

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\UserPreferenceController;
 use App\Modules\SuperAdmin\Http\Controllers\CmsContentController;
 use App\Modules\SuperAdmin\Http\Controllers\DemoRequestController;
 use App\Modules\SuperAdmin\Http\Controllers\PlanManagementController;
@@ -31,6 +32,10 @@ Route::post('login', [SuperAdminAuthController::class, 'login'])->name('login.st
 // Authenticated super admin panel.
 Route::middleware('superadmin.auth')->group(function () {
     Route::post('logout', [SuperAdminAuthController::class, 'logout'])->name('logout');
+
+    // Per-user UI preference (dark/light) — shared controller, one per guard.
+    Route::put('preferences/color-mode', [UserPreferenceController::class, 'updateColorMode'])
+        ->name('preferences.color-mode');
 
     Route::get('dashboard', [SuperAdminDashboardController::class, 'index'])->name('dashboard');
 

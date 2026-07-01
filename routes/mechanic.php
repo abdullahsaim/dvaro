@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\UserPreferenceController;
 use App\Modules\Workshop\Http\Controllers\MechanicAuthController;
 use App\Modules\Workshop\Http\Controllers\MechanicPasswordResetController;
 use App\Modules\Workshop\Http\Controllers\MechanicPortalController;
@@ -40,6 +41,10 @@ Route::post('reset-password', [MechanicPasswordResetController::class, 'reset'])
 // Authenticated mechanic portal.
 Route::middleware('auth:mechanic')->group(function () {
     Route::post('logout', [MechanicAuthController::class, 'logout'])->name('logout');
+
+    // Per-user UI preference (dark/light) — shared controller, one per guard.
+    Route::put('preferences/color-mode', [UserPreferenceController::class, 'updateColorMode'])
+        ->name('preferences.color-mode');
 
     Route::get('dashboard', [MechanicPortalController::class, 'dashboard'])->name('dashboard');
 

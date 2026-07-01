@@ -43,6 +43,7 @@ class TenantUser extends Authenticatable
         'email',
         'password',
         'role',
+        'color_mode',
     ];
 
     protected $hidden = [

@@ -51,6 +51,12 @@ class SuperAdminMiddleware
             ],
         ]);
 
+        // Per-user dark/light preference + the endpoint to persist it.
+        Inertia::share('colorMode', fn () => [
+            'value' => $admin->color_mode,
+            'url' => route('superadmin.preferences.color-mode'),
+        ]);
+
         return $next($request);
     }
 }
