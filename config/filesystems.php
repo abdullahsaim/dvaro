@@ -60,6 +60,36 @@ return [
             'report' => false,
         ],
 
+        /*
+        | Backup destinations (spatie/laravel-backup).
+        |
+        | 'backup'       — Contabo Object Storage (S3-compatible), used ONLY when
+        |                  CONTABO_BACKUP_KEY is configured. Separate from the app
+        |                  's3' disk (dedicated backup bucket, per CLAUDE.md).
+        | 'backup-local' — on-VPS fallback (storage/backups) used when no Contabo
+        |                  credentials are present.
+        |
+        | config/backup.php selects between them based on the env.
+        */
+        'backup' => [
+            'driver' => 's3',
+            'key' => env('CONTABO_BACKUP_KEY'),
+            'secret' => env('CONTABO_BACKUP_SECRET'),
+            'region' => env('CONTABO_BACKUP_REGION', 'eu2'),
+            'bucket' => env('CONTABO_BACKUP_BUCKET'),
+            'endpoint' => env('CONTABO_BACKUP_ENDPOINT'),
+            'use_path_style_endpoint' => true,
+            'throw' => false,
+            'report' => false,
+        ],
+
+        'backup-local' => [
+            'driver' => 'local',
+            'root' => storage_path('backups'),
+            'throw' => false,
+            'report' => false,
+        ],
+
     ],
 
     /*

@@ -17,6 +17,7 @@ use App\Modules\Invoice\Models\Invoice;
 use App\Modules\Invoice\Policies\InvoicePolicy;
 use App\Modules\Reporting\Models\ReportExport;
 use App\Modules\Reporting\Policies\ReportingPolicy;
+use App\Modules\SaasCore\Policies\BillingPolicy;
 use App\Modules\SuperAdmin\Policies\SuperAdminPolicy;
 use App\Modules\Workshop\Models\Mechanic;
 use App\Modules\Workshop\Policies\ManageMechanicPolicy;
@@ -78,6 +79,11 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('viewPortalInvoice', [CustomerPortalPolicy::class, 'viewInvoice']);
         Gate::define('viewPortalAgreement', [CustomerPortalPolicy::class, 'viewAgreement']);
         Gate::define('makePortalPayment', [CustomerPortalPolicy::class, 'makePayment']);
+
+        // Tenant billing portal — tenant-admin only. Model-less abilities on the
+        // TENANT guard: Gate::forUser(auth('tenant')->user())->authorize('viewBilling'…).
+        Gate::define('viewBilling', [BillingPolicy::class, 'view']);
+        Gate::define('requestUpgrade', [BillingPolicy::class, 'requestUpgrade']);
 
         // Public intake-form submissions: 5 per hour PER TOKEN (the {token} route
         // segment), not per IP — many customers may legitimately share one IP

@@ -6,6 +6,7 @@ use App\Traits\HasTenant;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Subscription — a tenant's current relationship to a Plan.
@@ -52,6 +53,12 @@ class Subscription extends Model
     public function plan(): BelongsTo
     {
         return $this->belongsTo(Plan::class);
+    }
+
+    /** Offline payments recorded against this subscription (super admin). */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(SubscriptionPayment::class);
     }
 
     // The tenant() relationship is provided by the HasTenant trait.

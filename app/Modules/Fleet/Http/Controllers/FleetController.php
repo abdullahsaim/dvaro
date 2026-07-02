@@ -185,8 +185,10 @@ class FleetController extends Controller
     }
 
     /**
-     * Stream the vehicle's stored QR (SVG) from S3 for inline display. Admin-only
-     * (behind auth:tenant); 404 until a QR has been generated.
+     * Stream the vehicle's stored QR (SVG) from the public disk for inline
+     * display. Admin-only (behind auth:tenant); 404 until a QR has been
+     * generated. The QR SVG is also directly reachable at /storage/{qrPath}
+     * (non-sensitive) — this route just keeps the existing auth-checked stream.
      */
     public function qr(Vehicle $vehicle): StreamedResponse
     {
@@ -194,7 +196,7 @@ class FleetController extends Controller
 
         abort_if($vehicle->qr_code_token === null, 404);
 
-        return Storage::disk('s3')->response(
+        return Storage::disk('public')->response(
             GenerateVehicleQrAction::qrPath($vehicle),
             'qr.svg',
             ['Content-Type' => 'image/svg+xml'],

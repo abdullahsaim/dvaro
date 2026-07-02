@@ -9,9 +9,11 @@ use App\Modules\Fleet\Http\Controllers\FleetController;
 use App\Modules\Invoice\Http\Controllers\InvoiceController;
 use App\Modules\Notification\Http\Controllers\NotificationSettingsController;
 use App\Modules\Reporting\Http\Controllers\ReportingController;
+use App\Modules\SaasCore\Http\Controllers\BillingController;
 use App\Modules\SaasCore\Http\Controllers\TenantAuthController;
 use App\Modules\SaasCore\Http\Controllers\TenantDashboardController;
 use App\Modules\SaasCore\Http\Controllers\TenantPasswordResetController;
+use App\Modules\SaasCore\Http\Controllers\UpgradeRequestController;
 use App\Modules\Workshop\Http\Controllers\MechanicController;
 use App\Modules\Workshop\Http\Controllers\WorkshopController;
 use Illuminate\Support\Facades\Route;
@@ -131,6 +133,14 @@ Route::middleware('auth:tenant')->group(function () {
         ->name('invoices.overdue');
     Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])
         ->name('invoices.pdf');
+
+    // Billing portal — tenant_admin only (BillingPolicy via the 'viewBilling' /
+    // 'requestUpgrade' gates in the controllers). No self-service plan assignment
+    // (that is super admin, or Stripe in a later session); the only mutation is
+    // submitting an upgrade request.
+    Route::get('billing', [BillingController::class, 'index'])->name('billing.index');
+    Route::post('billing/upgrade-request', [UpgradeRequestController::class, 'store'])
+        ->name('billing.upgrade-request');
 
     // Notification settings — tenant-wide provider selection + channel toggles.
     // Not a resource (single settings page); tenant_admin-gated in the controller.

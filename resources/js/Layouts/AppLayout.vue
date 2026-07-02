@@ -17,6 +17,7 @@ import {
     ChartBarIcon,
     SparklesIcon,
     IdentificationIcon,
+    CreditCardIcon,
     Cog6ToothIcon,
 } from '@heroicons/vue/24/outline';
 import Sidebar from '@/Components/UI/Sidebar.vue';
@@ -44,7 +45,7 @@ function isActive(href, exact = false) {
 
 const navItems = computed(() => {
     const base = `/app/${slug.value}`;
-    return [
+    const items = [
         { key: 'dashboard', label: t('nav.dashboard'), href: `${base}/dashboard`, icon: HomeIcon, exact: true },
         { key: 'fleet', label: t('nav.fleet'), href: `${base}/fleet`, icon: TruckIcon },
         { key: 'customers', label: t('nav.customers'), href: `${base}/customers`, icon: UsersIcon },
@@ -55,8 +56,13 @@ const navItems = computed(() => {
         { key: 'reports', label: t('nav.reports'), href: `${base}/reports`, icon: ChartBarIcon },
         { key: 'ai', label: t('nav.ai'), href: `${base}/ai`, icon: SparklesIcon },
         { key: 'mechanics', label: t('nav.mechanics'), href: `${base}/mechanics`, icon: IdentificationIcon },
+        // Billing is tenant-admin only (mirrors the server-side BillingPolicy).
+        ...(user.value?.role === 'tenant_admin'
+            ? [{ key: 'billing', label: t('nav.billing'), href: `${base}/billing`, icon: CreditCardIcon }]
+            : []),
         { key: 'settings', label: t('nav.settings'), href: `${base}/notifications/settings`, icon: Cog6ToothIcon },
-    ].map((item) => ({ ...item, active: isActive(item.href, item.exact) }));
+    ];
+    return items.map((item) => ({ ...item, active: isActive(item.href, item.exact) }));
 });
 
 // Impersonation banner (shared prop from CheckImpersonation middleware).

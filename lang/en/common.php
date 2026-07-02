@@ -106,5 +106,14 @@ return [
         'plan_updated'            => 'Plan updated.',
         'plan_toggled'            => 'Plan availability updated.',
         'settings_saved'          => 'Platform settings saved.',
+        'plan_assigned'           => 'Plan assigned to tenant.',
+        'payment_recorded'        => 'Offline payment recorded.',
+        'no_active_subscription'  => 'This tenant has no active subscription to record a payment against.',
+        'upgrade_marked_contacted' => 'Upgrade request marked as contacted.',
+        'upgrade_completed'       => 'Upgrade completed and plan assigned.',
+    ],
+
+    'billing' => [
+        'upgrade_requested' => 'Request received — our team will contact you shortly.',
     ],
 ];

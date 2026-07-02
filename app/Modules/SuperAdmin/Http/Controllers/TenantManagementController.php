@@ -5,10 +5,15 @@ namespace App\Modules\SuperAdmin\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Invoice\Models\Invoice;
 use App\Modules\Fleet\Models\Vehicle;
+use App\Modules\SaasCore\Models\Plan;
+use App\Modules\SaasCore\Models\SubscriptionPayment;
 use App\Modules\SaasCore\Models\TenantUser;
 use App\Modules\SaasCore\Models\Tenant;
+use App\Modules\SaasCore\Services\AssignPlanService;
 use App\Modules\SuperAdmin\Events\TenantActivated;
 use App\Modules\SuperAdmin\Events\TenantSuspended;
+use App\Modules\SuperAdmin\Http\Requests\AssignPlanRequest;
+use App\Modules\SuperAdmin\Http\Requests\OfflinePaymentRequest;
 use App\Scopes\TenantScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -97,7 +102,29 @@ class TenantManagementController extends Controller
     {
         Gate::forUser(auth('superadmin')->user())->authorize('supportAccess');
 
-        $subscriptions = $tenant->subscriptions()->with('plan:id,name,price_monthly,price_annual')->get();
+        $subscriptions = $tenant->subscriptions()
+            ->with([
+                'plan:id,name,price_monthly,price_annual',
+                // No bound tenant in the super admin context — drop TenantScope
+                // (payments are already constrained by subscription_id).
+                'payments' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)->latest('paid_at'),
+            ])
+            ->get();
+
+        // Active plans for the "Assign Plan" dropdown.
+        $plans = Plan::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('price_monthly')
+            ->get(['id', 'name', 'price_monthly', 'price_annual'])
+            ->map(fn (Plan $p) => [
+                'id' => $p->id,
+                'name' => $p->name,
+                'price_monthly' => $p->price_monthly,
+                'price_annual' => $p->price_annual,
+            ]);
+
+        $activePlanId = $tenant->activeSubscription?->plan_id;
 
         return Inertia::render('SuperAdmin/Tenants/Show', [
             'tenant' => [
@@ -108,6 +135,8 @@ class TenantManagementController extends Controller
                 'trial_ends_at' => $tenant->trial_ends_at,
                 'created_at' => $tenant->created_at,
             ],
+            'plans' => $plans,
+            'activePlanId' => $activePlanId,
             'counts' => [
                 'users' => $tenant->users()->count(),
                 'vehicles' => Vehicle::withoutGlobalScope(TenantScope::class)
@@ -124,6 +153,14 @@ class TenantManagementController extends Controller
                 'current_period_end' => $sub->current_period_end,
                 'trial_ends_at' => $sub->trial_ends_at,
                 'created_at' => $sub->created_at,
+                'payments' => $sub->payments->map(fn (SubscriptionPayment $p) => [
+                    'id' => $p->id,
+                    'amount' => $p->amount,
+                    'currency' => $p->currency,
+                    'method' => $p->method,
+                    'reference' => $p->reference,
+                    'paid_at' => $p->paid_at,
+                ]),
             ]),
         ]);
     }
@@ -150,6 +187,54 @@ class TenantManagementController extends Controller
         }
 
         return back()->with('success', __('common.superadmin.tenant_activated'));
+    }
+
+    /**
+     * Manually assign a plan to a tenant (no Stripe self-service yet). Cancels
+     * any current subscription, creates a new active one, promotes the tenant to
+     * active, and ends any trial — all in one transaction (AssignPlanService).
+     */
+    public function assignPlan(AssignPlanRequest $request, Tenant $tenant, AssignPlanService $service): RedirectResponse
+    {
+        Gate::forUser(auth('superadmin')->user())->authorize('supportAccess');
+
+        $service->execute(
+            $tenant,
+            $request->integer('plan_id'),
+            $request->string('billing_cycle')->toString(),
+        );
+
+        return back()->with('success', __('common.superadmin.plan_assigned'));
+    }
+
+    /**
+     * Record an OFFLINE payment (bank transfer / cash / etc.) against the
+     * tenant's active subscription. recorded_by is the acting super admin;
+     * tenant_id is set explicitly (no bound tenant in this context).
+     */
+    public function recordOfflinePayment(OfflinePaymentRequest $request, Tenant $tenant): RedirectResponse
+    {
+        Gate::forUser(auth('superadmin')->user())->authorize('supportAccess');
+
+        $subscription = $tenant->activeSubscription;
+
+        if ($subscription === null) {
+            return back()->with('error', __('common.superadmin.no_active_subscription'));
+        }
+
+        SubscriptionPayment::create([
+            'tenant_id' => $tenant->id,
+            'subscription_id' => $subscription->id,
+            'amount' => $request->integer('amount'),
+            'currency' => 'AUD',
+            'method' => $request->string('method')->toString(),
+            'reference' => $request->input('reference'),
+            'notes' => $request->input('notes'),
+            'paid_at' => $request->date('paid_at'),
+            'recorded_by' => auth('superadmin')->id(),
+        ]);
+
+        return back()->with('success', __('common.superadmin.payment_recorded'));
     }
 
     /**

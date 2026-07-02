@@ -29,7 +29,9 @@ class ExportService extends BaseService
     public const TYPES = ['revenue', 'fleet', 'overdue', 'workshop'];
 
     /**
-     * Render the report-specific Blade view to a PDF and store it on S3.
+     * Render the report-specific Blade view to a PDF and store it on the
+     * default (sensitive) disk — 'local' (private) by default, 's3' once
+     * configured. Served back only through the auth-checked download endpoint.
      */
     public function exportPdf(string $reportType, array $data, string $title): string
     {
@@ -43,13 +45,14 @@ class ExportService extends BaseService
         ]);
 
         $path = $this->path($tenant->id, $reportType, 'pdf');
-        Storage::disk('s3')->put($path, $pdf->output());
+        Storage::disk(config('filesystems.default'))->put($path, $pdf->output());
 
         return $path;
     }
 
     /**
-     * Build an .xlsx from the report's tabular form and store it on S3.
+     * Build an .xlsx from the report's tabular form and store it on the default
+     * (sensitive) disk — 'local' (private) by default, 's3' once configured.
      */
     public function exportExcel(string $reportType, array $data, string $title): string
     {
@@ -94,7 +97,7 @@ class ExportService extends BaseService
         (new Xlsx($spreadsheet))->save($tmp);
 
         $path = $this->path($tenant->id, $reportType, 'xlsx');
-        Storage::disk('s3')->put($path, file_get_contents($tmp));
+        Storage::disk(config('filesystems.default'))->put($path, file_get_contents($tmp));
 
         @unlink($tmp);
 

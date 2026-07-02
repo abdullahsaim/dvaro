@@ -14,11 +14,11 @@ use App\Modules\Invoice\DTOs\RecordPaymentDTO;
 use App\Modules\Invoice\Models\Invoice;
 use App\Modules\SaasCore\Models\Tenant;
 use App\Scopes\TenantScope;
+use App\Services\FileUrlService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -295,8 +295,9 @@ class CustomerPortalController extends Controller
             abort(404);
         }
 
-        // Serve via a short-lived signed S3 URL (15 min) — never a direct path.
-        $url = Storage::disk('s3')->temporaryUrl($path, now()->addMinutes(15));
+        // Short-lived signed URL (15 min), driver agnostic via FileUrlService —
+        // local signed route or S3 pre-signed URL. Never a direct public path.
+        $url = app(FileUrlService::class)->temporaryUrl($path);
 
         return redirect()->away($url);
     }

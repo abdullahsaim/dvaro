@@ -79,7 +79,9 @@ class GenerateAgreementPdfJob implements ShouldQueue
             $path = "tenants/{$this->tenantId}/agreements/{$agreement->id}"
                 ."/agreement-v{$agreement->version}.pdf";
 
-            Storage::disk('s3')->put($path, $pdf->output());
+            // Default disk: 'local' (private) by default, 's3' once configured.
+            // Sensitive — stored under the private root, never web-accessible.
+            Storage::disk(config('filesystems.default'))->put($path, $pdf->output());
 
             // pdf_path is an ordinary column — recording it is not an "edit" of
             // the agreement's terms, just attaching the rendered artifact.

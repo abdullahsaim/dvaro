@@ -107,17 +107,17 @@ class CmsContentService
     }
 
     /**
-     * Store an uploaded image for an image block on S3 and bust its caches.
+     * Store an uploaded image for an image block on the PUBLIC disk and bust its
+     * caches.
      *
      * The object lives at cms/images/{key}.{ext}; re-uploading replaces it
      * (deterministic path keyed by the block, so old files are not orphaned).
      *
-     * Uploaded with a PUBLIC-READ ACL: these are landing-page assets served
-     * directly from a public S3 URL (CmsContentBlock::imageUrl() → Storage::url),
-     * not through a signed/temporary URL like tenant documents. The 'public'
-     * visibility maps to the public-read ACL on S3. This requires the bucket
-     * policy to permit public reads on the cms/images/* prefix — a deployment
-     * (VPS/AWS console) task; see docs/MODULE_STATUS.md.
+     * Landing-page assets are served directly from /storage/cms/images/...
+     * (CmsContentBlock::imageUrl() → Storage::disk('public')->url), not through a
+     * signed/temporary URL like tenant documents. They live on the public local
+     * disk permanently — no S3 bucket policy / public-read ACL to configure, even
+     * once S3 backs sensitive documents.
      */
     public function updateImage(string $key, UploadedFile $file): void
     {
@@ -128,7 +128,7 @@ class CmsContentService
         }
 
         $path = "cms/images/{$key}.".$file->getClientOriginalExtension();
-        Storage::disk('s3')->put($path, $file->get(), 'public');
+        Storage::disk('public')->put($path, $file->get());
 
         $block->image_path = $path;
         $block->save();

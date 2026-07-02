@@ -54,9 +54,9 @@ class CmsContentBlock extends Model
     }
 
     /**
-     * Public URL for an image block's stored S3 object, or null when the block
-     * is not an image / has no image set. Used by the public pages and the
-     * super admin editor's preview.
+     * Public URL for an image block's stored object (public disk, served from
+     * /storage/), or null when the block is not an image / has no image set.
+     * Used by the public pages and the super admin editor's preview.
      */
     public function imageUrl(): ?string
     {
@@ -64,7 +64,7 @@ class CmsContentBlock extends Model
             return null;
         }
 
-        return Storage::disk('s3')->url($this->image_path);
+        return Storage::disk('public')->url($this->image_path);
     }
 
     /**

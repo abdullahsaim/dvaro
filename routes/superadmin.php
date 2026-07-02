@@ -9,6 +9,7 @@ use App\Modules\SuperAdmin\Http\Controllers\SuperAdminAuthController;
 use App\Modules\SuperAdmin\Http\Controllers\SuperAdminDashboardController;
 use App\Modules\SuperAdmin\Http\Controllers\SystemSettingsController;
 use App\Modules\SuperAdmin\Http\Controllers\TenantManagementController;
+use App\Modules\SuperAdmin\Http\Controllers\UpgradeRequestController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -50,6 +51,12 @@ Route::middleware('superadmin.auth')->group(function () {
     Route::post('tenants/{tenant}/impersonate', [TenantManagementController::class, 'impersonate'])
         ->name('tenants.impersonate');
 
+    // Manual billing actions on a tenant (no Stripe yet). {tenant} binds by slug.
+    Route::post('tenants/{tenant}/assign-plan', [TenantManagementController::class, 'assignPlan'])
+        ->name('tenants.assign-plan');
+    Route::post('tenants/{tenant}/offline-payment', [TenantManagementController::class, 'recordOfflinePayment'])
+        ->name('tenants.offline-payment');
+
     // Stop impersonating — clears the tenant guard + session marker (both).
     Route::post('stop-impersonating', [TenantManagementController::class, 'stopImpersonating'])
         ->name('stop-impersonating');
@@ -66,6 +73,16 @@ Route::middleware('superadmin.auth')->group(function () {
         ->name('subscriptions.index');
     Route::get('subscriptions/{subscription}', [SubscriptionManagementController::class, 'show'])
         ->name('subscriptions.show');
+
+    // Upgrade-request queue. UpgradeRequest is tenant-scoped, so it is resolved
+    // by explicit {id} inside the controller (withoutGlobalScope) — NOT route-
+    // model binding, which would trip TenantScope in this unbound context.
+    Route::get('upgrade-requests', [UpgradeRequestController::class, 'index'])
+        ->name('upgrade-requests.index');
+    Route::post('upgrade-requests/{id}/contacted', [UpgradeRequestController::class, 'markContacted'])
+        ->name('upgrade-requests.contacted');
+    Route::post('upgrade-requests/{id}/complete', [UpgradeRequestController::class, 'complete'])
+        ->name('upgrade-requests.complete');
 
     // Platform settings.
     Route::get('settings', [SystemSettingsController::class, 'show'])->name('settings');

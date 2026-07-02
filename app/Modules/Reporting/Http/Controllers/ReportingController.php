@@ -9,9 +9,9 @@ use App\Modules\Reporting\Http\Requests\ReportRequest;
 use App\Modules\Reporting\Models\ReportExport;
 use App\Modules\Reporting\Services\ReportCacheService;
 use App\Modules\Reporting\Services\ReportingService;
+use App\Services\FileUrlService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -145,20 +145,19 @@ class ReportingController extends Controller
     }
 
     /**
-     * Serve a generated export via a short-lived signed S3 URL (15 min). Only the
-     * owning tenant, only when ready and not expired. {export} binds through
-     * TenantScope, so a cross-tenant id 404s before this runs.
+     * Serve a generated export via a short-lived signed URL (15 min), driver
+     * agnostic through FileUrlService (local signed route or S3 pre-signed URL).
+     * Only the owning tenant, only when ready and not expired. {export} binds
+     * through TenantScope, so a cross-tenant id 404s before this runs.
      */
-    public function downloadExport(ReportExport $export): RedirectResponse
+    public function downloadExport(ReportExport $export, FileUrlService $fileUrls): RedirectResponse
     {
         Gate::forUser(auth('tenant')->user())->authorize('download', $export);
 
         abort_unless($export->isReady() && $export->file_path !== null, 404);
         abort_if($export->isExpired(), 410);
 
-        return redirect()->away(
-            Storage::disk('s3')->temporaryUrl($export->file_path, now()->addMinutes(15)),
-        );
+        return redirect()->away($fileUrls->temporaryUrl($export->file_path));
     }
 
     /**

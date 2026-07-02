@@ -193,9 +193,11 @@ class AgreementController extends Controller
     }
 
     /**
-     * Stream the stored agreement PDF from S3. Read-only; the PDF is produced
-     * asynchronously by GenerateAgreementPdfJob after signing, so pdf_path may
-     * still be null briefly (→ 404 until it lands).
+     * Stream the stored agreement PDF from the default (sensitive) disk. This
+     * action is auth-checked, so streaming directly is safe on both drivers
+     * (local download + s3 download behave identically). Read-only; the PDF is
+     * produced asynchronously by GenerateAgreementPdfJob after signing, so
+     * pdf_path may still be null briefly (→ 404 until it lands).
      */
     public function downloadPdf(Agreement $agreement): StreamedResponse
     {
@@ -203,7 +205,7 @@ class AgreementController extends Controller
 
         abort_if($agreement->pdf_path === null, 404);
 
-        return Storage::disk('s3')->download(
+        return Storage::disk(config('filesystems.default'))->download(
             $agreement->pdf_path,
             "agreement-{$agreement->id}-v{$agreement->version}.pdf",
         );

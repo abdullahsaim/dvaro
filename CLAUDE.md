@@ -24,7 +24,7 @@ This system handles real money, real agreements, and real fleets. Accuracy over 
 | Cache / Queue     | Redis                                      |
 | Auth              | Laravel Sanctum                            |
 | Roles/Permissions | Spatie Laravel Permission                  |
-| File Storage      | AWS S3-compatible (ap-southeast-2)         |
+| File Storage      | Local filesystem (default) or AWS S3-compatible (optional, via FILESYSTEM_DISK env) |
 | PDF Generation    | barryvdh/laravel-dompdf (Queued, pure PHP) |
 | QR Codes          | simplesoftwareio/simple-qrcode             |
 | Backup            | spatie/laravel-backup → Contabo Object Storage |

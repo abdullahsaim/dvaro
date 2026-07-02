@@ -14,7 +14,10 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
  * The token is a deterministic HMAC of the vehicle id keyed by the app key, so
  * regenerating produces the SAME token (idempotent) and the printed QR sticker
  * never needs reprinting after a regenerate. The image is rendered as SVG
- * (dependency-free — no imagick/GD required, unlike PNG) and stored on S3.
+ * (dependency-free — no imagick/GD required, unlike PNG) and stored on the
+ * PUBLIC disk (storage/app/public, served from /storage/). QR images are not
+ * sensitive, so they stay on the public local disk permanently even once S3 is
+ * configured for sensitive documents.
  *
  * The QR encodes a Laravel SIGNED scan URL (mechanic.scan): the route is signed
  * with a `signature` query param computed (with APP_KEY) over the slug + token,
@@ -47,7 +50,9 @@ class GenerateVehicleQrAction extends BaseAction
 
         $svg = QrCode::format('svg')->size(320)->margin(1)->generate($url);
 
-        Storage::disk('s3')->put($this->qrPath($vehicle), (string) $svg, [
+        // Public disk (storage/app/public) — served directly from /storage/.
+        // Non-sensitive; stays local even when S3 backs sensitive documents.
+        Storage::disk('public')->put($this->qrPath($vehicle), (string) $svg, [
             'ContentType' => 'image/svg+xml',
         ]);
 
@@ -58,7 +63,7 @@ class GenerateVehicleQrAction extends BaseAction
     }
 
     /**
-     * Deterministic S3 path for a vehicle's QR image.
+     * Deterministic path (relative to the public disk) for a vehicle's QR image.
      */
     public static function qrPath(Vehicle $vehicle): string
     {

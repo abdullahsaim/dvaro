@@ -190,8 +190,10 @@ class InvoiceController extends Controller
     }
 
     /**
-     * Stream the stored invoice PDF from S3. Read-only; the PDF is produced
-     * asynchronously by GenerateInvoicePdfJob, so pdf_path may be null briefly.
+     * Stream the stored invoice PDF from the default (sensitive) disk. This
+     * action is auth-checked, so streaming directly is safe on both drivers.
+     * Read-only; the PDF is produced asynchronously by GenerateInvoicePdfJob,
+     * so pdf_path may be null briefly.
      */
     public function downloadPdf(Invoice $invoice): StreamedResponse
     {
@@ -199,7 +201,7 @@ class InvoiceController extends Controller
 
         abort_if($invoice->pdf_path === null, 404);
 
-        return Storage::disk('s3')->download(
+        return Storage::disk(config('filesystems.default'))->download(
             $invoice->pdf_path,
             "invoice-{$invoice->id}.pdf",
         );

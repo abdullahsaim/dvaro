@@ -171,7 +171,7 @@ class CmsLandingTest extends TestCase
 
     public function test_super_admin_can_upload_a_cms_image(): void
     {
-        Storage::fake('s3');
+        Storage::fake('public');
         $this->seed(CmsContentSeeder::class);
         $admin = $this->makeSuperAdmin(SuperAdmin::ROLE_CONTENT_MANAGER);
 
@@ -182,7 +182,7 @@ class CmsLandingTest extends TestCase
             ->assertRedirect();
 
         $path = 'cms/images/hero_image.png';
-        Storage::disk('s3')->assertExists($path);
+        Storage::disk('public')->assertExists($path);
         $this->assertDatabaseHas('cms_content_blocks', [
             'key' => 'hero_image',
             'image_path' => $path,
