@@ -23,6 +23,7 @@ use App\Modules\Workshop\Models\Mechanic;
 use App\Modules\Workshop\Policies\ManageMechanicPolicy;
 use App\Modules\Workshop\Models\ServiceLog;
 use App\Modules\Workshop\Policies\MechanicPolicy;
+use App\Policies\ProfilePolicy;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
@@ -92,6 +93,12 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('viewBilling', [BillingPolicy::class, 'view']);
         Gate::define('requestUpgrade', [BillingPolicy::class, 'requestUpgrade']);
         Gate::define('manageSubscription', [BillingPolicy::class, 'manageSubscription']);
+
+        // Self-service profile pages — one ability shared by ALL FOUR guards
+        // (the profile only ever touches the authed user's own row). Model-less
+        // → Gate::define delegation; controllers keep the uniform
+        // Gate::forUser(auth($guard)->user())->authorize('manageOwnProfile').
+        Gate::define('manageOwnProfile', [ProfilePolicy::class, 'manageOwnProfile']);
 
         // Public intake-form submissions: 5 per hour PER TOKEN (the {token} route
         // segment), not per IP — many customers may legitimately share one IP

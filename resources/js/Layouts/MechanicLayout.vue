@@ -10,7 +10,7 @@
 import { computed, onMounted } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import { QrCodeIcon, SunIcon, MoonIcon, ArrowRightOnRectangleIcon } from '@heroicons/vue/24/outline';
+import { QrCodeIcon, SunIcon, MoonIcon, ArrowRightOnRectangleIcon, UserCircleIcon } from '@heroicons/vue/24/outline';
 import Toast from '@/Components/UI/Toast.vue';
 import { useColorMode } from '@/composables/useColorMode';
 
@@ -45,6 +45,14 @@ const iconBtn =
                         <SunIcon v-if="isDark" class="h-5 w-5" />
                         <MoonIcon v-else class="h-5 w-5" />
                     </button>
+                    <Link
+                        v-if="mechanic"
+                        :href="`${base}/profile`"
+                        :class="iconBtn"
+                        :aria-label="t('common.profile')"
+                    >
+                        <UserCircleIcon class="h-5 w-5" />
+                    </Link>
                     <button
                         v-if="mechanic"
                         type="button"

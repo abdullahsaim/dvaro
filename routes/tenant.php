@@ -14,6 +14,7 @@ use App\Modules\SaasCore\Http\Controllers\StripeCheckoutController;
 use App\Modules\SaasCore\Http\Controllers\TenantAuthController;
 use App\Modules\SaasCore\Http\Controllers\TenantDashboardController;
 use App\Modules\SaasCore\Http\Controllers\TenantPasswordResetController;
+use App\Modules\SaasCore\Http\Controllers\TenantProfileController;
 use App\Modules\SaasCore\Http\Controllers\UpgradeRequestController;
 use App\Modules\Workshop\Http\Controllers\MechanicController;
 use App\Modules\Workshop\Http\Controllers\WorkshopController;
@@ -57,6 +58,12 @@ Route::middleware('auth:tenant')->group(function () {
     // Per-user UI preference (dark/light) — shared controller, one per guard.
     Route::put('preferences/color-mode', [UserPreferenceController::class, 'updateColorMode'])
         ->name('preferences.color-mode');
+
+    // Own profile — name/email + password (self-service, own row only).
+    Route::get('profile', [TenantProfileController::class, 'showProfile'])->name('profile');
+    Route::put('profile', [TenantProfileController::class, 'updateProfile'])->name('profile.update');
+    Route::put('profile/password', [TenantProfileController::class, 'updatePassword'])
+        ->name('profile.password');
 
     Route::get('dashboard', [TenantDashboardController::class, 'index'])->name('dashboard');
 

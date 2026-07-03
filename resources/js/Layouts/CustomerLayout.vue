@@ -23,6 +23,7 @@ const nav = computed(() => [
     { key: 'dashboard', label: t('customer.portal.dashboard'), href: `${base.value}/dashboard` },
     { key: 'invoices', label: t('customer.portal.invoices'), href: `${base.value}/invoices` },
     { key: 'agreements', label: t('customer.portal.agreements'), href: `${base.value}/agreements` },
+    { key: 'profile', label: t('common.profile'), href: `${base.value}/profile` },
 ]);
 
 function isActive(href) {

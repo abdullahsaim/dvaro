@@ -81,6 +81,12 @@ return [
         'saved' => 'Notification settings saved.',
     ],
 
+    'profile' => [
+        'updated'          => 'Profile updated.',
+        'password_updated' => 'Password updated.',
+        'pin_updated'      => 'PIN updated.',
+    ],
+
     'ai' => [
         'conversation_deleted' => 'Conversation deleted.',
     ],

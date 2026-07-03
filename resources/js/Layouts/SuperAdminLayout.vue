@@ -55,7 +55,7 @@ onMounted(syncFromServer);
             <Sidebar :items="navItems" title="DVARO" :context-label="t('superadmin.panel')" variant="dark" />
 
             <div class="flex min-w-0 flex-1 flex-col">
-                <TopBar :title="t('superadmin.panel')" :user="admin" logout-href="/superadmin/logout" />
+                <TopBar :title="t('superadmin.panel')" :user="admin" logout-href="/superadmin/logout" profile-href="/superadmin/profile" />
 
                 <main class="flex-1 overflow-y-auto">
                     <div class="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">

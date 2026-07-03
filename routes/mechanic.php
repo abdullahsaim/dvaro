@@ -4,6 +4,7 @@ use App\Http\Controllers\UserPreferenceController;
 use App\Modules\Workshop\Http\Controllers\MechanicAuthController;
 use App\Modules\Workshop\Http\Controllers\MechanicPasswordResetController;
 use App\Modules\Workshop\Http\Controllers\MechanicPortalController;
+use App\Modules\Workshop\Http\Controllers\MechanicProfileController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -45,6 +46,15 @@ Route::middleware('auth:mechanic')->group(function () {
     // Per-user UI preference (dark/light) — shared controller, one per guard.
     Route::put('preferences/color-mode', [UserPreferenceController::class, 'updateColorMode'])
         ->name('preferences.color-mode');
+
+    // Own profile — name/email + password + PIN (identity re-verified before
+    // either credential changes; see UpdatePinRequest/UpdatePasswordRequest).
+    Route::get('profile', [MechanicProfileController::class, 'showProfile'])->name('profile');
+    Route::put('profile', [MechanicProfileController::class, 'updateProfile'])->name('profile.update');
+    Route::put('profile/password', [MechanicProfileController::class, 'updatePassword'])
+        ->name('profile.password');
+    Route::put('profile/pin', [MechanicProfileController::class, 'updatePin'])
+        ->name('profile.pin');
 
     Route::get('dashboard', [MechanicPortalController::class, 'dashboard'])->name('dashboard');
 

@@ -7,6 +7,7 @@ use App\Modules\SuperAdmin\Http\Controllers\PlanManagementController;
 use App\Modules\SuperAdmin\Http\Controllers\SubscriptionManagementController;
 use App\Modules\SuperAdmin\Http\Controllers\SuperAdminAuthController;
 use App\Modules\SuperAdmin\Http\Controllers\SuperAdminDashboardController;
+use App\Modules\SuperAdmin\Http\Controllers\SuperAdminProfileController;
 use App\Modules\SuperAdmin\Http\Controllers\SystemSettingsController;
 use App\Modules\SuperAdmin\Http\Controllers\TenantManagementController;
 use App\Modules\SuperAdmin\Http\Controllers\UpgradeRequestController;
@@ -37,6 +38,13 @@ Route::middleware('superadmin.auth')->group(function () {
     // Per-user UI preference (dark/light) — shared controller, one per guard.
     Route::put('preferences/color-mode', [UserPreferenceController::class, 'updateColorMode'])
         ->name('preferences.color-mode');
+
+    // Own profile — name/email + password. Email is GLOBALLY unique here
+    // (platform-wide guard, no tenant scoping).
+    Route::get('profile', [SuperAdminProfileController::class, 'showProfile'])->name('profile');
+    Route::put('profile', [SuperAdminProfileController::class, 'updateProfile'])->name('profile.update');
+    Route::put('profile/password', [SuperAdminProfileController::class, 'updatePassword'])
+        ->name('profile.password');
 
     Route::get('dashboard', [SuperAdminDashboardController::class, 'index'])->name('dashboard');
 

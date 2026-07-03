@@ -4,6 +4,7 @@ use App\Http\Controllers\UserPreferenceController;
 use App\Modules\Customer\Http\Controllers\CustomerAuthController;
 use App\Modules\Customer\Http\Controllers\CustomerPasswordResetController;
 use App\Modules\Customer\Http\Controllers\CustomerPortalController;
+use App\Modules\Customer\Http\Controllers\CustomerProfileController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -47,6 +48,13 @@ Route::middleware('auth:customer')->group(function () {
     // Per-user UI preference (dark/light) — shared controller, one per guard.
     Route::put('preferences/color-mode', [UserPreferenceController::class, 'updateColorMode'])
         ->name('preferences.color-mode');
+
+    // Own profile — email + password only (the display name lives on the
+    // linked Customer record and changes via the tenant admin, never here).
+    Route::get('profile', [CustomerProfileController::class, 'showProfile'])->name('profile');
+    Route::put('profile', [CustomerProfileController::class, 'updateProfile'])->name('profile.update');
+    Route::put('profile/password', [CustomerProfileController::class, 'updatePassword'])
+        ->name('profile.password');
 
     Route::get('dashboard', [CustomerPortalController::class, 'dashboard'])->name('dashboard');
 

@@ -34,6 +34,7 @@ const slug = computed(() => tenant.value?.slug ?? '');
 const user = computed(() => page.props.auth?.user ?? null);
 
 const logoutHref = computed(() => (slug.value ? `/app/${slug.value}/logout` : ''));
+const profileHref = computed(() => (slug.value ? `/app/${slug.value}/profile` : ''));
 
 // Current path (query stripped) for active-link matching.
 const currentPath = computed(() => (page.url || '').split('?')[0]);
@@ -97,7 +98,7 @@ onMounted(syncFromServer);
             <Sidebar :items="navItems" title="DVARO" :context-label="tenantName" />
 
             <div class="flex min-w-0 flex-1 flex-col">
-                <TopBar :title="tenantName" :user="user" :logout-href="logoutHref" />
+                <TopBar :title="tenantName" :user="user" :logout-href="logoutHref" :profile-href="profileHref" />
 
                 <main class="flex-1 overflow-y-auto">
                     <div class="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
