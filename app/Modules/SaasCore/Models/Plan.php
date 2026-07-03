@@ -60,6 +60,9 @@ class Plan extends Model
         'modules',
         'limits',
         'sort_order',
+        'stripe_product_id',
+        'stripe_monthly_price_id',
+        'stripe_annual_price_id',
     ];
 
     protected function casts(): array
@@ -79,6 +82,27 @@ class Plan extends Model
     public function subscriptions(): HasMany
     {
         return $this->hasMany(Subscription::class);
+    }
+
+    /**
+     * The Stripe Price id for a billing cycle, or null when the plan has not
+     * been synced (stripe:sync-plans) for that cycle.
+     */
+    public function stripePriceIdFor(string $billingCycle): ?string
+    {
+        return $billingCycle === Subscription::BILLING_ANNUAL
+            ? $this->stripe_annual_price_id
+            : $this->stripe_monthly_price_id;
+    }
+
+    /**
+     * The plan's price in cents for a billing cycle.
+     */
+    public function priceFor(string $billingCycle): int
+    {
+        return $billingCycle === Subscription::BILLING_ANNUAL
+            ? (int) $this->price_annual
+            : (int) $this->price_monthly;
     }
 
     /**

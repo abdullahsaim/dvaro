@@ -13,7 +13,11 @@ use App\Modules\Notification\Listeners\SendInvoiceGeneratedNotification;
 use App\Modules\Notification\Listeners\SendLateFeeNotification;
 use App\Modules\Notification\Listeners\SendLeadSubmittedNotification;
 use App\Modules\Notification\Listeners\SendPaymentReceivedNotification;
+use App\Modules\Notification\Listeners\SendSubscriptionCancelledNotification;
+use App\Modules\Notification\Listeners\SendSubscriptionPaymentFailedNotification;
 use App\Modules\Reporting\Listeners\ReportCacheInvalidationListener;
+use App\Modules\SaasCore\Events\SubscriptionCancelled;
+use App\Modules\SaasCore\Events\SubscriptionPaymentFailed;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
 /**
@@ -48,6 +52,13 @@ class EventServiceProvider extends ServiceProvider
         ],
         LeadSubmitted::class => [
             SendLeadSubmittedNotification::class,
+        ],
+        // Stripe webhook outcomes — tenant-admin ops notices (queued, email-only).
+        SubscriptionPaymentFailed::class => [
+            SendSubscriptionPaymentFailedNotification::class,
+        ],
+        SubscriptionCancelled::class => [
+            SendSubscriptionCancelledNotification::class,
         ],
     ];
 

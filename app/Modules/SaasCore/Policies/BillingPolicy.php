@@ -28,6 +28,15 @@ class BillingPolicy
         return $this->isAdmin($user);
     }
 
+    /**
+     * Start a Stripe checkout or cancel the Stripe subscription — money
+     * movements, so tenant-admin only like everything else on this policy.
+     */
+    public function manageSubscription(TenantUser $user): bool
+    {
+        return $this->isAdmin($user);
+    }
+
     private function isAdmin(TenantUser $user): bool
     {
         return $user->role === TenantUser::ROLE_ADMIN;

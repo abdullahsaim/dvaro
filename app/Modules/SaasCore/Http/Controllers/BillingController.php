@@ -2,26 +2,32 @@
 
 namespace App\Modules\SaasCore\Http\Controllers;
 
+use App\Exceptions\CheckoutNotAllowedException;
 use App\Http\Controllers\Controller;
+use App\Modules\SaasCore\Actions\CancelStripeSubscriptionAction;
 use App\Modules\SaasCore\Models\Plan;
 use App\Modules\SaasCore\Models\Subscription;
 use App\Modules\SaasCore\Models\Tenant;
 use App\Modules\SaasCore\Services\UsageService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
+use Throwable;
 
 /**
  * Tenant billing portal — TENANT-ADMIN ONLY.
  *
  * Runs behind ['web', 'tenant', 'auth:tenant'], so current_tenant is bound and
  * every count in UsageService is tenant-scoped. Authorization is the model-less
- * 'viewBilling' gate (BillingPolicy@view) via the load-bearing forUser pattern —
- * NOT $this->authorize(), which would resolve the empty web guard.
+ * 'viewBilling' / 'manageSubscription' gates (BillingPolicy) via the
+ * load-bearing forUser pattern — NOT $this->authorize(), which would resolve
+ * the empty web guard.
  *
- * Read-only: tenants CANNOT self-assign a plan (that is a super-admin action, or
- * Stripe self-service in a later session). The only mutation from here is
- * submitting an UpgradeRequest (UpgradeRequestController).
+ * Mutations from here: submitting an UpgradeRequest (UpgradeRequestController),
+ * starting a Stripe checkout (StripeCheckoutController) and requesting a
+ * Stripe cancellation (cancelSubscription below — cancel-at-period-end; the
+ * definitive local cancellation arrives via webhook).
  */
 class BillingController extends Controller
 {
@@ -65,6 +71,10 @@ class BillingController extends Controller
                 'modules' => $p->modules ?? [],
                 'limits' => $p->limits ?? [],
                 'is_current' => $plan !== null && $p->id === $plan->id,
+                // Self-service Stripe checkout per cycle — only when the plan
+                // is paid AND synced to Stripe (stripe:sync-plans).
+                'can_checkout_monthly' => ! $p->is_free && $p->stripe_monthly_price_id !== null,
+                'can_checkout_annual' => ! $p->is_free && $p->stripe_annual_price_id !== null,
             ]);
 
         // Billing history — every subscription this tenant has held, newest first.
@@ -92,6 +102,12 @@ class BillingController extends Controller
                 'status' => $subscription->status,
                 'billing_cycle' => $subscription->billing_cycle,
                 'current_period_end' => $subscription->current_period_end,
+                'gateway' => $subscription->gateway,
+                'stripe_status' => $subscription->stripe_status,
+                // Cancellable = billed through Stripe and not already winding down.
+                'can_cancel' => $subscription->gateway === Subscription::GATEWAY_STRIPE
+                    && filled($subscription->gateway_subscription_id)
+                    && $subscription->stripe_status !== Subscription::STRIPE_STATUS_CANCELING,
             ],
             'trialDaysRemaining' => $trialDaysRemaining,
             'usage' => $usage->getUsage($tenant),
@@ -99,5 +115,29 @@ class BillingController extends Controller
             'availablePlans' => $availablePlans,
             'history' => $history,
         ]);
+    }
+
+    /**
+     * Ask Stripe to cancel at period end (CancelStripeSubscriptionAction sets
+     * stripe_status='canceling'; access continues until the period lapses and
+     * the customer.subscription.deleted webhook cancels locally).
+     */
+    public function cancelSubscription(CancelStripeSubscriptionAction $action): RedirectResponse
+    {
+        Gate::forUser(auth('tenant')->user())->authorize('manageSubscription');
+
+        /** @var Tenant $tenant */
+        $tenant = app('current_tenant');
+
+        try {
+            $action->execute($tenant);
+        } catch (CheckoutNotAllowedException $e) {
+            return back()->with('error', $e->getMessage());
+        } catch (Throwable $e) {
+            report($e); // Stripe API/network failure — never leak the raw error
+            return back()->with('error', __('common.billing.cancel_failed'));
+        }
+
+        return back()->with('success', __('common.billing.cancel_requested'));
     }
 }

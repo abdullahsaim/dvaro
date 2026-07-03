@@ -27,12 +27,19 @@ class Subscription extends Model
     public const BILLING_MONTHLY = 'monthly';
     public const BILLING_ANNUAL = 'annual';
 
+    public const GATEWAY_STRIPE = 'stripe';
+
+    /** Stripe's own status once the tenant asked to cancel at period end. */
+    public const STRIPE_STATUS_CANCELING = 'canceling';
+
     protected $fillable = [
         'tenant_id',
         'plan_id',
         'status',
         'gateway',
         'gateway_subscription_id',
+        'stripe_price_id',
+        'stripe_status',
         'billing_cycle',
         'current_period_start',
         'current_period_end',

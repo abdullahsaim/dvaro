@@ -10,9 +10,11 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Assigns a plan to a tenant, replacing any current subscription — the ONLY
- * sanctioned path for a super admin to change a tenant's plan (no Stripe
- * self-service yet). Called from TenantManagementController@assignPlan and from
- * the super-admin UpgradeRequestController@complete.
+ * sanctioned path to change a tenant's plan. Called from
+ * TenantManagementController@assignPlan, the super-admin
+ * UpgradeRequestController@complete (manual assignment), and
+ * ActivateStripeSubscriptionAction (Stripe checkout, which passes the gateway
+ * attributes so the new subscription row carries its Stripe identity).
  *
  * Runs with NO bound tenant (super admin context), so:
  *   - the tenant's existing subscriptions are read via $tenant->subscriptions()
@@ -27,10 +29,13 @@ class AssignPlanService extends BaseService
 {
     /**
      * @param  string  $billingCycle  Subscription::BILLING_MONTHLY|BILLING_ANNUAL
+     * @param  array<string, mixed>  $gatewayAttributes  Extra columns for the new
+     *         subscription row (gateway / gateway_subscription_id /
+     *         stripe_price_id / stripe_status). Empty for manual assignment.
      */
-    public function execute(Tenant $tenant, int $planId, string $billingCycle): Subscription
+    public function execute(Tenant $tenant, int $planId, string $billingCycle, array $gatewayAttributes = []): Subscription
     {
-        return DB::transaction(function () use ($tenant, $planId, $billingCycle) {
+        return DB::transaction(function () use ($tenant, $planId, $billingCycle, $gatewayAttributes) {
             $now = now();
 
             // Cancel every currently-granting subscription (active OR trialing).
@@ -49,7 +54,7 @@ class AssignPlanService extends BaseService
                 : $now->copy()->addMonthNoOverflow();
 
             // tenant_id passed explicitly — no bound tenant in this context.
-            $subscription = Subscription::create([
+            $subscription = Subscription::create(array_merge([
                 'tenant_id' => $tenant->id,
                 'plan_id' => $planId,
                 'status' => Subscription::STATUS_ACTIVE,
@@ -57,7 +62,7 @@ class AssignPlanService extends BaseService
                 'current_period_start' => $now,
                 'current_period_end' => $periodEnd,
                 'trial_ends_at' => null,
-            ]);
+            ], $gatewayAttributes));
 
             // Assigning a paid plan promotes the tenant to active and ends any
             // trial — leaving a "trial" status against a paid subscription is a

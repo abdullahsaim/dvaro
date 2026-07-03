@@ -3,7 +3,7 @@
 // disabled modules, available plans, upgrade-request modal, billing history.
 // Tenant-admin only (enforced server-side by BillingPolicy). Design-system UI.
 import { computed, ref } from 'vue';
-import { Head, useForm, usePage } from '@inertiajs/vue3';
+import { Head, router, useForm, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import PageHeader from '@/Components/UI/PageHeader.vue';
@@ -92,6 +92,61 @@ function submitUpgrade() {
         },
     });
 }
+
+// Stripe checkout. The server replies with an external-location redirect to
+// Stripe's hosted page, so the "loading" state lives until the browser leaves.
+const checkingOut = ref(null); // `${planId}:${cycle}` while redirecting
+
+function subscribe(plan, cycle) {
+    checkingOut.value = `${plan.id}:${cycle}`;
+    router.post(
+        `/app/${slug.value}/billing/checkout/${plan.id}`,
+        { billing_cycle: cycle },
+        {
+            preserveScroll: true,
+            onError: () => { checkingOut.value = null; },
+            onFinish: () => { checkingOut.value = null; },
+        },
+    );
+}
+
+// A subscribe button is pointless for the exact plan+cycle already billing
+// through Stripe (unless it is winding down) — the server guards this too.
+function alreadyOnStripe(plan, cycle) {
+    return plan.is_current
+        && props.subscription?.gateway === 'stripe'
+        && props.subscription?.billing_cycle === cycle
+        && props.subscription?.stripe_status !== 'canceling';
+}
+
+const KNOWN_STRIPE_STATUSES = ['active', 'trialing', 'past_due', 'canceling', 'canceled', 'incomplete', 'unpaid'];
+
+function stripeStatusLabel(status) {
+    return KNOWN_STRIPE_STATUSES.includes(status)
+        ? t(`billing.stripe_statuses.${status}`)
+        : status;
+}
+
+const stripeStatusVariants = {
+    active: 'success',
+    trialing: 'info',
+    past_due: 'danger',
+    canceling: 'warning',
+    canceled: 'neutral',
+};
+
+// Cancel-subscription confirmation modal.
+const showCancel = ref(false);
+const cancelForm = useForm({});
+
+function submitCancel() {
+    cancelForm.post(`/app/${slug.value}/billing/cancel`, {
+        preserveScroll: true,
+        onSuccess: () => {
+            showCancel.value = false;
+        },
+    });
+}
 </script>
 
 <template>
@@ -121,19 +176,43 @@ function submitUpgrade() {
                     </p>
                 </div>
                 <div class="flex flex-col items-end gap-2">
-                    <StatusBadge
-                        v-if="subscription"
-                        :variant="statusVariants[subscription.status] ?? 'neutral'"
-                        :label="subscription.status"
-                    />
+                    <div class="flex items-center gap-2">
+                        <StatusBadge
+                            v-if="subscription && subscription.gateway === 'stripe' && subscription.stripe_status"
+                            :variant="stripeStatusVariants[subscription.stripe_status] ?? 'neutral'"
+                            :label="stripeStatusLabel(subscription.stripe_status)"
+                        />
+                        <StatusBadge
+                            v-if="subscription"
+                            :variant="statusVariants[subscription.status] ?? 'neutral'"
+                            :label="subscription.status"
+                        />
+                    </div>
+                    <p v-if="subscription && subscription.gateway === 'stripe'" class="text-xs text-ink-400">
+                        {{ t('billing.paid_via_stripe') }}
+                    </p>
                     <p v-if="trialDaysRemaining !== null" class="text-sm font-medium text-info-600 dark:text-info-500">
                         {{ t('billing.trial_days_remaining', { days: trialDaysRemaining }) }}
                     </p>
                     <p v-else-if="subscription && subscription.current_period_end" class="text-sm text-ink-500">
                         {{ t('billing.renews_on') }} {{ formatDate(subscription.current_period_end) }}
                     </p>
+                    <Button
+                        v-if="subscription && subscription.can_cancel"
+                        variant="secondary"
+                        size="sm"
+                        @click="showCancel = true"
+                    >
+                        {{ t('billing.cancel_subscription') }}
+                    </Button>
                 </div>
             </div>
+            <p
+                v-if="subscription && subscription.stripe_status === 'canceling'"
+                class="mt-3 text-sm text-warning-600 dark:text-warning-500"
+            >
+                {{ t('billing.canceling_notice') }}
+            </p>
         </div>
 
         <!-- Usage meters -->
@@ -195,7 +274,12 @@ function submitUpgrade() {
                 </div>
                 <p class="mt-1 text-sm text-ink-500">
                     <span v-if="plan.is_free">{{ t('billing.free') }}</span>
-                    <span v-else>{{ formatAUD(plan.price_monthly) }}{{ t('billing.per_month') }}</span>
+                    <template v-else>
+                        <span>{{ formatAUD(plan.price_monthly) }}{{ t('billing.per_month') }}</span>
+                        <span v-if="plan.price_annual > 0" class="text-ink-400">
+                            · {{ t('billing.or_annual', { price: formatAUD(plan.price_annual) }) }}
+                        </span>
+                    </template>
                 </p>
                 <p v-if="plan.description" class="mt-2 text-sm text-ink-600 dark:text-ink-300">{{ plan.description }}</p>
                 <div class="mt-3 flex flex-wrap gap-1.5">
@@ -206,6 +290,32 @@ function submitUpgrade() {
                     >
                         {{ moduleLabel(key) }}
                     </span>
+                </div>
+                <!-- Stripe checkout — only for paid plans synced to Stripe. -->
+                <div
+                    v-if="plan.can_checkout_monthly || plan.can_checkout_annual"
+                    class="mt-4 flex flex-wrap gap-2 border-t border-ink-100 pt-4 dark:border-ink-800"
+                >
+                    <Button
+                        v-if="plan.can_checkout_monthly"
+                        variant="primary"
+                        size="sm"
+                        :disabled="alreadyOnStripe(plan, 'monthly') || checkingOut !== null"
+                        :loading="checkingOut === `${plan.id}:monthly`"
+                        @click="subscribe(plan, 'monthly')"
+                    >
+                        {{ checkingOut === `${plan.id}:monthly` ? t('billing.redirecting') : t('billing.subscribe_monthly') }}
+                    </Button>
+                    <Button
+                        v-if="plan.can_checkout_annual"
+                        variant="secondary"
+                        size="sm"
+                        :disabled="alreadyOnStripe(plan, 'annual') || checkingOut !== null"
+                        :loading="checkingOut === `${plan.id}:annual`"
+                        @click="subscribe(plan, 'annual')"
+                    >
+                        {{ checkingOut === `${plan.id}:annual` ? t('billing.redirecting') : t('billing.subscribe_annual') }}
+                    </Button>
                 </div>
             </div>
         </div>
@@ -262,6 +372,17 @@ function submitUpgrade() {
                 <Button variant="secondary" @click="showUpgrade = false">{{ t('billing.cancel') }}</Button>
                 <Button variant="primary" :loading="form.processing" @click="submitUpgrade">
                     {{ t('billing.submit_request') }}
+                </Button>
+            </template>
+        </Modal>
+
+        <!-- Cancel-subscription confirmation modal -->
+        <Modal :show="showCancel" :title="t('billing.cancel_subscription_title')" @close="showCancel = false">
+            <p class="text-sm text-ink-500">{{ t('billing.cancel_subscription_hint') }}</p>
+            <template #footer>
+                <Button variant="secondary" @click="showCancel = false">{{ t('billing.keep_subscription') }}</Button>
+                <Button variant="danger" :loading="cancelForm.processing" @click="submitCancel">
+                    {{ t('billing.confirm_cancel') }}
                 </Button>
             </template>
         </Modal>

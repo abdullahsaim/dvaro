@@ -6,6 +6,7 @@ use App\Modules\CRM\Http\Controllers\IntakeFormController;
 use App\Modules\Customer\Http\Controllers\CustomerPortalController;
 use App\Modules\SaasCore\Http\Controllers\TenantRegistrationController;
 use App\Modules\SaasCore\Http\Controllers\WorkspaceLookupController;
+use App\Http\Controllers\StripeWebhookController;
 use App\Modules\Workshop\Http\Controllers\QrScanController;
 use Illuminate\Support\Facades\Route;
 
@@ -111,3 +112,18 @@ Route::get('portal/{tenant_slug}/invite/{token}', [CustomerPortalController::cla
     ->name('customer.portal.invite');
 Route::post('portal/{tenant_slug}/invite/{token}', [CustomerPortalController::class, 'acceptInvitation'])
     ->name('customer.portal.invite.accept');
+
+/*
+|--------------------------------------------------------------------------
+| Stripe webhook
+|--------------------------------------------------------------------------
+|
+| SERVER-TO-SERVER: no auth middleware and NO CSRF (excluded in
+| bootstrap/app.php) — the verified Stripe webhook signature is the only
+| authentication; an invalid signature aborts 400 before any processing.
+| This is where subscriptions actually activate (checkout.session.completed),
+| never on the success-URL redirect.
+|
+*/
+Route::post('stripe/webhook', [StripeWebhookController::class, 'handle'])
+    ->name('stripe.webhook');

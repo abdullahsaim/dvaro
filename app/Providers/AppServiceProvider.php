@@ -38,7 +38,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Payment provider contract → Stripe (the only gateway implemented;
+        // PayPal is a later session and will make this a per-tenant factory
+        // like NotificationProviderFactory). Everything charges through the
+        // interface — never the SDK.
+        $this->app->bind(
+            \App\Contracts\PaymentProviderInterface::class,
+            \App\Modules\SaasCore\Providers\StripePaymentProvider::class,
+        );
     }
 
     /**
@@ -84,6 +91,7 @@ class AppServiceProvider extends ServiceProvider
         // TENANT guard: Gate::forUser(auth('tenant')->user())->authorize('viewBilling'…).
         Gate::define('viewBilling', [BillingPolicy::class, 'view']);
         Gate::define('requestUpgrade', [BillingPolicy::class, 'requestUpgrade']);
+        Gate::define('manageSubscription', [BillingPolicy::class, 'manageSubscription']);
 
         // Public intake-form submissions: 5 per hour PER TOKEN (the {token} route
         // segment), not per IP — many customers may legitimately share one IP

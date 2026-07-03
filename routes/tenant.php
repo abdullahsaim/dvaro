@@ -10,6 +10,7 @@ use App\Modules\Invoice\Http\Controllers\InvoiceController;
 use App\Modules\Notification\Http\Controllers\NotificationSettingsController;
 use App\Modules\Reporting\Http\Controllers\ReportingController;
 use App\Modules\SaasCore\Http\Controllers\BillingController;
+use App\Modules\SaasCore\Http\Controllers\StripeCheckoutController;
 use App\Modules\SaasCore\Http\Controllers\TenantAuthController;
 use App\Modules\SaasCore\Http\Controllers\TenantDashboardController;
 use App\Modules\SaasCore\Http\Controllers\TenantPasswordResetController;
@@ -135,12 +136,25 @@ Route::middleware('auth:tenant')->group(function () {
         ->name('invoices.pdf');
 
     // Billing portal — tenant_admin only (BillingPolicy via the 'viewBilling' /
-    // 'requestUpgrade' gates in the controllers). No self-service plan assignment
-    // (that is super admin, or Stripe in a later session); the only mutation is
-    // submitting an upgrade request.
+    // 'requestUpgrade' / 'manageSubscription' gates in the controllers).
     Route::get('billing', [BillingController::class, 'index'])->name('billing.index');
     Route::post('billing/upgrade-request', [UpgradeRequestController::class, 'store'])
         ->name('billing.upgrade-request');
+
+    // Stripe Checkout (hosted page). {plan} binds by id — Plan is platform-wide
+    // (unscoped), so cross-tenant leakage is not a concern; the checkout service
+    // still guards active/paid/synced. success/cancel are merely where Stripe
+    // sends the browser back — activation ONLY happens via webhook.
+    Route::post('billing/checkout/{plan}', [StripeCheckoutController::class, 'checkout'])
+        ->name('billing.checkout');
+    Route::get('billing/checkout/success', [StripeCheckoutController::class, 'success'])
+        ->name('billing.checkout.success');
+    Route::get('billing/checkout/cancel', [StripeCheckoutController::class, 'cancel'])
+        ->name('billing.checkout.cancel');
+
+    // Cancel the Stripe subscription (at period end — webhook finalises).
+    Route::post('billing/cancel', [BillingController::class, 'cancelSubscription'])
+        ->name('billing.cancel');
 
     // Notification settings — tenant-wide provider selection + channel toggles.
     // Not a resource (single settings page); tenant_admin-gated in the controller.

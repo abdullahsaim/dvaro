@@ -115,5 +115,15 @@ return [
 
     'billing' => [
         'upgrade_requested' => 'Request received — our team will contact you shortly.',
+        // Stripe checkout / cancellation flash + guard messages.
+        'checkout_failed'    => 'We could not start the checkout. Please try again shortly.',
+        'checkout_cancelled' => 'Checkout cancelled — you have not been charged.',
+        'plan_unavailable'   => 'This plan is not currently available.',
+        'plan_is_free'       => 'This plan is free and does not require payment.',
+        'plan_not_synced'    => 'Online payment for this plan is not available yet — please send an upgrade request instead.',
+        'already_subscribed' => 'You are already subscribed to this plan.',
+        'no_stripe_subscription' => 'There is no active online subscription to cancel.',
+        'cancel_failed'      => 'We could not cancel the subscription. Please try again shortly.',
+        'cancel_requested'   => 'Cancellation scheduled — your plan remains active until the end of the current period.',
     ],
 ];

@@ -63,6 +63,15 @@ return [
         'key' => env('DEEPSEEK_API_KEY'),
     ],
 
+    // Stripe — platform subscription billing (tenant checkout). Secret is used
+    // server-side only, via StripePaymentProvider; webhook_secret verifies the
+    // signature on POST /stripe/webhook.
+    'stripe' => [
+        'key' => env('STRIPE_KEY'),
+        'secret' => env('STRIPE_SECRET'),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

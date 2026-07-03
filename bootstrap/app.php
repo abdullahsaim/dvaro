@@ -83,6 +83,13 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\HandleInertiaRequests::class,
         ]);
 
+        // Stripe posts webhooks server-to-server — it cannot carry a CSRF token.
+        // The verified webhook signature (StripeWebhookController) is the sole
+        // authentication for this endpoint.
+        $middleware->validateCsrfTokens(except: [
+            'stripe/webhook',
+        ]);
+
         // CRITICAL ordering: Laravel's middleware-priority sort hoists the
         // framework Authenticate middleware ('auth:tenant') ahead of unsorted
         // custom middleware. Without this, auth would run BEFORE TenantMiddleware
