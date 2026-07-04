@@ -2,6 +2,7 @@
 
 namespace App\Modules\SaasCore\Models;
 
+use App\Scopes\TenantScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -79,9 +80,16 @@ class Plan extends Model
         ];
     }
 
+    /**
+     * Subscription is tenant-scoped (HasTenant), but this relation is only
+     * used from the super admin context (plan list counts, delete guard),
+     * where no tenant is bound and counts must span all tenants — so the
+     * global TenantScope is removed here, like Tenant::subscriptions().
+     */
     public function subscriptions(): HasMany
     {
-        return $this->hasMany(Subscription::class);
+        return $this->hasMany(Subscription::class)
+            ->withoutGlobalScope(TenantScope::class);
     }
 
     /**
