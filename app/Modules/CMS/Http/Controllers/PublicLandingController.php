@@ -28,27 +28,35 @@ class PublicLandingController extends Controller
     ) {}
 
     /**
-     * Homepage: hero, features, a pricing preview and testimonials.
+     * Homepage: hero, stats, features, how-it-works, a pricing preview,
+     * testimonials, FAQ and the closing CTA band.
      */
     public function index(): Response
     {
         return Inertia::render('Public/Landing', [
             'hero' => $this->section('hero'),
+            'stats' => $this->section('stats'),
             'features' => $this->section('features'),
+            'howItWorks' => $this->section('how_it_works'),
             'about' => $this->section('about'),
             'testimonials' => $this->section('testimonials'),
+            'faq' => $this->section('faq'),
+            'cta' => $this->section('cta'),
             'contact' => $this->section('contact'),
             'plans' => $this->activePlans(),
         ]);
     }
 
     /**
-     * Dedicated pricing page — every active plan with pricing, modules, limits.
+     * Dedicated pricing page — every active plan with pricing, modules, limits,
+     * plus the shared FAQ and CTA content.
      */
     public function pricing(): Response
     {
         return Inertia::render('Public/Pricing', [
             'plans' => $this->activePlans(),
+            'faq' => $this->section('faq'),
+            'cta' => $this->section('cta'),
         ]);
     }
 
@@ -56,6 +64,9 @@ class PublicLandingController extends Controller
     {
         return Inertia::render('Public/About', [
             'about' => $this->section('about'),
+            'values' => $this->section('values'),
+            'stats' => $this->section('stats'),
+            'cta' => $this->section('cta'),
         ]);
     }
 

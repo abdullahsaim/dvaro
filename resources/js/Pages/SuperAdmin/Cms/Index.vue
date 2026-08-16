@@ -107,7 +107,20 @@ function uploadImage(block, event) {
                         <div class="flex flex-col gap-4 sm:flex-row sm:items-start">
                             <div class="sm:w-64">
                                 <p class="mb-1 text-xs font-medium text-ink-500">{{ t('superadmin.cms.current_image') }}</p>
-                                <img v-if="cmsImage(block.key, block.image_url)" :src="cmsImage(block.key, block.image_url)" alt="" class="w-full rounded-control border border-ink-200 bg-white object-contain p-2 dark:border-ink-700 dark:bg-ink-800" />
+                                <!-- Theme logos preview on a surface matching the theme they'll
+                                     render on (white-on-transparent needs a dark bg and vice
+                                     versa), regardless of the editor's own color mode. -->
+                                <img
+                                    v-if="cmsImage(block.key, block.image_url)"
+                                    :src="cmsImage(block.key, block.image_url)"
+                                    alt=""
+                                    class="w-full rounded-control border object-contain p-2"
+                                    :class="{
+                                        'border-ink-700 bg-ink-950': block.key === 'logo_dark',
+                                        'border-ink-200 bg-white': block.key === 'logo_light',
+                                        'border-ink-200 bg-white dark:border-ink-700 dark:bg-ink-800': block.key !== 'logo_dark' && block.key !== 'logo_light',
+                                    }"
+                                />
                                 <p v-else class="rounded-control border border-dashed border-ink-300 p-4 text-center text-xs text-ink-400 dark:border-ink-700">
                                     {{ t('superadmin.cms.no_image') }}
                                 </p>

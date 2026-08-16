@@ -10,13 +10,27 @@
 //
 // Color mode here is localStorage-only on guest pages (no server prop); the
 // composable handles that gracefully.
-import { ref } from 'vue';
-import { Link } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
+import { Link, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import { SunIcon, MoonIcon, Bars3Icon, XMarkIcon } from '@heroicons/vue/24/outline';
 import { useColorMode } from '@/composables/useColorMode';
+import { cmsImage } from '@/cms/defaultImages.js';
 
 const { t } = useI18n();
+const page = usePage();
+
+// CMS-managed theme logos (shared 'branding' prop). Each mode prefers its own
+// logo, falls back to the other, then to the bundled defaults via cmsImage —
+// so the header never renders empty. Theme switching is pure CSS (dark:hidden /
+// hidden dark:block), no re-render needed on toggle.
+const branding = computed(() => page.props.branding ?? {});
+const logoLight = computed(
+    () => cmsImage('logo_light', branding.value.logo_light) || cmsImage('logo_dark', branding.value.logo_dark),
+);
+const logoDark = computed(
+    () => cmsImage('logo_dark', branding.value.logo_dark) || cmsImage('logo_light', branding.value.logo_light),
+);
 
 const mobileOpen = ref(false);
 
@@ -42,9 +56,15 @@ const iconBtn =
         <!-- Header -->
         <header class="sticky top-0 z-30 border-b border-ink-200/70 bg-white/80 backdrop-blur dark:border-ink-800/70 dark:bg-ink-950/80">
             <div class="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-                <Link href="/" class="flex items-center gap-2">
-                    <span class="grid h-8 w-8 place-items-center rounded-control bg-ink-950 text-sm font-bold text-white dark:bg-ink-50 dark:text-ink-950">D</span>
-                    <span class="text-lg font-semibold tracking-tight">{{ t('app.name') }}</span>
+                <Link href="/" class="flex items-center">
+                    <template v-if="logoLight || logoDark">
+                        <img :src="logoLight" :alt="t('app.name')" class="h-7 w-auto max-w-40 object-contain object-left dark:hidden sm:h-8" />
+                        <img :src="logoDark" :alt="t('app.name')" class="hidden h-7 w-auto max-w-40 object-contain object-left dark:block sm:h-8" />
+                    </template>
+                    <template v-else>
+                        <span class="grid h-8 w-8 place-items-center rounded-control bg-ink-950 text-sm font-bold text-white dark:bg-ink-50 dark:text-ink-950">D</span>
+                        <span class="ml-2 text-lg font-semibold tracking-tight">{{ t('app.name') }}</span>
+                    </template>
                 </Link>
 
                 <!-- Desktop nav -->
@@ -126,9 +146,15 @@ const iconBtn =
         <footer class="border-t border-ink-200 bg-ink-50 dark:border-ink-800 dark:bg-ink-900/50">
             <div class="mx-auto grid w-full max-w-7xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-3 lg:px-8">
                 <div>
-                    <div class="flex items-center gap-2">
-                        <span class="grid h-8 w-8 place-items-center rounded-control bg-ink-950 text-sm font-bold text-white dark:bg-ink-50 dark:text-ink-950">D</span>
-                        <span class="text-lg font-semibold">{{ t('app.name') }}</span>
+                    <div class="flex items-center">
+                        <template v-if="logoLight || logoDark">
+                            <img :src="logoLight" :alt="t('app.name')" class="h-7 w-auto max-w-40 object-contain object-left dark:hidden" />
+                            <img :src="logoDark" :alt="t('app.name')" class="hidden h-7 w-auto max-w-40 object-contain object-left dark:block" />
+                        </template>
+                        <template v-else>
+                            <span class="grid h-8 w-8 place-items-center rounded-control bg-ink-950 text-sm font-bold text-white dark:bg-ink-50 dark:text-ink-950">D</span>
+                            <span class="ml-2 text-lg font-semibold">{{ t('app.name') }}</span>
+                        </template>
                     </div>
                     <p class="mt-3 max-w-xs text-sm text-ink-500">{{ t('public.footer.tagline') }}</p>
                 </div>

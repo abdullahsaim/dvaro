@@ -3,7 +3,6 @@
 namespace App\Modules\CMS\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * CmsContentBlock — a single editable piece of landing-page content.
@@ -57,6 +56,12 @@ class CmsContentBlock extends Model
      * Public URL for an image block's stored object (public disk, served from
      * /storage/), or null when the block is not an image / has no image set.
      * Used by the public pages and the super admin editor's preview.
+     *
+     * ROOT-RELATIVE on purpose: Storage::disk('public')->url() prefixes
+     * APP_URL, so a mismatched env (e.g. APP_URL=http://localhost while
+     * browsing 127.0.0.1:8000 or the demo vhost) produced broken image links.
+     * CMS images are always served same-origin from the /storage symlink, so
+     * the host is dropped entirely.
      */
     public function imageUrl(): ?string
     {
@@ -64,7 +69,7 @@ class CmsContentBlock extends Model
             return null;
         }
 
-        return Storage::disk('public')->url($this->image_path);
+        return '/storage/'.ltrim($this->image_path, '/');
     }
 
     /**

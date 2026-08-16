@@ -26,11 +26,28 @@
             "not_found": "We couldn't find a workspace for {email}.",
             "register_cta": "Register a new company"
         },
+        "hero": {
+            "no_card_required": "Free trial — no credit card required",
+            "toast_title": "Payment received",
+            "toast_body": "Invoice #1042 paid online"
+        },
         "features": {
+            "kicker": "The platform",
             "title": "Everything you need to run a rental business",
             "subtitle": "One platform, from the first lead to the final invoice."
         },
+        "how": {
+            "kicker": "How it works",
+            "title": "Up and running in an afternoon",
+            "subtitle": "From signup to your first signed agreement in four steps."
+        },
+        "faq": {
+            "title": "Frequently asked questions",
+            "subtitle": "Everything you need to know before getting started.",
+            "toggle_label": "Toggle answer: {question}"
+        },
         "pricing": {
+            "kicker": "Pricing",
             "title": "Simple, transparent pricing",
             "subtitle": "Choose the plan that fits your fleet. Upgrade anytime.",
             "monthly": "Monthly",
@@ -43,7 +60,21 @@
             "get_started": "Get started",
             "view_all": "View all plans",
             "no_plans": "Plans are coming soon. Check back shortly.",
-            "limit_unlimited": "Unlimited"
+            "limit_unlimited": "Unlimited",
+            "most_popular": "Most popular",
+            "save_annual": "Save {amount} a year",
+            "save_up_to": "Save up to {percent}%",
+            "trust_cancel": "Cancel anytime",
+            "trust_aud": "Prices in AUD, GST-ready",
+            "trust_data": "Your data stays yours",
+            "custom_title": "Need a bigger fleet or a custom plan?",
+            "custom_subtitle": "Tell us about your operation and we'll put together a plan that fits.",
+            "limits": {
+                "vehicles": "Up to {count} vehicles",
+                "staff": "Up to {count} staff users",
+                "customers": "Up to {count} customers",
+                "storage": "{count} GB document storage"
+            }
         },
         "testimonials": {
             "title": "Loved by rental operators"
@@ -60,18 +91,25 @@
             "submitting": "Sending…"
         },
         "contact": {
+            "kicker": "Contact",
             "title": "Get in touch",
             "subtitle": "Have a question? Send us a message.",
             "email": "Email",
             "phone": "Phone",
             "address": "Address",
+            "hours": "Office hours",
             "name": "Your name",
             "message": "Message",
             "send": "Send message",
             "sending": "Sending…"
         },
         "about": {
-            "title": "About DVARO"
+            "kicker": "About us",
+            "title": "About DVARO",
+            "story_title": "One accurate system, end to end",
+            "mission_title": "Our mission",
+            "values_title": "What we stand for",
+            "values_subtitle": "The principles behind every feature we ship."
         }
     },
     "auth": {
@@ -761,12 +799,18 @@
             "upload_image": "Upload new image",
             "image_hint": "JPG, PNG or WebP, up to 5MB. Swaps the image in place — the layout does not change.",
             "sections": {
+                "branding": "Branding & logos",
                 "hero": "Hero",
+                "stats": "Stats band",
                 "features": "Features",
+                "how_it_works": "How it works",
                 "pricing": "Pricing",
                 "about": "About",
+                "values": "Values",
                 "contact": "Contact",
-                "testimonials": "Testimonials"
+                "testimonials": "Testimonials",
+                "faq": "FAQ",
+                "cta": "Call to action"
             }
         },
         "demo_requests": {

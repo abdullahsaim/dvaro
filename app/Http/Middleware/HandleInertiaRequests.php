@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Modules\CMS\Services\CmsContentService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -29,6 +30,17 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request), // includes the validation 'errors' bag
+
+            // Platform branding (CMS-managed header/footer logos, one per color
+            // mode). Shared globally — PublicLayout wraps auth pages as well as
+            // the marketing pages, so per-controller props can't cover it.
+            // CmsContentService is cache-first (Redis), so this costs two cache
+            // reads, not DB queries. Null until the super admin uploads a logo;
+            // the frontend then falls back to the bundled defaults.
+            'branding' => [
+                'logo_light' => fn () => app(CmsContentService::class)->get('logo_light'),
+                'logo_dark' => fn () => app(CmsContentService::class)->get('logo_dark'),
+            ],
 
             // One-shot flash messages (e.g. redirect()->with('success', ...)).
             'flash' => [

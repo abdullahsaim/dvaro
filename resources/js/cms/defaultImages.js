@@ -9,6 +9,8 @@
 // Keyed by CMS block key — must stay in sync with the image blocks seeded in
 // database/seeders/CmsContentSeeder.php.
 export const defaultImages = {
+    logo_light: '/images/landing/logo-black.png',
+    logo_dark: '/images/landing/logo-white.png',
     hero_image: '/images/landing/hero.jpg',
     feature_1_image: '/images/landing/feature-fleet.svg',
     feature_2_image: '/images/landing/feature-agreement.svg',

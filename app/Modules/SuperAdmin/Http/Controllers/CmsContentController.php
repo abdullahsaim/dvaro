@@ -28,16 +28,33 @@ class CmsContentController extends Controller
     ) {}
 
     /**
+     * Editor tab order — mirrors the order the sections appear on the public
+     * pages (unknown/new sections fall to the end alphabetically).
+     */
+    private const SECTION_ORDER = [
+        'branding', 'hero', 'stats', 'features', 'how_it_works', 'about',
+        'values', 'testimonials', 'faq', 'cta', 'contact',
+    ];
+
+    /**
      * All content blocks grouped by section for the editor.
      */
     public function index(): Response
     {
         Gate::forUser(auth('superadmin')->user())->authorize('contentAccess');
 
+        $order = array_flip(self::SECTION_ORDER);
+
         $sections = CmsContentBlock::query()
             ->orderBy('section')
             ->orderBy('sort_order')
             ->get()
+            ->sortBy(fn (CmsContentBlock $b) => [
+                $order[$b->section] ?? PHP_INT_MAX,
+                $b->section,
+                $b->sort_order,
+            ])
+            ->values()
             ->map(fn (CmsContentBlock $b) => [
                 'key' => $b->key,
                 'type' => $b->type,
