@@ -1,5 +1,5 @@
 <script setup>
-// Tenant billing portal — current plan, usage meters (vehicles/staff/customers),
+// Tenant billing portal — current plan, usage meters (vehicles/staff/customers/mechanics),
 // disabled modules, available plans, upgrade-request modal, billing history.
 // Tenant-admin only (enforced server-side by BillingPolicy). Design-system UI.
 import { computed, ref } from 'vue';
@@ -44,6 +44,7 @@ const meters = computed(() => [
     { key: 'vehicles', label: t('billing.usage_vehicles'), ...props.usage.vehicles },
     { key: 'staff', label: t('billing.usage_staff'), ...props.usage.staff },
     { key: 'customers', label: t('billing.usage_customers'), ...props.usage.customers },
+    { key: 'mechanics', label: t('billing.usage_mechanics'), ...props.usage.mechanics },
 ]);
 
 function meterText(m) {
@@ -217,7 +218,7 @@ function submitCancel() {
 
         <!-- Usage meters -->
         <h2 class="mt-8 text-lg font-semibold text-ink-900 dark:text-ink-50">{{ t('billing.usage') }}</h2>
-        <div class="mt-4 grid gap-4 sm:grid-cols-3">
+        <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div
                 v-for="m in meters"
                 :key="m.key"

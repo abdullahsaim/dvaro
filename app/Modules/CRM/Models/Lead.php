@@ -61,7 +61,24 @@ class Lead extends Model
         'converted_at',
         'converted_customer_id',
         'created_by',
+        'source',
+        'referrer_url',
+        'submitted_ip',
+        'captcha_status',
     ];
+
+    /** Staff-created lead + per-lead signed intake link (the original flow). */
+    public const SOURCE_LINK = 'link';
+    /** Tenant's public lead form opened directly (share link / QR). */
+    public const SOURCE_PUBLIC_FORM = 'public_form';
+    /** Tenant's public lead form embedded on their own website (iframe). */
+    public const SOURCE_EMBED = 'embed';
+
+    public const SOURCES = [self::SOURCE_LINK, self::SOURCE_PUBLIC_FORM, self::SOURCE_EMBED];
+
+    public const CAPTCHA_PASSED = 'passed';
+    /** Captcha not configured, or Google unreachable — accepted but flagged. */
+    public const CAPTCHA_UNVERIFIED = 'unverified';
 
     protected function casts(): array
     {

@@ -7,6 +7,8 @@ use App\Modules\Agreement\DTOs\CreateAgreementDTO;
 use App\Modules\Agreement\Http\Requests\SignAgreementRequest;
 use App\Modules\Agreement\Http\Requests\StoreAgreementRequest;
 use App\Modules\Agreement\Models\Agreement;
+use App\Modules\Agreement\Models\AgreementTemplate;
+use App\Modules\Agreement\Services\AgreementTemplateService;
 use App\Modules\Agreement\Services\AgreementService;
 use App\Modules\Customer\Models\Customer;
 use App\Modules\Fleet\Models\Vehicle;
@@ -110,6 +112,12 @@ class AgreementController extends Controller
                 ->get(['id', 'registration_number', 'make', 'model']),
             'types' => Agreement::TYPES,
             'billingCycles' => Agreement::BILLING_CYCLES,
+            'states' => AgreementTemplate::STATES,
+            // Pre-selected state + the terms templates this tenant may use
+            // (own + platform defaults). Leaving the template blank lets the
+            // selection cascade decide (AgreementTemplateService::resolveFor).
+            'defaultState' => app('current_tenant')->settings['default_state'] ?? null,
+            'templates' => app(AgreementTemplateService::class)->selectableFor(app('current_tenant')->id),
         ]);
     }
 
@@ -131,10 +139,17 @@ class AgreementController extends Controller
     {
         Gate::forUser(auth('tenant')->user())->authorize('view', $agreement);
 
-        $agreement->load(['customer', 'vehicle']);
+        $agreement->load(['customer', 'vehicle', 'template']);
 
         return Inertia::render('Agreement/Show', [
             'agreement' => $agreement,
+            // FROZEN terms (sanitised when the template was saved, merge fields
+            // already resolved) + provenance for the "from template" line.
+            'terms' => $agreement->terms_html,
+            'termsSource' => $agreement->agreement_template_id === null ? null : [
+                'name' => $agreement->template?->name,
+                'revision' => $agreement->template_revision,
+            ],
             // Whole version lineage (tree), newest first, for the history list.
             'versions' => $this->lineage($agreement)
                 ->map(fn (Agreement $a) => [

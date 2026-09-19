@@ -129,6 +129,7 @@ class GenerateReportExportJob implements ShouldQueue
             'fleet' => ['rows' => $reporting->fleetUtilisation($from, $to)],
             'overdue' => ['rows' => $reporting->overduePayments()],
             'workshop' => $reporting->workshopPerformance($from, $to),
+            'expenses' => $reporting->expenses($from, $to),
             default => [],
         };
     }

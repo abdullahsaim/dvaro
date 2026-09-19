@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\UserPreferenceController;
+use App\Modules\SuperAdmin\Http\Controllers\AgreementTemplateController as SuperAdminAgreementTemplateController;
 use App\Modules\SuperAdmin\Http\Controllers\CmsContentController;
 use App\Modules\SuperAdmin\Http\Controllers\DemoRequestController;
 use App\Modules\SuperAdmin\Http\Controllers\PlanManagementController;
@@ -98,6 +99,15 @@ Route::middleware('superadmin.auth')->group(function () {
 
     // Landing-page CMS. {key} is the content block's unique string key (validated
     // in the request). All actions are content-access gated.
+    // Platform DEFAULT agreement terms (tenant_id NULL) — the wording every
+    // tenant inherits until they write or copy their own.
+    Route::get('agreement-templates', [SuperAdminAgreementTemplateController::class, 'index'])
+        ->name('agreement-templates.index');
+    Route::post('agreement-templates', [SuperAdminAgreementTemplateController::class, 'store'])
+        ->name('agreement-templates.store');
+    Route::put('agreement-templates/{template}', [SuperAdminAgreementTemplateController::class, 'update'])
+        ->whereNumber('template')->name('agreement-templates.update');
+
     Route::get('cms', [CmsContentController::class, 'index'])->name('cms.index');
     Route::put('cms/{key}', [CmsContentController::class, 'update'])->name('cms.update');
     Route::post('cms/{key}/image', [CmsContentController::class, 'updateImage'])->name('cms.image');

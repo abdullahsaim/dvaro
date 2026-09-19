@@ -215,7 +215,7 @@ class WorkshopTest extends TestCase
             'token' => 'tok-123',
             'title' => 'Brake service',
             'labour_cost' => 3000,
-        ])->assertRedirect('/mechanic/shop-a/vehicle/tok-123');
+        ])->assertRedirect("/mechanic/shop-a/vehicles/{$vehicle->id}"); // legacy token payload still accepted
 
         app()->instance('current_tenant', $t);
         $this->assertSame(Vehicle::STATUS_MAINTENANCE, $vehicle->fresh()->status);

@@ -4,6 +4,7 @@ namespace App\Modules\Workshop\Actions;
 
 use App\Actions\BaseAction;
 use App\Modules\Fleet\Actions\ChangeVehicleStatusAction;
+use App\Modules\Fleet\Actions\ResetServiceScheduleAction;
 use App\Modules\Fleet\Models\Vehicle;
 use App\Modules\Workshop\Events\MaintenanceCompleted;
 use App\Modules\Workshop\Models\ServiceLog;
@@ -22,6 +23,7 @@ class ChangeServiceLogStatusAction extends BaseAction
 {
     public function __construct(
         private readonly ChangeVehicleStatusAction $changeVehicleStatus,
+        private readonly ResetServiceScheduleAction $resetServiceSchedule,
     ) {}
 
     /**
@@ -55,6 +57,16 @@ class ChangeServiceLogStatusAction extends BaseAction
             if ($newStatus === ServiceLog::STATUS_COMPLETED && ! $wasComplete) {
                 $vehicle = Vehicle::findOrFail($log->vehicle_id);
                 $this->changeVehicleStatus->execute($vehicle, Vehicle::STATUS_AVAILABLE);
+
+                // A SCHEDULED service resets the service schedule (date + km).
+                // An ignored (backwards) odometer never becomes the baseline.
+                if ($log->is_scheduled_service) {
+                    $this->resetServiceSchedule->execute(
+                        $vehicle,
+                        $log->completed_at,
+                        $log->odometer_ignored ? null : $log->odometer_reading,
+                    );
+                }
 
                 MaintenanceCompleted::dispatch($log);
             }

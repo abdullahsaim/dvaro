@@ -17,7 +17,8 @@ class UpdateVehicleAction extends BaseAction
 {
     public function execute(Vehicle $vehicle, UpdateVehicleDTO $dto): Vehicle
     {
-        $vehicle->update($dto->toAttributes());
+        // Re-derive next service date/km from the (possibly changed) intervals.
+        $vehicle->fill($dto->toAttributes())->applyServiceSchedule()->save();
 
         return $vehicle;
     }

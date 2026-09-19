@@ -23,6 +23,12 @@
         td.value { font-weight: bold; }
         .meta { color: #666; font-size: 11px; }
         .sig { margin-top: 8px; border: 1px solid #ccc; max-width: 320px; }
+        .terms { font-size: 11px; line-height: 1.5; }
+        .terms h2 { font-size: 13px; margin: 14px 0 4px; }
+        .terms h3 { font-size: 12px; margin: 12px 0 4px; }
+        .terms p { margin: 0 0 8px; }
+        .terms ul, .terms ol { margin: 0 0 8px 18px; padding: 0; }
+        .terms li { margin: 0 0 4px; }
     </style>
 </head>
 <body>
@@ -71,6 +77,13 @@
         <tr><td class="label">End date</td><td class="value">{{ $agreement->end_date ? $date($agreement->end_date) : 'No fixed term' }}</td></tr>
         <tr><td class="label">Notes</td><td class="value">{{ $agreement->notes ?? '—' }}</td></tr>
     </table>
+
+    @if (filled($agreement->terms_html))
+        {{-- FROZEN terms: merge fields already resolved and the HTML sanitised
+             when the template was saved, so this is safe to render raw. --}}
+        <h2>Terms and conditions</h2>
+        <div class="terms">{!! $agreement->terms_html !!}</div>
+    @endif
 
     <h2>Signature</h2>
     <table>

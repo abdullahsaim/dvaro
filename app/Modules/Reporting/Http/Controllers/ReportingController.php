@@ -92,6 +92,19 @@ class ReportingController extends Controller
         ]);
     }
 
+    public function expenses(ReportRequest $request, ReportCacheService $cache): Response
+    {
+        Gate::forUser(auth('tenant')->user())->authorize('viewAny', ReportExport::class);
+
+        [$from, $to] = $request->range();
+
+        return Inertia::render('Reporting/Expenses', [
+            'report' => $cache->expenses($from, $to),
+            'filters' => $this->filters($from, $to),
+            'exports' => $this->recentExports('expenses'),
+        ]);
+    }
+
     public function customers(ReportRequest $request, ReportCacheService $cache): Response
     {
         Gate::forUser(auth('tenant')->user())->authorize('viewAny', ReportExport::class);

@@ -16,6 +16,7 @@ const links = computed(() => [
     { key: 'workshop', href: `/app/${slug}/reports/workshop`, label: t('reporting.nav.workshop') },
     { key: 'customers', href: `/app/${slug}/reports/customers`, label: t('reporting.nav.customers') },
     { key: 'maintenance', href: `/app/${slug}/reports/maintenance`, label: t('reporting.nav.maintenance') },
+    { key: 'expenses', href: `/app/${slug}/reports/expenses`, label: t('reporting.nav.expenses') },
 ]);
 
 defineProps({ active: { type: String, required: true } });

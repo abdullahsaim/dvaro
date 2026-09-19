@@ -13,6 +13,7 @@ const page = usePage();
 
 const props = defineProps({
     agreement: { type: Object, required: true },
+    terms: { type: String, default: null }, // frozen, sanitised terms
 });
 
 const base = computed(() => `/portal/${page.props.tenant.slug}`);
@@ -57,6 +58,16 @@ const rows = computed(() => [
                 <dd class="mt-0.5 font-medium capitalize text-ink-900 dark:text-ink-50">{{ row.value }}</dd>
             </div>
         </dl>
+
+        <!-- The terms this customer agreed to (frozen + sanitised server-side) -->
+        <section v-if="terms" class="mt-6">
+            <h2 class="text-sm font-semibold text-ink-900 dark:text-ink-50">{{ t('customer.portal.terms') }}</h2>
+            <!-- eslint-disable-next-line vue/no-v-html -->
+            <div
+                class="terms-content mt-3 rounded-card border border-ink-200 bg-white p-5 shadow-subtle dark:border-ink-800 dark:bg-ink-900"
+                v-html="terms"
+            />
+        </section>
 
         <p v-if="!agreement.has_pdf" class="mt-4 text-sm text-ink-500">{{ t('customer.portal.no_pdf') }}</p>
     </CustomerLayout>

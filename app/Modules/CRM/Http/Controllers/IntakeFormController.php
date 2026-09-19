@@ -64,8 +64,17 @@ class IntakeFormController extends Controller
     {
         $lead = $this->resolveLead($request, $tenant_slug, $token);
 
+        $data = $request->validated();
+
+        // Email is optional on this form (walk-ins may not have one) but
+        // leads.email is NOT NULL: a blank email keeps what staff captured
+        // instead of nulling the column (previously a 500).
+        if (blank($data['email'] ?? null)) {
+            unset($data['email']);
+        }
+
         $lead->update([
-            ...$request->validated(),
+            ...$data,
             'submitted_at' => now(),
         ]);
 

@@ -73,6 +73,7 @@
                 "vehicles": "Up to {count} vehicles",
                 "staff": "Up to {count} staff users",
                 "customers": "Up to {count} customers",
+                "mechanics": "Up to {count} mechanics",
                 "storage": "{count} GB document storage"
             }
         },
@@ -159,6 +160,7 @@
         "all": "All",
         "none": "—",
         "search": "Search",
+        "view_plans": "View plans",
         "confirm_delete": "Remove this vehicle from your fleet?",
         "close": "Close",
         "menu": "Menu",
@@ -174,6 +176,7 @@
         "customers": "Customers",
         "agreements": "Agreements",
         "invoices": "Invoices",
+        "expenses": "Expenses",
         "leads": "Leads",
         "workshop": "Workshop",
         "reports": "Reports",
@@ -225,6 +228,7 @@
         "usage_vehicles": "Vehicles",
         "usage_staff": "Staff users",
         "usage_customers": "Customers",
+        "usage_mechanics": "Mechanics",
         "usage_unlimited": "Unlimited",
         "usage_of": "{current} of {limit}",
         "stored_files": "Stored files",
@@ -277,6 +281,11 @@
         "empty": "No vehicles yet.",
         "change_status": "Change status",
         "update_status": "Update status",
+        "expiring_soon": "Expiring soon",
+        "expiry": {
+            "overdue": "Overdue",
+            "due_soon": "Due soon"
+        },
         "fields": {
             "registration_number": "Registration",
             "make": "Make",
@@ -289,7 +298,35 @@
             "registration_expiry": "Registration expiry",
             "last_service_date": "Last service date",
             "next_service_due": "Next service due",
-            "notes": "Notes"
+            "notes": "Notes",
+            "service_interval_months": "Service every (months)",
+            "service_interval_km": "Service every (km)",
+            "current_odometer": "Odometer",
+            "last_service_odometer": "Odometer at last service (km)"
+        },
+        "schedule": {
+            "title": "Service schedule",
+            "hint": "Set months, km or both. The next service is due at whichever comes first.",
+            "auto_hint": "Calculated from the last service date and the months interval.",
+            "interval": "Interval",
+            "every_months": "Every {n} months",
+            "every_km": "every {km} km",
+            "or": "or",
+            "last_service": "Last service",
+            "next_service": "Next service",
+            "km_to_go": "{km} km to go",
+            "km_over": "{km} km overdue"
+        },
+        "odometer": {
+            "record": "Record reading",
+            "record_label": "New odometer reading (km)",
+            "history": "Odometer history",
+            "none": "No readings recorded yet.",
+            "sources": {
+                "manual": "Staff",
+                "service_log": "Service",
+                "return_inspection": "Return"
+            }
         },
         "statuses": {
             "available": "Available",
@@ -349,6 +386,19 @@
         "invite_portal": "Invite to portal",
         "has_portal_access": "This customer has portal access.",
         "portal_access_hint": "Invite this customer to log in and view their invoices and agreements.",
+        "documents": {
+            "title": "Documents",
+            "hint": "JPG, PNG or PDF, up to 10 MB. Stored privately — links expire after 15 minutes.",
+            "license_front": "Licence — front",
+            "license_back": "Licence — back",
+            "proof_of_address": "Proof of address",
+            "on_file": "On file",
+            "missing": "Not uploaded",
+            "view": "View",
+            "upload": "Upload",
+            "replace": "Replace",
+            "uploading": "Uploading…"
+        },
         "fields": {
             "name": "Name",
             "email": "Email",
@@ -397,6 +447,7 @@
             "method": "Method",
             "date": "Date",
             "download_pdf": "Download PDF",
+            "terms": "Terms and conditions",
             "view": "View",
             "pay_now": "Pay now",
             "pay_amount": "Amount (AUD)",
@@ -419,6 +470,75 @@
         }
     },
     "crm": {
+        "source_label": "Source",
+        "sources": {
+            "all": "All sources",
+            "link": "Direct link",
+            "public_form": "Website form",
+            "embed": "Embedded form"
+        },
+        "unverified": "Unverified",
+        "unverified_hint": "reCAPTCHA could not verify this submission (not configured or unreachable). Check it looks genuine.",
+        "lead_form": {
+            "nav": "Lead form",
+            "title": "Lead form",
+            "intro": "One enquiry form for your business. Share the link, print the QR code, or embed it on your website. Every submission lands in Leads.",
+            "live": "Live",
+            "off": "Switched off",
+            "submissions": "{n} submissions in the last 30 days",
+            "captcha_missing": "reCAPTCHA isn't configured on this server yet, so spam checks rely on the hidden trap, timing and rate limits. Submissions are marked Unverified.",
+            "share_title": "Share link",
+            "share_hint": "Send it to customers, add it to social profiles, or print the QR code for your counter.",
+            "copy": "Copy link",
+            "copy_code": "Copy code",
+            "copied": "Copied",
+            "preview": "Open form",
+            "download_qr": "Download QR code",
+            "send": "Send link",
+            "send_title": "Send the form link",
+            "channel_email": "Email",
+            "channel_sms": "SMS",
+            "recipient_email": "Customer email",
+            "recipient_phone": "Customer mobile",
+            "sms_disabled": "Turn on SMS in Notification settings to send by text message.",
+            "embed_title": "Embed on your website",
+            "embed_hint": "Paste this code where the form should appear. It resizes itself to fit.",
+            "settings": "Settings",
+            "admin_only": "Only an admin can change these settings.",
+            "enabled": "Accept submissions",
+            "intro_label": "Message above the form",
+            "intro_placeholder": "Tell us what you need and we'll be in touch within one business day.",
+            "domains": "Websites allowed to embed",
+            "domains_hint": "Leave empty to allow any website. Add your domain to stop others embedding your form.",
+            "domains_any": "Any website can embed this form.",
+            "domain_placeholder": "yourwebsite.com.au",
+            "add": "Add",
+            "regenerate_title": "Create a new link",
+            "regenerate_hint": "Use this if your link is being abused. The old link, QR code and embed code stop working.",
+            "regenerate": "Create new link",
+            "regenerate_confirm": "Your current link, printed QR codes and website embed will stop working straight away. You'll need to update your website with the new embed code. Continue?"
+        },
+        "public_form": {
+            "title": "Rental enquiry — {company}",
+            "heading": "Rental enquiry",
+            "default_intro": "Tell us what you need and {company} will be in touch.",
+            "name": "Full name",
+            "phone": "Phone",
+            "email": "Email",
+            "start_date": "Preferred start date",
+            "duration": "How long do you need it?",
+            "duration_placeholder": "e.g. 3 weeks",
+            "notes": "Anything else we should know?",
+            "submit": "Send enquiry",
+            "privacy": "We only use your details to reply to your enquiry.",
+            "powered_by": "Powered by DVARO",
+            "thanks_title": "Thank you",
+            "thanks_body": "We've received your enquiry. {company} will be in touch shortly.",
+            "unavailable_title": "This form isn't available",
+            "unavailable_body": "The link may have changed. Please contact the rental company directly.",
+            "rate_limited_title": "Too many attempts",
+            "rate_limited_body": "Please wait a while and try again, or contact the rental company directly."
+        },
         "title": "Leads",
         "add_lead": "Add lead",
         "new_lead": "New lead",
@@ -466,6 +586,12 @@
         }
     },
     "agreement": {
+        "terms": "Terms and conditions",
+        "terms_from": "From “{name}”, revision {revision}",
+        "no_state": "Not set",
+        "terms_automatic": "Choose automatically",
+        "platform_default": "platform default",
+        "templates_link": "Templates",
         "title": "Agreements",
         "add_agreement": "New agreement",
         "new_agreement": "New agreement",
@@ -512,6 +638,8 @@
             "monthly": "Monthly"
         },
         "fields": {
+            "state": "State",
+            "terms_template": "Terms template",
             "customer": "Customer",
             "vehicle": "Vehicle",
             "type": "Type",
@@ -600,6 +728,16 @@
         }
     },
     "notifications": {
+        "fleet": {
+            "title": "Fleet reminders",
+            "hint": "A daily email to all staff listing registration, insurance and service that is due soon or overdue.",
+            "enabled": "Send fleet reminders",
+            "days": "Remind this many days ahead",
+            "days_help": "Registration, insurance and service dates.",
+            "km": "Remind this many km ahead",
+            "km_help": "Service by odometer.",
+            "email_off": "Email notifications are switched off above, so no reminders will be sent."
+        },
         "title": "Notification settings",
         "intro": "Choose how your company sends emails and text messages to customers.",
         "providers": "Providers",
@@ -631,6 +769,7 @@
             "plans": "Plans",
             "subscriptions": "Subscriptions",
             "settings": "Settings",
+            "agreement_templates": "Agreement terms",
             "cms": "Landing content",
             "demo_requests": "Demo requests",
             "upgrade_requests": "Upgrade requests"
@@ -750,7 +889,8 @@
                 "max_staff_users": "Max staff users",
                 "max_customers": "Max customers",
                 "max_storage_gb": "Max storage (GB)",
-                "max_file_size_mb": "Max file size (MB)"
+                "max_file_size_mb": "Max file size (MB)",
+                "max_mechanics": "Max mechanics"
             }
         },
         "subscriptions": {
@@ -852,6 +992,17 @@
     },
     "workshop": {
         "title": "Workshop",
+        "plate_search": {
+            "title": "Find a vehicle",
+            "hint": "No QR sticker? Search by number plate.",
+            "label": "Number plate",
+            "placeholder": "e.g. 1ABC 234",
+            "submit": "Search",
+            "too_short": "Enter at least 2 characters of the plate.",
+            "results": "{count} vehicles match “{plate}”",
+            "no_results": "No vehicle matches “{plate}”",
+            "no_results_hint": "Check the plate and try again. Spaces and dashes are ignored."
+        },
         "portal_title": "Mechanic portal",
         "sign_in": "Sign in",
         "scan": "Scan vehicle",
@@ -882,10 +1033,14 @@
         "started_at": "Started",
         "completed_at": "Completed",
         "open_qr": "Open vehicle",
+        "scheduled_service_hint": "Completing this job resets the vehicle's service schedule (date and km).",
+        "scheduled_badge": "Scheduled service",
+        "odometer_ignored": "lower than the vehicle's current reading, not recorded",
         "fields": {
             "title": "Title",
             "description": "Description",
             "odometer_reading": "Odometer (km)",
+            "is_scheduled_service": "This was a scheduled service",
             "labour_cost": "Labour cost (AUD)",
             "part_name": "Part name",
             "quantity": "Quantity",
@@ -929,6 +1084,130 @@
         "you": "You",
         "assistant": "Assistant"
     },
+    "expenses": {
+        "title": "Expenses",
+        "intro": "Daily costs, government fees, utilities and anything else the business spends. Amounts include GST.",
+        "record": "Record expense",
+        "edit": "Edit expense",
+        "report": "Report",
+        "categories": "Categories",
+        "by_category": "Spend by category",
+        "by_month": "Spend by month",
+        "filtered_total": "{total} in this period · GST {gst}",
+        "empty": "No expenses in this period.",
+        "empty_hint": "Record fuel, rego, utilities and other costs to see where the money goes.",
+        "empty_period": "No expenses in this period.",
+        "description_placeholder": "e.g. Fuel for rego ABC123",
+        "no_vehicle": "Not linked to a vehicle",
+        "gst_short": "GST {gst}",
+        "no_gst": "No GST",
+        "gst_reset": "Reset to 1/11 of total",
+        "view_receipt": "View receipt",
+        "current_receipt": "Current receipt",
+        "remove_receipt": "Remove",
+        "receipt_hint": "Photo or PDF, up to 10 MB. Stored privately.",
+        "voided": "Voided",
+        "voided_label": "Voided: {reason}",
+        "void": "Void",
+        "void_title": "Void expense",
+        "void_body": "Void “{description}” ({amount})? It stays on record but drops out of every total. This can't be undone.",
+        "void_reason": "Reason",
+        "category_name": "Category name",
+        "default_category": "Default",
+        "hide_category": "Hide",
+        "show_category": "Show",
+        "add_category": "Add",
+        "new_category_placeholder": "e.g. Fuel, Cleaning, Rent",
+        "categories_hint": "Hidden categories can't be picked for new expenses; existing expenses keep them. Categories are never deleted.",
+        "vehicle_section": "Expenses",
+        "vehicle_fy_total": "{total} this financial year",
+        "vehicle_none": "No expenses linked to this vehicle yet.",
+        "presets": {
+            "this_month": "This month",
+            "last_month": "Last month"
+        },
+        "filters": {
+            "from": "From",
+            "to": "To",
+            "all_categories": "All categories",
+            "all_vehicles": "All vehicles",
+            "show_voided": "Show voided"
+        },
+        "stats": {
+            "this_month": "Spent this month",
+            "fy_to_date": "{fy} to date",
+            "gst_fy": "GST paid {fy}",
+            "count": "Expenses",
+            "total": "Total (incl. GST)",
+            "gst": "GST paid",
+            "ex_gst": "Total (ex GST)"
+        },
+        "fields": {
+            "date": "Date",
+            "category": "Category",
+            "description": "Description",
+            "supplier": "Supplier",
+            "vehicle": "Vehicle",
+            "vehicle_optional": "Vehicle (optional)",
+            "amount_incl": "Amount incl. GST (AUD)",
+            "total": "Total",
+            "gst": "GST (AUD)",
+            "ex_gst": "Ex GST",
+            "includes_gst": "Amount includes GST",
+            "payment_method": "Paid by",
+            "notes": "Notes",
+            "receipt": "Receipt"
+        },
+        "methods": {
+            "cash": "Cash",
+            "card": "Card",
+            "bank_transfer": "Bank transfer",
+            "other": "Other"
+        }
+    },
+    "agreement_template": {
+        "title": "Agreement templates",
+        "intro": "The terms and conditions printed on your rental agreements. Set different wording per agreement type and per state.",
+        "platform_title": "Agreement templates (platform defaults)",
+        "platform_intro": "The fallback wording every rental company inherits until they write or copy their own.",
+        "your_templates": "Your templates",
+        "your_templates_hint": "Used automatically on new agreements — the most specific match for the type and state wins.",
+        "platform_defaults": "Platform defaults",
+        "platform_defaults_hint": "Read-only. Copy one to your own library to edit the wording.",
+        "none": "No templates yet. Copy a platform default below, or write your own.",
+        "new": "New template",
+        "editing": "Editing “{name}”",
+        "copy": "Copy and edit",
+        "archive": "Archive",
+        "restore": "Restore",
+        "archived": "Archived",
+        "revision": "Revision {n}",
+        "any_type": "Any agreement type",
+        "all_states": "All states",
+        "admin_only": "Only an admin can change the wording. You can read it here.",
+        "default_state": "Default state",
+        "no_default_state": "Not set",
+        "default_state_hint": "Pre-selected on new agreements.",
+        "fields": {
+            "name": "Template name",
+            "type": "Agreement type",
+            "state": "State",
+            "active": "Available for new agreements"
+        },
+        "editor": {
+            "heading": "Heading {level}",
+            "bold": "Bold",
+            "italic": "Italic",
+            "underline": "Underline",
+            "bullet_list": "Bullet list",
+            "ordered_list": "Numbered list",
+            "undo": "Undo",
+            "redo": "Redo",
+            "insert_field": "Insert field…",
+            "preview": "Preview with sample details",
+            "hint": "Insert fields from the menu — they are filled in when an agreement is created and frozen from then on."
+        }
+    },
     "reporting": {
         "title": "Reports & Analytics",
         "subtitle": "Revenue, fleet, payments and workshop insights.",
@@ -939,7 +1218,8 @@
             "overdue": "Overdue payments",
             "workshop": "Workshop",
             "customers": "Customer growth",
-            "maintenance": "Maintenance costs"
+            "maintenance": "Maintenance costs",
+            "expenses": "Expenses"
         },
         "kpi": {
             "revenue_this_month": "Revenue this month",
@@ -970,6 +1250,10 @@
             "amount": "Revenue",
             "vehicle": "Vehicle",
             "days_rented": "Days rented",
+            "expenses": "Expenses",
+            "maintenance": "Workshop",
+            "profit": "Profit",
+            "profit_hint": "Profit = revenue − expenses linked to the vehicle − completed workshop costs. Most profitable first.",
             "empty": "No revenue in this period."
         },
         "fleet": {

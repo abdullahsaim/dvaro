@@ -56,6 +56,38 @@ class LedgerService extends BaseService
     }
 
     /**
+     * Append a BUSINESS-LEVEL entry (no customer) — company expenses only.
+     *
+     * Sign for these entries: POSITIVE = money spent, NEGATIVE = a reversal
+     * (edit / void). They never touch a customer balance (balances are always
+     * computed per customer_id), and the DB CHECK constraint
+     * ledger_entries_customer_required only admits NULL customers for
+     * TYPE_EXPENSE.
+     */
+    public function appendBusiness(
+        int $tenantId,
+        string $type,
+        int $amount,
+        string $description,
+        ?string $referenceType = null,
+        ?int $referenceId = null,
+    ): LedgerEntry {
+        if (! in_array($type, LedgerEntry::BUSINESS_TYPES, true)) {
+            throw new InvalidArgumentException("Ledger type '{$type}' requires a customer.");
+        }
+
+        return LedgerEntry::create([
+            'tenant_id' => $tenantId,
+            'customer_id' => null,
+            'type' => $type,
+            'amount' => $amount,
+            'description' => $description,
+            'reference_type' => $referenceType,
+            'reference_id' => $referenceId,
+        ]);
+    }
+
+    /**
      * Current balance for a customer, in cents.
      *
      * Net of every entry: POSITIVE means the customer owes the tenant, NEGATIVE

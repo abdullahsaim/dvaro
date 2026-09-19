@@ -9,6 +9,7 @@ use App\Modules\Invoice\Models\Invoice;
 use App\Modules\Reporting\Models\ReportExport;
 use App\Modules\SaasCore\Models\Tenant;
 use App\Modules\SaasCore\Models\TenantUser;
+use App\Modules\Workshop\Models\Mechanic;
 use App\Services\BaseService;
 
 /**
@@ -18,11 +19,11 @@ use App\Services\BaseService;
  * Queries run tenant-scoped: the billing portal is entered with the tenant
  * bound, and each counted model uses TenantScope, so counts are automatically
  * constrained to the current tenant. The counts mirror exactly what the
- * enforcement path meters (Vehicle::count / Customer::count / TenantUser::count),
+ * enforcement path meters (Vehicle / Customer / TenantUser / Mechanic ::count),
  * so the bars never disagree with a PlanLimitExceededException.
  *
- * The metered keys (vehicles / staff / customers) map to real, enforced numeric
- * plan limits (max_vehicles / max_staff_users / max_customers). Storage is NOT
+ * The metered keys (vehicles / staff / customers / mechanics) map to real, enforced
+ * plan limits (max_vehicles / max_staff_users / max_customers / max_mechanics). Storage is NOT
  * metered as a percentage — we store no byte totals — so it is reported as an
  * informational FILE COUNT only (stored PDFs + exports), never a progress bar.
  */
@@ -35,6 +36,7 @@ class UsageService extends BaseService
         'vehicles' => 'max_vehicles',
         'staff' => 'max_staff_users',
         'customers' => 'max_customers',
+        'mechanics' => 'max_mechanics',
     ];
 
     /**
@@ -44,6 +46,7 @@ class UsageService extends BaseService
      *     vehicles: array{current:int,limit:int,percentage:int,approaching:bool},
      *     staff: array{current:int,limit:int,percentage:int,approaching:bool},
      *     customers: array{current:int,limit:int,percentage:int,approaching:bool},
+     *     mechanics: array{current:int,limit:int,percentage:int,approaching:bool},
      *     storage: array{files:int}
      * }
      */
@@ -106,6 +109,7 @@ class UsageService extends BaseService
             'vehicles' => Vehicle::count(),
             'staff' => TenantUser::count(),
             'customers' => Customer::count(),
+            'mechanics' => Mechanic::count(),
             default => 0,
         };
     }

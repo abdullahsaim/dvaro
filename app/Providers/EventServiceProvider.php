@@ -60,6 +60,16 @@ class EventServiceProvider extends ServiceProvider
         SubscriptionCancelled::class => [
             SendSubscriptionCancelledNotification::class,
         ],
+        // Expenses (Session 32) — sync; bust the expenses + profit-per-vehicle caches.
+        \App\Modules\Finance\Events\ExpenseRecorded::class => [
+            \App\Modules\Finance\Listeners\ExpenseReportCacheListener::class,
+        ],
+        \App\Modules\Finance\Events\ExpenseUpdated::class => [
+            \App\Modules\Finance\Listeners\ExpenseReportCacheListener::class,
+        ],
+        \App\Modules\Finance\Events\ExpenseVoided::class => [
+            \App\Modules\Finance\Listeners\ExpenseReportCacheListener::class,
+        ],
     ];
 
     /**

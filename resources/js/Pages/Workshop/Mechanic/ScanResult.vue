@@ -1,5 +1,5 @@
 <script setup>
-// Mechanic vehicle service page (reached from a QR scan). Shows the vehicle,
+// Mechanic vehicle service page (reached from a QR scan or plate search). Shows the vehicle,
 // its service history, a new-log form, and per-log status + parts controls.
 // Design-system pass; mobile-first.
 import { computed, reactive } from 'vue';
@@ -16,7 +16,6 @@ const { formatAUD, toCents } = useCurrency();
 
 const props = defineProps({
     vehicle: { type: Object, required: true },
-    token: { type: String, required: true },
     serviceHistory: { type: Array, required: true },
     statuses: { type: Array, required: true },
 });
@@ -35,11 +34,12 @@ const statusVariants = {
 
 // New service log.
 const logForm = useForm({
-    token: props.token,
+    vehicle_id: props.vehicle.id,
     title: '',
     description: '',
     odometer_reading: '',
     labour_cost: '', // AUD in the input → cents on submit
+    is_scheduled_service: false, // resets the vehicle's service schedule on completion
 });
 
 function createLog() {
@@ -49,7 +49,7 @@ function createLog() {
         labour_cost: data.labour_cost === '' ? 0 : toCents(data.labour_cost),
     })).post(`${base.value}/logs`, {
         preserveScroll: true,
-        onSuccess: () => logForm.reset('title', 'description', 'odometer_reading', 'labour_cost'),
+        onSuccess: () => logForm.reset('title', 'description', 'odometer_reading', 'labour_cost', 'is_scheduled_service'),
     });
 }
 
@@ -111,6 +111,17 @@ function addPart(log) {
                 </div>
                 <Input v-model="logForm.odometer_reading" type="number" min="0" :label="t('workshop.fields.odometer_reading')" :error="logForm.errors.odometer_reading" />
                 <Input v-model="logForm.labour_cost" type="number" min="0" step="0.01" :label="t('workshop.fields.labour_cost')" :error="logForm.errors.labour_cost" />
+                <label class="flex items-start gap-3 rounded-control border border-ink-200 p-3 sm:col-span-2 dark:border-ink-800">
+                    <input
+                        v-model="logForm.is_scheduled_service"
+                        type="checkbox"
+                        class="mt-0.5 h-5 w-5 rounded border-ink-300 accent-ink-900 dark:border-ink-700 dark:accent-ink-100"
+                    />
+                    <span>
+                        <span class="block text-sm font-medium text-ink-900 dark:text-ink-100">{{ t('workshop.fields.is_scheduled_service') }}</span>
+                        <span class="block text-xs text-ink-500">{{ t('workshop.scheduled_service_hint') }}</span>
+                    </span>
+                </label>
                 <div class="sm:col-span-2">
                     <Button type="submit" :loading="logForm.processing">{{ t('workshop.new_log') }}</Button>
                 </div>
@@ -130,8 +141,15 @@ function addPart(log) {
                             <p class="font-medium text-ink-900 dark:text-ink-50">{{ log.title }}</p>
                             <p v-if="log.description" class="mt-1 text-sm text-ink-500">{{ log.description }}</p>
                             <p class="mt-1 text-xs text-ink-400">{{ log.mechanic?.name }}</p>
+                            <p v-if="log.odometer_reading !== null" class="mt-1 text-xs tabular-nums text-ink-500">
+                                {{ t('workshop.fields.odometer_reading') }}: {{ log.odometer_reading.toLocaleString('en-AU') }} km
+                                <span v-if="log.odometer_ignored" class="text-warning-700 dark:text-warning-500">· {{ t('workshop.odometer_ignored') }}</span>
+                            </p>
                         </div>
-                        <StatusBadge :variant="statusVariants[log.status]" :label="t(`workshop.statuses.${log.status}`)" />
+                        <div class="flex flex-wrap items-center gap-2">
+                            <StatusBadge v-if="log.is_scheduled_service" variant="info" :label="t('workshop.scheduled_badge')" />
+                            <StatusBadge :variant="statusVariants[log.status]" :label="t(`workshop.statuses.${log.status}`)" />
+                        </div>
                     </div>
 
                     <!-- Costs -->

@@ -4,12 +4,15 @@ namespace App\Modules\Workshop\Actions;
 
 use App\Actions\BaseAction;
 use App\Modules\Fleet\Actions\ChangeVehicleStatusAction;
+use App\Modules\Fleet\Actions\RecordOdometerReadingAction;
+use App\Modules\Fleet\Models\OdometerReading;
 use App\Modules\Fleet\Models\Vehicle;
 use App\Modules\Workshop\DTOs\CreateServiceLogDTO;
 use App\Modules\Workshop\Events\MaintenanceStarted;
 use App\Modules\Workshop\Models\Mechanic;
 use App\Modules\Workshop\Models\ServiceLog;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Opens a new service log against a vehicle and puts that vehicle into the
@@ -23,6 +26,7 @@ class CreateServiceLogAction extends BaseAction
 {
     public function __construct(
         private readonly ChangeVehicleStatusAction $changeVehicleStatus,
+        private readonly RecordOdometerReadingAction $recordOdometer,
     ) {}
 
     public function execute(CreateServiceLogDTO $dto, Mechanic $mechanic): ServiceLog
@@ -42,7 +46,26 @@ class CreateServiceLogAction extends BaseAction
                 'labour_cost' => $dto->labour_cost,
                 'total_cost' => $dto->labour_cost, // no parts yet
                 'started_at' => now(),
+                'is_scheduled_service' => $dto->is_scheduled_service,
             ]);
+
+            // The mechanic's odometer becomes a vehicle reading (append-only
+            // history). A reading BELOW the current one never blocks the
+            // mechanic: it stays on the log, flagged, and isn't recorded.
+            if ($dto->odometer_reading !== null) {
+                try {
+                    $this->recordOdometer->execute(
+                        $vehicle,
+                        $dto->odometer_reading,
+                        OdometerReading::SOURCE_SERVICE_LOG,
+                        OdometerReading::ACTOR_MECHANIC,
+                        $mechanic->id,
+                        $log->id,
+                    );
+                } catch (ValidationException) {
+                    $log->forceFill(['odometer_ignored' => true])->save();
+                }
+            }
 
             // The sanctioned path — validates + fires VehicleStatusChanged.
             $this->changeVehicleStatus->execute($vehicle, Vehicle::STATUS_MAINTENANCE);

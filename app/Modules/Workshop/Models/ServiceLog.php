@@ -48,6 +48,8 @@ class ServiceLog extends Model
         'total_cost',
         'started_at',
         'completed_at',
+        'is_scheduled_service',
+        'odometer_ignored',
     ];
 
     protected function casts(): array
@@ -58,6 +60,8 @@ class ServiceLog extends Model
             'total_cost' => 'integer',  // cents
             'started_at' => 'datetime',
             'completed_at' => 'datetime',
+            'is_scheduled_service' => 'boolean',
+            'odometer_ignored' => 'boolean',
         ];
     }
 

@@ -24,3 +24,6 @@ yarn-error.log
 *.log
 /storage/logs/*
 /.laravel-tmp
+
+# Claude Code local settings (machine-specific; launch.json is shared)
+.claude/settings.local.json

@@ -6,8 +6,8 @@ use App\Modules\Notification\Services\ExpiryReminderService;
 use Illuminate\Console\Command;
 
 /**
- * Sends 14-day expiry reminders (vehicle registration/insurance/service +
- * agreement end) to each tenant's admin.
+ * Sends 14-day agreement-end reminders to each tenant's admin (vehicle
+ * reminders moved to notifications:send-fleet-reminders).
  *
  * Scheduled daily (routes/console.php). Delegates to ExpiryReminderService,
  * which is tenant-aware, idempotent, and never throws — so a single tenant
@@ -17,7 +17,7 @@ class SendExpiryRemindersCommand extends Command
 {
     protected $signature = 'notifications:send-expiry-reminders';
 
-    protected $description = 'Send 14-day expiry reminders to tenant admins (all tenants).';
+    protected $description = 'Send 14-day agreement-end reminders to tenant admins (all tenants).';
 
     public function handle(ExpiryReminderService $service): int
     {

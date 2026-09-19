@@ -1,3 +1,50 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/*
+ | Agreement terms content (editor, preview, agreement page, customer portal).
+ |
+ | The HTML here is the server-sanitised allow-list: p, h2, h3, strong/b, em/i,
+ | u, ul, ol, li, br — nothing else survives AgreementTermsSanitizer. The
+ | project has no typography plugin, so these few rules are the styling.
+ */
+@layer components {
+    .terms-content {
+        @apply text-sm leading-relaxed text-ink-700 dark:text-ink-200;
+    }
+
+    .terms-content h2 {
+        @apply mb-2 mt-5 text-base font-semibold text-ink-900 first:mt-0 dark:text-ink-50;
+    }
+
+    .terms-content h3 {
+        @apply mb-1.5 mt-4 text-sm font-semibold text-ink-900 dark:text-ink-50;
+    }
+
+    .terms-content p {
+        @apply mb-3;
+    }
+
+    .terms-content ul {
+        @apply mb-3 list-disc space-y-1 pl-5;
+    }
+
+    .terms-content ol {
+        @apply mb-3 list-decimal space-y-1 pl-5;
+    }
+
+    .terms-content strong,
+    .terms-content b {
+        @apply font-semibold text-ink-900 dark:text-ink-50;
+    }
+
+    .terms-content u {
+        @apply underline;
+    }
+
+    /* TipTap's editable area shares the same styling, plus a caret. */
+    .terms-content:focus {
+        @apply outline-none;
+    }
+}

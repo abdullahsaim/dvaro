@@ -28,6 +28,10 @@ class CreateAgreementDTO extends BaseDTO
         public readonly int $bond_amount = 0,
         public readonly ?string $end_date = null,
         public readonly ?string $notes = null,
+        // Australian state the agreement is governed by (drives which terms
+        // template applies) + an explicitly chosen template, if any.
+        public readonly ?string $state = null,
+        public readonly ?int $agreement_template_id = null,
     ) {}
 
     public static function fromRequest(Request $request): self
@@ -46,6 +50,9 @@ class CreateAgreementDTO extends BaseDTO
                 ? $request->string('end_date')->toString() : null,
             notes: $request->filled('notes')
                 ? $request->string('notes')->toString() : null,
+            state: $request->filled('state') ? $request->string('state')->toString() : null,
+            agreement_template_id: $request->filled('agreement_template_id')
+                ? $request->integer('agreement_template_id') : null,
         );
     }
 
@@ -67,6 +74,11 @@ class CreateAgreementDTO extends BaseDTO
             bond_amount: (int) $agreement->bond_amount,
             end_date: $agreement->end_date?->format('Y-m-d'),
             notes: $agreement->notes,
+            state: $agreement->state,
+            // A new version keeps the SAME template revision the customer
+            // agreed to — the wording is re-filled from terms_source, never
+            // re-resolved from the (possibly edited) template.
+            agreement_template_id: $agreement->agreement_template_id,
         );
     }
 
@@ -88,6 +100,7 @@ class CreateAgreementDTO extends BaseDTO
             'bond_amount' => $this->bond_amount,
             'start_date' => $this->start_date,
             'end_date' => $this->end_date,
+            'state' => $this->state,
             'notes' => $this->notes,
         ];
     }

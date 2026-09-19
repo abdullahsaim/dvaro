@@ -3,6 +3,7 @@
 namespace App\Modules\Agreement\Http\Requests;
 
 use App\Modules\Agreement\Models\Agreement;
+use App\Modules\Agreement\Models\AgreementTemplate;
 use App\Modules\Fleet\Models\Vehicle;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -57,6 +58,11 @@ class StoreAgreementRequest extends FormRequest
             'start_date' => ['required', 'date', 'after_or_equal:today'],
             'end_date' => ['nullable', 'date', 'after:start_date'],
             'notes' => ['nullable', 'string'],
+            // Australian state (drives which terms template applies) and an
+            // optional explicit template — existence is checked tenant-safely
+            // in the service (own + platform defaults only).
+            'state' => ['nullable', Rule::in(AgreementTemplate::STATES)],
+            'agreement_template_id' => ['nullable', 'integer'],
         ];
     }
 

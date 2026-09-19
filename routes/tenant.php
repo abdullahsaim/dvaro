@@ -3,8 +3,13 @@
 use App\Http\Controllers\UserPreferenceController;
 use App\Modules\AI\Http\Controllers\AiController;
 use App\Modules\Agreement\Http\Controllers\AgreementController;
+use App\Modules\Agreement\Http\Controllers\AgreementTemplateController;
 use App\Modules\CRM\Http\Controllers\LeadController;
+use App\Modules\CRM\Http\Controllers\LeadFormController;
+use App\Modules\Finance\Http\Controllers\ExpenseCategoryController;
+use App\Modules\Finance\Http\Controllers\ExpenseController;
 use App\Modules\Customer\Http\Controllers\CustomerController;
+use App\Modules\Customer\Models\Customer;
 use App\Modules\Fleet\Http\Controllers\FleetController;
 use App\Modules\Invoice\Http\Controllers\InvoiceController;
 use App\Modules\Notification\Http\Controllers\NotificationSettingsController;
@@ -78,6 +83,11 @@ Route::middleware('auth:tenant')->group(function () {
 
     // QR code — generate/regenerate (deterministic token) + inline stream of the
     // stored SVG (admin-only display). Generation lives in GenerateVehicleQrAction.
+    // Staff odometer entry → RecordOdometerReadingAction (append-only history,
+    // never backwards).
+    Route::post('fleet/{vehicle}/odometer', [FleetController::class, 'recordOdometer'])
+        ->name('fleet.odometer');
+
     Route::post('fleet/{vehicle}/qr', [FleetController::class, 'generateQr'])
         ->name('fleet.qr.generate');
     Route::get('fleet/{vehicle}/qr', [FleetController::class, 'qr'])
@@ -98,6 +108,35 @@ Route::middleware('auth:tenant')->group(function () {
     Route::post('customers/{customer}/invite-portal', [CustomerController::class, 'invitePortal'])
         ->name('customers.invite-portal');
 
+    // Customer identity documents (licence front/back, proof of address).
+    // SENSITIVE: stored on the default (private) disk; download is auth-checked
+    // and only ever redirects to a short-lived signed URL (FileUrlService).
+    Route::post('customers/{customer}/documents/{type}', [CustomerController::class, 'uploadDocument'])
+        ->whereIn('type', array_keys(Customer::DOCUMENT_TYPES))
+        ->name('customers.documents.upload');
+    Route::get('customers/{customer}/documents/{type}', [CustomerController::class, 'downloadDocument'])
+        ->whereIn('type', array_keys(Customer::DOCUMENT_TYPES))
+        ->name('customers.documents.download');
+
+    // Finance → Expenses (Session 32). {expense}/{category} bind via
+    // TenantScope (cross-tenant id → 404). Update is PUT via POST + _method so
+    // a receipt file can ride along (multipart). ExpensePolicy on every action.
+    Route::get('expenses', [ExpenseController::class, 'index'])->name('expenses.index');
+    Route::post('expenses', [ExpenseController::class, 'store'])->name('expenses.store');
+    Route::put('expenses/{expense}', [ExpenseController::class, 'update'])->name('expenses.update');
+    Route::post('expenses/{expense}/void', [ExpenseController::class, 'void'])->name('expenses.void');
+    Route::get('expenses/{expense}/receipt', [ExpenseController::class, 'receipt'])->name('expenses.receipt');
+    Route::post('expense-categories', [ExpenseCategoryController::class, 'store'])->name('expense-categories.store');
+    Route::put('expense-categories/{category}', [ExpenseCategoryController::class, 'update'])->name('expense-categories.update');
+
+    // Public lead form management (share link / QR / embed / send). Registered
+    // BEFORE Route::resource('leads') so "form" is never bound as a {lead} id.
+    Route::get('leads/form', [LeadFormController::class, 'show'])->name('leads.form');
+    Route::put('leads/form', [LeadFormController::class, 'update'])->name('leads.form.update');
+    Route::post('leads/form/regenerate', [LeadFormController::class, 'regenerate'])->name('leads.form.regenerate');
+    Route::post('leads/form/send', [LeadFormController::class, 'send'])->name('leads.form.send');
+    Route::get('leads/form/qr', [LeadFormController::class, 'qr'])->name('leads.form.qr');
+
     // CRM leads — {lead} binds through TenantScope (cross-tenant id => 404).
     // No edit/update: a lead is captured, shared, then converted/expired — it is
     // not an editable record (the customer edits via the public intake form).
@@ -109,6 +148,21 @@ Route::middleware('auth:tenant')->group(function () {
         ->name('leads.convert');
     Route::post('leads/{lead}/expire', [LeadController::class, 'expire'])
         ->name('leads.expire');
+
+    // Agreement terms templates. Registered BEFORE the agreements resource so
+    // "templates" is never bound as an {agreement} id. Templates are read by
+    // everyone and written by tenant_admin (AgreementTemplatePolicy); platform
+    // defaults are read-only and must be copied before editing.
+    Route::get('agreements/templates', [AgreementTemplateController::class, 'index'])
+        ->name('agreements.templates');
+    Route::post('agreements/templates', [AgreementTemplateController::class, 'store'])
+        ->name('agreements.templates.store');
+    Route::put('agreements/templates/default-state', [AgreementTemplateController::class, 'updateDefaultState'])
+        ->name('agreements.templates.state');
+    Route::put('agreements/templates/{template}', [AgreementTemplateController::class, 'update'])
+        ->whereNumber('template')->name('agreements.templates.update');
+    Route::post('agreements/templates/{template}/copy', [AgreementTemplateController::class, 'copy'])
+        ->whereNumber('template')->name('agreements.templates.copy');
 
     // Agreements — {agreement} binds through TenantScope (cross-tenant id => 404).
     // IMMUTABLE: no edit/update/destroy — agreements are never edited or deleted.
@@ -216,6 +270,7 @@ Route::middleware('auth:tenant')->group(function () {
     Route::get('reports/workshop', [ReportingController::class, 'workshop'])->name('reports.workshop');
     Route::get('reports/customers', [ReportingController::class, 'customers'])->name('reports.customers');
     Route::get('reports/maintenance', [ReportingController::class, 'maintenance'])->name('reports.maintenance');
+    Route::get('reports/expenses', [ReportingController::class, 'expenses'])->name('reports.expenses');
 
     // Queue an export — 5/hour per tenant (report-export limiter; expensive).
     Route::post('reports/export', [ReportingController::class, 'export'])

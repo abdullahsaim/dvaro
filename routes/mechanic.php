@@ -63,6 +63,15 @@ Route::middleware('auth:mechanic')->group(function () {
     Route::get('vehicle/{token}', [MechanicPortalController::class, 'scanResult'])
         ->name('vehicle');
 
+    // Manual number-plate lookup + the id-based vehicle page that both QR and
+    // search land on. {vehicle} binds through TenantScope (cross-tenant => 404).
+    // 'search' is registered before {vehicle}; whereNumber keeps them apart.
+    Route::get('vehicles/search', [MechanicPortalController::class, 'searchVehicles'])
+        ->name('vehicles.search');
+    Route::get('vehicles/{vehicle}', [MechanicPortalController::class, 'showVehicle'])
+        ->whereNumber('vehicle')
+        ->name('vehicles.show');
+
     // Service logs. {log} binds through TenantScope (cross-tenant id => 404).
     Route::post('logs', [MechanicPortalController::class, 'createLog'])->name('logs.store');
     Route::put('logs/{log}/status', [MechanicPortalController::class, 'updateStatus'])

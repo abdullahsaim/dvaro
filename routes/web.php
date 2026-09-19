@@ -3,6 +3,7 @@
 use App\Modules\CMS\Http\Controllers\DemoRequestController;
 use App\Modules\CMS\Http\Controllers\PublicLandingController;
 use App\Modules\CRM\Http\Controllers\IntakeFormController;
+use App\Modules\CRM\Http\Controllers\PublicLeadFormController;
 use App\Modules\Customer\Http\Controllers\CustomerPortalController;
 use App\Modules\SaasCore\Http\Controllers\TenantRegistrationController;
 use App\Modules\SaasCore\Http\Controllers\WorkspaceLookupController;
@@ -60,6 +61,17 @@ Route::get('intake/{tenant_slug}/{token}', [IntakeFormController::class, 'show']
 Route::post('intake/{tenant_slug}/{token}', [IntakeFormController::class, 'submit'])
     ->middleware('throttle:crm-intake')
     ->name('crm.intake.submit');
+
+// Tenant's PUBLIC lead form (one per tenant) — share link / QR and website
+// embed. No auth / tenant middleware; gated by the tenant's secret token.
+// POST is CSRF-exempt (cross-site iframe) — see PublicLeadFormController.
+Route::get('lead/{tenant_slug}/{token}', [PublicLeadFormController::class, 'show'])
+    ->name('crm.lead-form.show');
+Route::get('lead/{tenant_slug}/{token}/embed', [PublicLeadFormController::class, 'embed'])
+    ->name('crm.lead-form.embed');
+Route::post('lead/{tenant_slug}/{token}', [PublicLeadFormController::class, 'submit'])
+    ->middleware('throttle:lead-form')
+    ->name('crm.lead-form.submit');
 
 /*
 |--------------------------------------------------------------------------

@@ -27,6 +27,12 @@ class CreateVehicleDTO extends BaseDTO
         public readonly ?string $last_service_date = null,
         public readonly ?string $next_service_due = null,
         public readonly ?string $notes = null,
+        public readonly ?int $service_interval_months = null,
+        public readonly ?int $service_interval_km = null,
+        public readonly ?int $last_service_odometer = null,
+        // Starting reading — recorded via RecordOdometerReadingAction, never
+        // mass-assigned (see toAttributes()).
+        public readonly ?int $current_odometer = null,
     ) {}
 
     public static function fromRequest(Request $request): self
@@ -49,6 +55,10 @@ class CreateVehicleDTO extends BaseDTO
             next_service_due: $request->filled('next_service_due')
                 ? $request->string('next_service_due')->toString() : null,
             notes: $request->filled('notes') ? $request->string('notes')->toString() : null,
+            service_interval_months: $request->filled('service_interval_months') ? (int) $request->input('service_interval_months') : null,
+            service_interval_km: $request->filled('service_interval_km') ? (int) $request->input('service_interval_km') : null,
+            last_service_odometer: $request->filled('last_service_odometer') ? (int) $request->input('last_service_odometer') : null,
+            current_odometer: $request->filled('current_odometer') ? (int) $request->input('current_odometer') : null,
         );
     }
 
@@ -72,6 +82,9 @@ class CreateVehicleDTO extends BaseDTO
             'last_service_date' => $this->last_service_date,
             'next_service_due' => $this->next_service_due,
             'notes' => $this->notes,
+            'service_interval_months' => $this->service_interval_months,
+            'service_interval_km' => $this->service_interval_km,
+            'last_service_odometer' => $this->last_service_odometer,
         ];
     }
 }

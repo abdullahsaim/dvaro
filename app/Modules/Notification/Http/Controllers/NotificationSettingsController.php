@@ -3,6 +3,7 @@
 namespace App\Modules\Notification\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Fleet\Models\Vehicle;
 use App\Modules\Notification\Http\Requests\UpdateNotificationSettingsRequest;
 use App\Modules\SaasCore\Models\TenantUser;
 use Illuminate\Http\RedirectResponse;
@@ -36,6 +37,9 @@ class NotificationSettingsController extends Controller
                 'notify_email_enabled' => (bool) ($settings['notify_email_enabled'] ?? true),
                 'notify_sms_enabled' => (bool) ($settings['notify_sms_enabled'] ?? false),
                 'notify_whatsapp_enabled' => (bool) ($settings['notify_whatsapp_enabled'] ?? false),
+                'fleet_reminders_enabled' => (bool) ($settings['fleet_reminders_enabled'] ?? true),
+                'fleet_reminder_days' => (int) ($settings['fleet_reminder_days'] ?? Vehicle::DEFAULT_REMINDER_DAYS),
+                'fleet_reminder_km' => (int) ($settings['fleet_reminder_km'] ?? Vehicle::DEFAULT_REMINDER_KM),
             ],
             'emailProviders' => UpdateNotificationSettingsRequest::EMAIL_PROVIDERS,
             'smsProviders' => UpdateNotificationSettingsRequest::SMS_PROVIDERS,
@@ -57,6 +61,9 @@ class NotificationSettingsController extends Controller
             'notify_email_enabled' => $request->boolean('notify_email_enabled'),
             'notify_sms_enabled' => $request->boolean('notify_sms_enabled'),
             'notify_whatsapp_enabled' => $request->boolean('notify_whatsapp_enabled'),
+            'fleet_reminders_enabled' => $request->boolean('fleet_reminders_enabled'),
+            'fleet_reminder_days' => $request->integer('fleet_reminder_days'),
+            'fleet_reminder_km' => $request->integer('fleet_reminder_km'),
         ];
         $tenant->save();
 

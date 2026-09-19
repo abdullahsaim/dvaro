@@ -31,6 +31,9 @@ return [
         'deleted'        => 'Vehicle removed from your fleet.',
         'status_changed' => 'Vehicle status updated.',
         'qr_generated'   => 'QR code generated.',
+        'odometer_recorded'  => 'Odometer reading recorded.',
+        'odometer_backwards' => 'Odometer readings can\'t go backwards. The current reading is :current km.',
+        'odometer_negative'  => 'The odometer reading must be zero or more.',
     ],
 
     'workshop' => [
@@ -56,6 +59,11 @@ return [
         'portal_payment_recorded' => 'Payment recorded. Thank you.',
         'portal_invite_used'      => 'This invitation has already been used. Please log in.',
         'portal_invite_expired'   => 'This invitation has expired. Please ask for a new one.',
+        'document_uploaded'       => 'Document uploaded.',
+    ],
+
+    'plan' => [
+        'file_too_large' => 'This file exceeds your plan\'s :limit MB upload limit. Upgrade your plan to upload larger files.',
     ],
 
     'crm' => [
@@ -63,6 +71,24 @@ return [
         'deleted'   => 'Lead removed.',
         'converted' => 'Lead converted to a customer.',
         'expired'   => 'Intake link expired.',
+        // Public lead form (share link / embed).
+        'lead_form_iframe_title'         => ':company rental enquiry form',
+        'lead_form_start_date_attribute' => 'preferred start date',
+        'lead_form_retry'                => 'Something went wrong. Please check your details and try again.',
+        'lead_form_captcha_failed'       => 'Please tick "I\'m not a robot" and try again.',
+        'lead_form_saved'                => 'Lead form settings saved.',
+        'lead_form_regenerated'          => 'New link created. Update the embed code on your website.',
+        'lead_form_link_sent'            => 'The form link is on its way.',
+        'lead_form_bad_domain'           => '":domain" isn\'t a valid website address.',
+    ],
+
+    'agreement_template' => [
+        'saved'         => 'Agreement terms saved.',
+        'copied'        => 'Copied to your templates — edit the wording to suit your business.',
+        'state_saved'   => 'Default state saved.',
+        'empty'         => 'The terms can\'t be empty.',
+        'unknown_field' => 'Unknown field ":field". Use the "Insert field" menu to add one that exists.',
+        'not_copyable'  => 'Only platform default templates can be copied.',
     ],
 
     'agreement' => [
@@ -79,6 +105,16 @@ return [
 
     'notifications' => [
         'saved' => 'Notification settings saved.',
+    ],
+
+    'expenses' => [
+        'recorded'         => 'Expense recorded.',
+        'updated'          => 'Expense updated.',
+        'voided'           => 'Expense voided.',
+        'voided_locked'    => 'A voided expense can\'t be edited.',
+        'already_voided'   => 'This expense is already voided.',
+        'category_saved'   => 'Category saved.',
+        'category_exists'  => 'You already have a category with that name.',
     ],
 
     'profile' => [

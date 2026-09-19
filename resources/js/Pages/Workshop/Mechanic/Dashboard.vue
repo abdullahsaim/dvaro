@@ -6,6 +6,7 @@ import { Head, Link, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import MechanicLayout from '@/Layouts/MechanicLayout.vue';
 import StatusBadge from '@/Components/UI/StatusBadge.vue';
+import PlateSearch from '@/Components/Workshop/PlateSearch.vue';
 
 const props = defineProps({
     activeJobs: { type: Array, required: true },
@@ -25,9 +26,7 @@ const statusVariants = {
 };
 
 function vehicleUrl(job) {
-    return job.vehicle?.qr_code_token
-        ? `${base.value}/vehicle/${job.vehicle.qr_code_token}`
-        : null;
+    return job.vehicle ? `${base.value}/vehicles/${job.vehicle.id}` : null;
 }
 
 function vehicleLabel(job) {
@@ -41,6 +40,15 @@ function vehicleLabel(job) {
         <Head :title="t('workshop.dashboard')" />
 
         <h1 class="text-2xl font-semibold tracking-tight text-ink-900 dark:text-ink-50">{{ t('workshop.dashboard') }}</h1>
+
+        <!-- Manual vehicle lookup (alternative to scanning the QR sticker) -->
+        <section class="mt-6">
+            <h2 class="text-xs font-medium uppercase tracking-wide text-ink-500">{{ t('workshop.plate_search.title') }}</h2>
+            <p class="mt-1 text-sm text-ink-500">{{ t('workshop.plate_search.hint') }}</p>
+            <div class="mt-3">
+                <PlateSearch />
+            </div>
+        </section>
 
         <!-- Active jobs -->
         <section class="mt-6">

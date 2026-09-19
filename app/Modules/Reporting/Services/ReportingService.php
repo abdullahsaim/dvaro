@@ -4,6 +4,7 @@ namespace App\Modules\Reporting\Services;
 
 use App\Modules\Agreement\Models\Agreement;
 use App\Modules\Customer\Models\Customer;
+use App\Modules\Finance\Services\ExpenseReportService;
 use App\Modules\Fleet\Models\Vehicle;
 use App\Modules\Invoice\Models\Invoice;
 use App\Modules\Invoice\Models\InvoiceItem;
@@ -62,36 +63,74 @@ class ReportingService extends BaseService
      * range, grouped by vehicle. days_rented is the (de-duplicated) number of
      * rental days that vehicle was on an agreement inside the window.
      *
-     * @return list<array{vehicle: string, revenue: int, days_rented: int}>
+     * PROFIT (Session 32, CLAUDE.md "most profitable vehicles"): per vehicle,
+     * revenue − vehicle-linked expenses (active, by expense_date) − completed
+     * workshop cost (service_logs.total_cost, by completed_at). Vehicles with
+     * costs but no revenue are included (negative profit). Sorted by profit.
+     *
+     * @return list<array{vehicle: string, revenue: int, days_rented: int, expenses: int, maintenance: int, profit: int}>
      */
     public function revenueByVehicle(Carbon $from, Carbon $to): array
     {
-        $rows = InvoiceItem::query()
+        $revenue = InvoiceItem::query()
             ->whereNotNull('vehicle_id')
             ->whereHas('invoice', fn ($q) => $q
                 ->where('status', Invoice::STATUS_PAID)
                 ->whereBetween('created_at', [$from, $to]))
             ->selectRaw('vehicle_id, SUM(amount) as revenue')
             ->groupBy('vehicle_id')
-            ->get();
+            ->pluck('revenue', 'vehicle_id')
+            ->map(fn ($v) => (int) $v);
+
+        $expenses = collect(app(ExpenseReportService::class)->totalsByVehicle($from, $to));
+
+        $maintenance = ServiceLog::query()
+            ->where('status', ServiceLog::STATUS_COMPLETED)
+            ->whereBetween('completed_at', [$from, $to])
+            ->groupBy('vehicle_id')
+            ->selectRaw('vehicle_id, SUM(total_cost) as cost')
+            ->pluck('cost', 'vehicle_id')
+            ->map(fn ($v) => (int) $v);
+
+        $ids = $revenue->keys()->merge($expenses->keys())->merge($maintenance->keys())->unique()->values();
 
         // Include soft-deleted vehicles: a vehicle may be archived yet still own
         // revenue history. withTrashed drops only the SoftDelete scope — the
         // tenant scope still applies.
         $vehicles = Vehicle::withTrashed()
-            ->whereIn('id', $rows->pluck('vehicle_id'))
+            ->whereIn('id', $ids)
             ->get()
             ->keyBy('id');
 
-        return $rows
-            ->map(fn ($row) => [
-                'vehicle' => $this->vehicleLabel($vehicles->get($row->vehicle_id), (int) $row->vehicle_id),
-                'revenue' => (int) $row->revenue,
-                'days_rented' => $this->rentedDaysForVehicle((int) $row->vehicle_id, $from, $to),
-            ])
-            ->sortByDesc('revenue')
+        return $ids
+            ->map(function ($id) use ($vehicles, $revenue, $expenses, $maintenance, $from, $to) {
+                $rev = (int) ($revenue[$id] ?? 0);
+                $exp = (int) ($expenses[$id] ?? 0);
+                $maint = (int) ($maintenance[$id] ?? 0);
+
+                return [
+                    'vehicle' => $this->vehicleLabel($vehicles->get($id), (int) $id),
+                    'revenue' => $rev,
+                    'days_rented' => $this->rentedDaysForVehicle((int) $id, $from, $to),
+                    'expenses' => $exp,
+                    'maintenance' => $maint,
+                    'profit' => $rev - $exp - $maint,
+                ];
+            })
+            ->sortByDesc('profit')
             ->values()
             ->all();
+    }
+
+    /**
+     * Expenses report (Session 32): totals, by category, by month — active
+     * expenses only, by expense_date. Money in cents.
+     *
+     * @return array<string, mixed>
+     */
+    public function expenses(Carbon $from, Carbon $to): array
+    {
+        return app(ExpenseReportService::class)->summary($from, $to);
     }
 
     /**

@@ -17,6 +17,9 @@ import { useCurrency } from '@/composables/useCurrency';
 const props = defineProps({
     agreement: { type: Object, required: true },
     versions: { type: Array, default: () => [] },
+    // FROZEN terms: sanitised on save, merge fields already filled in.
+    terms: { type: String, default: null },
+    termsSource: { type: Object, default: null }, // { name, revision }
     availableVehicles: { type: Array, default: () => [] },
 });
 
@@ -206,6 +209,21 @@ function cancelChange() {
                     <Button variant="secondary" @click="clearPad">{{ t('agreement.clear') }}</Button>
                 </div>
             </div>
+
+            <!-- Terms and conditions (frozen at creation) -->
+            <section v-if="terms" class="mt-8">
+                <div class="flex flex-wrap items-baseline justify-between gap-2">
+                    <h2 class="text-lg font-semibold text-ink-900 dark:text-ink-50">{{ t('agreement.terms') }}</h2>
+                    <p v-if="termsSource" class="text-xs text-ink-400">
+                        {{ t('agreement.terms_from', { name: termsSource.name ?? '—', revision: termsSource.revision ?? 1 }) }}
+                    </p>
+                </div>
+                <!-- eslint-disable-next-line vue/no-v-html -->
+                <div
+                    class="terms-content mt-3 rounded-card border border-ink-200 bg-white p-5 shadow-subtle dark:border-ink-800 dark:bg-ink-900"
+                    v-html="terms"
+                />
+            </section>
 
             <!-- Signed signature preview + create new version -->
             <div v-else class="rounded-card border border-ink-200 bg-white p-4 shadow-subtle dark:border-ink-800 dark:bg-ink-900">

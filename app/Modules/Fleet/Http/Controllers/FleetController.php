@@ -3,15 +3,21 @@
 namespace App\Modules\Fleet\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Finance\Models\Expense;
+use App\Modules\Finance\Services\ExpenseReportService;
 use App\Modules\Fleet\Actions\ChangeVehicleStatusAction;
 use App\Modules\Fleet\Actions\CreateVehicleAction;
+use App\Modules\Fleet\Actions\RecordOdometerReadingAction;
 use App\Modules\Fleet\Actions\UpdateVehicleAction;
 use App\Modules\Fleet\DTOs\CreateVehicleDTO;
 use App\Modules\Fleet\DTOs\UpdateVehicleDTO;
 use App\Modules\Fleet\Http\Requests\ChangeStatusRequest;
+use App\Modules\Fleet\Http\Requests\RecordOdometerRequest;
 use App\Modules\Fleet\Http\Requests\StoreVehicleRequest;
 use App\Modules\Fleet\Http\Requests\UpdateVehicleRequest;
+use App\Modules\Fleet\Models\OdometerReading;
 use App\Modules\Fleet\Models\Vehicle;
+use App\Modules\Reporting\Services\ReportingService;
 use App\Modules\Workshop\Actions\GenerateVehicleQrAction;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -28,7 +34,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  * ──────────────────────────────────────────────────────────────────────────
  * AUTHORIZATION — READ BEFORE EDITING:
  * Every action that touches a SPECIFIC vehicle (show, edit, update, destroy,
- * changeStatus) MUST authorize via:
+ * changeStatus, recordOdometer) MUST authorize via:
  *
  *     Gate::forUser(auth('tenant')->user())->authorize($ability, $vehicle);
  *
@@ -53,11 +59,29 @@ class FleetController extends Controller
             $status = null;
         }
 
+        $expiring = $request->boolean('expiring');
+
+        // Sort: whitelisted date columns only; empty dates always sort last.
+        $sort = in_array($request->query('sort'), Vehicle::SORTABLE_DATES, true)
+            ? $request->query('sort')
+            : null;
+        $direction = $request->query('direction') === 'desc' ? 'desc' : 'asc';
+
         $vehicles = Vehicle::query()
             ->when($status, fn ($query) => $query->where('status', $status))
-            ->latest()
+            ->when($expiring, fn ($query) => $query->expiringSoon())
+            ->when(
+                $sort,
+                fn ($query) => $query->orderByRaw("{$sort} {$direction} NULLS LAST")->orderBy('id'),
+                fn ($query) => $query->latest(),
+            )
             ->paginate(15)
             ->withQueryString();
+
+        $vehicles->through(fn (Vehicle $vehicle) => tap($vehicle, function (Vehicle $v) {
+            $v->setAttribute('registration_state', $v->expiryState('registration_expiry'));
+            $v->setAttribute('service_state', $v->serviceState());
+        }));
 
         // Per-status counts for the filter tabs (tenant-scoped). 'all' is the total.
         $counts = Vehicle::query()
@@ -75,6 +99,12 @@ class FleetController extends Controller
             'statuses' => Vehicle::STATUSES,
             'statusCounts' => $statusCounts,
             'activeStatus' => $status,
+            'expiringCount' => Vehicle::query()->expiringSoon()->count(),
+            'filters' => [
+                'expiring' => $expiring,
+                'sort' => $sort,
+                'direction' => $direction,
+            ],
         ]);
     }
 
@@ -91,16 +121,21 @@ class FleetController extends Controller
     {
         Gate::forUser(auth('tenant')->user())->authorize('create', Vehicle::class);
 
-        $action->execute(CreateVehicleDTO::fromRequest($request));
+        $action->execute(CreateVehicleDTO::fromRequest($request), auth('tenant')->id());
 
         return redirect()
             ->route('tenant.fleet.index', ['tenant_slug' => app('current_tenant')->slug])
             ->with('success', __('common.fleet.created'));
     }
 
-    public function show(Vehicle $vehicle): Response
-    {
+    public function show(
+        Vehicle $vehicle,
+        ExpenseReportService $expenseReports,
+        ReportingService $reporting,
+    ): Response {
         Gate::forUser(auth('tenant')->user())->authorize('view', $vehicle);
+
+        $fy = $reporting->australianFY();
 
         // Recent workshop history for the service-history section.
         $serviceLogs = $vehicle->serviceLogs()
@@ -109,12 +144,31 @@ class FleetController extends Controller
             ->limit(10)
             ->get();
 
+        // Append-only odometer history (newest first).
+        $odometerReadings = $vehicle->odometerReadings()
+            ->latest('recorded_at')
+            ->latest('id')
+            ->limit(10)
+            ->get(['id', 'reading', 'source', 'recorded_at']);
+
         return Inertia::render('Fleet/Show', [
             'vehicle' => $vehicle,
             'statuses' => Vehicle::STATUSES,
             // QR is rendered via the stream endpoint only when a token exists.
             'hasQr' => $vehicle->qr_code_token !== null,
             'serviceLogs' => $serviceLogs,
+            'odometerReadings' => $odometerReadings,
+            'serviceState' => $vehicle->serviceState(),
+            // Vehicle-linked expenses (active only): latest 5 + this-FY total.
+            'vehicleExpenses' => Expense::query()
+                ->active()
+                ->where('vehicle_id', $vehicle->id)
+                ->with('category:id,name')
+                ->orderByDesc('expense_date')
+                ->orderByDesc('id')
+                ->limit(5)
+                ->get(['id', 'expense_category_id', 'expense_date', 'description', 'amount_total']),
+            'vehicleExpensesFy' => $expenseReports->summary($fy['from'], $fy['to'], null, $vehicle->id)['totals']['total'],
         ]);
     }
 
@@ -169,6 +223,28 @@ class FleetController extends Controller
         $action->execute($vehicle, $request->string('status')->toString());
 
         return back()->with('success', __('common.fleet.status_changed'));
+    }
+
+    /**
+     * Staff-entered odometer reading. Goes through RecordOdometerReadingAction
+     * (append-only history; a backwards reading is a validation error).
+     */
+    public function recordOdometer(
+        RecordOdometerRequest $request,
+        Vehicle $vehicle,
+        RecordOdometerReadingAction $action,
+    ): RedirectResponse {
+        Gate::forUser(auth('tenant')->user())->authorize('update', $vehicle);
+
+        $action->execute(
+            $vehicle,
+            $request->integer('reading'),
+            OdometerReading::SOURCE_MANUAL,
+            OdometerReading::ACTOR_TENANT_USER,
+            auth('tenant')->id(),
+        );
+
+        return back()->with('success', __('common.fleet.odometer_recorded'));
     }
 
     /**

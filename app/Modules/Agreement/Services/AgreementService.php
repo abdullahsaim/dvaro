@@ -9,6 +9,7 @@ use App\Modules\Agreement\Events\AgreementCreated;
 use App\Modules\Agreement\Events\AgreementSigned;
 use App\Modules\Agreement\Events\AgreementVersionCreated;
 use App\Modules\Agreement\Models\Agreement;
+use App\Modules\Agreement\Models\AgreementTemplate;
 use App\Modules\Invoice\Services\NextBillingDateService;
 use App\Services\BaseService;
 use Illuminate\Support\Facades\DB;
@@ -29,6 +30,8 @@ class AgreementService extends BaseService
 {
     public function __construct(
         private readonly NextBillingDateService $nextBilling,
+        private readonly AgreementTemplateService $templates,
+        private readonly AgreementTermsRenderer $renderer,
     ) {}
 
     /**
@@ -44,6 +47,11 @@ class AgreementService extends BaseService
                 'version' => 1,
                 'parent_agreement_id' => null,
             ]);
+
+            // FREEZE the terms: resolve the template, fill in the merge fields
+            // and store both the resolved text and the wording it came from.
+            // Editing the template later must never change this agreement.
+            $this->freezeTerms($agreement, $this->resolveTemplate($agreement, $dto->agreement_template_id));
 
             AgreementCreated::dispatch($agreement);
 
@@ -108,9 +116,67 @@ class AgreementService extends BaseService
                 'parent_agreement_id' => $agreement->id,
             ]);
 
+            // A new version keeps the WORDING THE CUSTOMER AGREED TO (the
+            // parent's terms_source), re-filled with this version's details
+            // (e.g. a swapped vehicle). Only if the parent predates templates
+            // do we fall back to resolving one.
+            if (filled($agreement->terms_source)) {
+                $newVersion->forceFill([
+                    'agreement_template_id' => $agreement->agreement_template_id,
+                    'template_revision' => $agreement->template_revision,
+                    'terms_source' => $agreement->terms_source,
+                    'terms_html' => $this->renderer->render(
+                        $agreement->terms_source,
+                        $this->renderer->valuesFor($newVersion),
+                    ),
+                ])->save();
+            } else {
+                $this->freezeTerms($newVersion, $this->resolveTemplate($newVersion, $dto->agreement_template_id));
+            }
+
             AgreementVersionCreated::dispatch($agreement, $newVersion);
 
             return $newVersion;
         });
+    }
+
+    /**
+     * The template for this agreement: the one explicitly chosen on the form
+     * (validated to be visible to the tenant), else the selection cascade.
+     */
+    private function resolveTemplate(Agreement $agreement, ?int $templateId): ?AgreementTemplate
+    {
+        if ($templateId !== null) {
+            $chosen = AgreementTemplate::visibleTo((int) $agreement->tenant_id)
+                ->active()
+                ->find($templateId);
+
+            if ($chosen !== null) {
+                return $chosen;
+            }
+        }
+
+        return $this->templates->resolveFor((int) $agreement->tenant_id, $agreement->type, $agreement->state);
+    }
+
+    /**
+     * Stamp the resolved terms onto the agreement — ONCE, at creation. Both the
+     * filled-in text (terms_html) and the wording it came from (terms_source)
+     * are stored, so a later version can reuse the exact wording the customer
+     * agreed to even after the template is edited. No template → no terms (the
+     * agreement still works; the PDF simply has no terms section).
+     */
+    private function freezeTerms(Agreement $agreement, ?AgreementTemplate $template): void
+    {
+        if ($template === null) {
+            return;
+        }
+
+        $agreement->forceFill([
+            'agreement_template_id' => $template->id,
+            'template_revision' => $template->revision,
+            'terms_source' => $template->body_html,
+            'terms_html' => $this->renderer->render($template->body_html, $this->renderer->valuesFor($agreement)),
+        ])->save();
     }
 }

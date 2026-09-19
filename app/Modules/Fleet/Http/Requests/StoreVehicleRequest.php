@@ -43,6 +43,15 @@ class StoreVehicleRequest extends FormRequest
             'last_service_date' => ['nullable', 'date'],
             'next_service_due' => ['nullable', 'date'],
             'notes' => ['nullable', 'string'],
+            // Service schedule — whichever of months / km comes first.
+            'service_interval_months' => ['nullable', 'integer', 'min:1', 'max:120'],
+            'service_interval_km' => ['nullable', 'integer', 'min:100', 'max:1000000'],
+            // Starting odometer (create only) — recorded as the first reading.
+            'current_odometer' => ['nullable', 'integer', 'min:0', 'max:9999999'],
+            'last_service_odometer' => [
+                'nullable', 'integer', 'min:0', 'max:9999999',
+                Rule::when($this->filled('current_odometer'), ['lte:current_odometer']),
+            ],
         ];
     }
 }

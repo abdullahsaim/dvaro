@@ -22,6 +22,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  *   NEGATIVE = credit/payment → customer owes LESS
  * A customer balance is SUM(amount) over their entries (see LedgerService).
  *
+ * BUSINESS-LEVEL entries (customer_id NULL, TYPE_EXPENSE only — Session 32):
+ * company expenses. POSITIVE = money spent, NEGATIVE = reversal. They never
+ * affect a customer balance (every balance query filters by customer_id).
+ *
  * APPEND-ONLY — enforced in code, not by convention. Entries may only be
  * created. update() and delete() throw LedgerImmutableException at every layer:
  *   1. the instance methods overridden below,
@@ -60,6 +64,12 @@ class LedgerEntry extends Model
         self::TYPE_EXPENSE,
         self::TYPE_REFUND,
     ];
+
+    /**
+     * Types that may be BUSINESS-LEVEL (customer_id NULL) — see
+     * LedgerService::appendBusiness() and the DB CHECK constraint.
+     */
+    public const BUSINESS_TYPES = [self::TYPE_EXPENSE];
 
     protected $fillable = [
         'tenant_id',

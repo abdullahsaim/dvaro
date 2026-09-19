@@ -45,6 +45,7 @@ const limitLines = computed(() => {
         { key: 'max_vehicles', label: 'public.pricing.limits.vehicles' },
         { key: 'max_staff_users', label: 'public.pricing.limits.staff' },
         { key: 'max_customers', label: 'public.pricing.limits.customers' },
+    { key: 'max_mechanics', label: 'public.pricing.limits.mechanics' },
         { key: 'max_storage_gb', label: 'public.pricing.limits.storage' },
     ]
         .filter((l) => Number(limits[l.key]) > 0)

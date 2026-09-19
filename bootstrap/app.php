@@ -81,13 +81,21 @@ return Application::configure(basePath: dirname(__DIR__))
         // session-flashed validation errors are shared into Inertia page props.
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
+            // Anti-clickjacking (frame-ancestors 'self') on every web page; the
+            // lead-form embed sets its own policy. See the class.
+            \App\Http\Middleware\SecurityHeaders::class,
         ]);
 
         // Stripe posts webhooks server-to-server — it cannot carry a CSRF token.
         // The verified webhook signature (StripeWebhookController) is the sole
         // authentication for this endpoint.
+        // The public lead form is submitted from a CROSS-SITE iframe where
+        // DVARO's session cookie is never sent, so a CSRF token can't be
+        // verified; it is protected instead by reCAPTCHA + honeypot + timing
+        // token + throttle:lead-form (PublicLeadFormController).
         $middleware->validateCsrfTokens(except: [
             'stripe/webhook',
+            'lead/*',
         ]);
 
         // CRITICAL ordering: Laravel's middleware-priority sort hoists the

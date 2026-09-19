@@ -12,7 +12,9 @@ use App\Modules\Workshop\Http\Requests\AddPartRequest;
 use App\Modules\Workshop\Http\Requests\CreateServiceLogRequest;
 use App\Modules\Workshop\Http\Requests\UpdateStatusRequest;
 use App\Modules\Workshop\Models\ServiceLog;
+use App\Modules\Workshop\Services\VehicleLookupService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -61,16 +63,51 @@ class MechanicPortalController extends Controller
     }
 
     /**
-     * The vehicle service page reached from a QR scan (mechanic.vehicle). The
-     * vehicle is resolved by its QR token — tenant-scoped, so a cross-tenant
-     * token never resolves (404).
+     * QR entry point (mechanic.vehicle). Resolves the vehicle by its QR token —
+     * tenant-scoped, so a cross-tenant token never resolves (404) — then hands
+     * off to the id-based vehicle page, so QR and plate search share ONE page.
+     * Kept at this URL so printed QR stickers + post-login redirects still work.
      */
-    public function scanResult(string $tenant_slug, string $token): Response
+    public function scanResult(string $token, VehicleLookupService $lookup): RedirectResponse
     {
-        $vehicle = Vehicle::query()
-            ->where('qr_code_token', $token)
-            ->firstOrFail();
+        $vehicle = $lookup->findByToken($token);
 
+        return redirect()->route('mechanic.vehicles.show', [
+            'tenant_slug' => app('current_tenant')->slug,
+            'vehicle' => $vehicle->id,
+        ]);
+    }
+
+    /**
+     * Manual lookup by number plate (for vehicles without a QR sticker, or a
+     * damaged one). One match → straight to the vehicle page; otherwise a
+     * results list (possibly empty).
+     */
+    public function searchVehicles(Request $request, VehicleLookupService $lookup): Response|RedirectResponse
+    {
+        $plate = trim((string) $request->query('plate', ''));
+        $results = $lookup->searchByPlate($plate);
+
+        if ($results->count() === 1) {
+            return redirect()->route('mechanic.vehicles.show', [
+                'tenant_slug' => app('current_tenant')->slug,
+                'vehicle' => $results->first()->id,
+            ]);
+        }
+
+        return Inertia::render('Workshop/Mechanic/VehicleSearch', [
+            'plate' => $plate,
+            'results' => $results,
+            'tooShort' => strlen(VehicleLookupService::normalizePlate($plate)) < VehicleLookupService::MIN_QUERY_LENGTH,
+        ]);
+    }
+
+    /**
+     * The vehicle service page. {vehicle} binds through TenantScope, so another
+     * tenant's vehicle id is a 404.
+     */
+    public function showVehicle(Vehicle $vehicle): Response
+    {
         $serviceHistory = ServiceLog::query()
             ->where('vehicle_id', $vehicle->id)
             ->with(['mechanic:id,name', 'parts'])
@@ -79,21 +116,24 @@ class MechanicPortalController extends Controller
 
         return Inertia::render('Workshop/Mechanic/ScanResult', [
             'vehicle' => $vehicle,
-            'token' => $token,
             'serviceHistory' => $serviceHistory,
             'statuses' => ServiceLog::STATUSES,
         ]);
     }
 
-    public function createLog(CreateServiceLogRequest $request, CreateServiceLogAction $action): RedirectResponse
-    {
+    public function createLog(
+        CreateServiceLogRequest $request,
+        CreateServiceLogAction $action,
+        VehicleLookupService $lookup,
+    ): RedirectResponse {
         Gate::forUser(auth('mechanic')->user())->authorize('create', ServiceLog::class);
 
-        // Resolve the vehicle from the QR token the page carries — tenant-scoped,
-        // so a cross-tenant token is never found (404).
-        $vehicle = Vehicle::query()
-            ->where('qr_code_token', $request->string('token'))
-            ->firstOrFail();
+        // By vehicle_id (current page) or QR token (pages opened before the
+        // id-based route) — tenant-scoped either way, cross-tenant => 404.
+        $vehicle = $lookup->resolveForLog(
+            $request->filled('vehicle_id') ? $request->integer('vehicle_id') : null,
+            $request->filled('token') ? $request->string('token')->toString() : null,
+        );
 
         $action->execute(
             CreateServiceLogDTO::fromRequest($request, $vehicle->id),
@@ -101,9 +141,9 @@ class MechanicPortalController extends Controller
         );
 
         return redirect()
-            ->route('mechanic.vehicle', [
+            ->route('mechanic.vehicles.show', [
                 'tenant_slug' => app('current_tenant')->slug,
-                'token' => $vehicle->qr_code_token,
+                'vehicle' => $vehicle->id,
             ])
             ->with('success', __('common.workshop.log_created'));
     }

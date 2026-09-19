@@ -37,6 +37,7 @@ class ReportCacheService extends BaseService
     public const TYPE_CUSTOMERS = 'customers';
     public const TYPE_MAINTENANCE = 'maintenance';
     public const TYPE_DASHBOARD = 'dashboard';
+    public const TYPE_EXPENSES = 'expenses';
 
     public function __construct(private readonly ReportingService $reporting) {}
 
@@ -80,6 +81,12 @@ class ReportCacheService extends BaseService
     {
         return $this->remember(self::TYPE_MAINTENANCE, $this->range($from, $to), self::TTL_DEFAULT,
             fn () => $this->reporting->maintenanceCosts($from, $to));
+    }
+
+    public function expenses(Carbon $from, Carbon $to): array
+    {
+        return $this->remember(self::TYPE_EXPENSES, $this->range($from, $to), self::TTL_DEFAULT,
+            fn () => $this->reporting->expenses($from, $to));
     }
 
     public function dashboardStats(): array

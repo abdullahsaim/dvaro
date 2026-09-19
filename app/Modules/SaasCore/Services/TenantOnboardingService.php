@@ -2,6 +2,7 @@
 
 namespace App\Modules\SaasCore\Services;
 
+use App\Modules\Finance\Services\ExpenseCategoryService;
 use App\Modules\SaasCore\DTOs\TenantOnboardingDTO;
 use App\Modules\SaasCore\Events\TenantRegistered;
 use App\Modules\SaasCore\Models\Plan;
@@ -82,6 +83,9 @@ class TenantOnboardingService extends BaseService
             ]);
 
             $user->assignRole(TenantUser::ROLE_ADMIN);
+
+            // Default expense categories (Daily / Government / Utilities).
+            app(ExpenseCategoryService::class)->ensureDefaults($tenant);
 
             TenantRegistered::dispatch($tenant);
 

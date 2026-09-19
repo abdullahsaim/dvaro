@@ -47,6 +47,16 @@ class AppServiceProvider extends ServiceProvider
             \App\Contracts\PaymentProviderInterface::class,
             \App\Modules\SaasCore\Providers\StripePaymentProvider::class,
         );
+
+        // Captcha (public lead form) → Google reCAPTCHA v2 when keys are set,
+        // otherwise a no-op verifier that accepts + flags leads "unverified".
+        $this->app->bind(\App\Contracts\CaptchaVerifierInterface::class, function () {
+            $secret = config('services.recaptcha.secret_key');
+
+            return filled($secret)
+                ? new \App\Services\Captcha\GoogleRecaptchaVerifier($secret, config('services.recaptcha.site_key'))
+                : new \App\Services\Captcha\NullCaptchaVerifier();
+        });
     }
 
     /**
@@ -61,6 +71,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Lead::class, LeadPolicy::class);
         Gate::policy(Agreement::class, AgreementPolicy::class);
         Gate::policy(Invoice::class, InvoicePolicy::class);
+        Gate::policy(\App\Modules\Finance\Models\Expense::class, \App\Modules\Finance\Policies\ExpensePolicy::class);
+        Gate::policy(\App\Modules\Agreement\Models\AgreementTemplate::class, \App\Modules\Agreement\Policies\AgreementTemplatePolicy::class);
         // Workshop service logs are authorized against the MECHANIC guard.
         Gate::policy(ServiceLog::class, MechanicPolicy::class);
         // Mechanic ACCOUNT management is a tenant-admin-only TENANT-guard action
@@ -106,6 +118,22 @@ class AppServiceProvider extends ServiceProvider
         // without an authenticated user to throttle on.
         RateLimiter::for('crm-intake', function (Request $request) {
             return Limit::perHour(5)->by((string) $request->route('token'));
+        });
+
+        // Public lead form (share link / website embed): 10/hour per IP per
+        // tenant form + 200/day per tenant form (caps a distributed flood).
+        // Over the limit → a friendly "try again later" page, not a raw 429.
+        RateLimiter::for('lead-form', function (Request $request) {
+            $form = (string) $request->route('tenant_slug');
+            $tooMany = fn () => \Inertia\Inertia::render('CRM/PublicLeadFormUnavailable', [
+                'embedded' => $request->boolean('embedded'),
+                'reason' => 'rate_limited',
+            ])->toResponse($request)->setStatusCode(429);
+
+            return [
+                Limit::perHour(10)->by("lead-form:{$form}:".$request->ip())->response($tooMany),
+                Limit::perDay(200)->by("lead-form:{$form}")->response($tooMany),
+            ];
         });
 
         // AI chat: 20 requests per minute PER TENANT USER. AI calls cost money,

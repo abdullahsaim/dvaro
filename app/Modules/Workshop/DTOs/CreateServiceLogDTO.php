@@ -21,6 +21,7 @@ class CreateServiceLogDTO extends BaseDTO
         public readonly ?string $description = null,
         public readonly ?int $odometer_reading = null,
         public readonly int $labour_cost = 0,
+        public readonly bool $is_scheduled_service = false,
     ) {}
 
     public static function fromRequest(Request $request, int $vehicleId): self
@@ -33,6 +34,7 @@ class CreateServiceLogDTO extends BaseDTO
             odometer_reading: $request->filled('odometer_reading')
                 ? (int) $request->input('odometer_reading') : null,
             labour_cost: (int) $request->input('labour_cost', 0),
+            is_scheduled_service: $request->boolean('is_scheduled_service'),
         );
     }
 }

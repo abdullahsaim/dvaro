@@ -4,6 +4,7 @@ namespace App\Modules\Agreement\Models;
 
 use App\Modules\Customer\Models\Customer;
 use App\Modules\Fleet\Models\Vehicle;
+use App\Scopes\TenantScope;
 use App\Traits\HasTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -73,6 +74,9 @@ class Agreement extends Model
         'end_date',
         'next_billing_date',
         'notes',
+        'state',
+        // terms_html / terms_source / agreement_template_id / template_revision
+        // are NOT fillable: AgreementService freezes them once at creation.
         'signed_at',
         'signature_data',
         'pdf_path',
@@ -105,6 +109,16 @@ class Agreement extends Model
     public function vehicle(): BelongsTo
     {
         return $this->belongsTo(Vehicle::class);
+    }
+
+    /**
+     * The terms template this agreement's frozen terms came from (may be a
+     * platform default, so the tenant scope is dropped for the lookup).
+     */
+    public function template(): BelongsTo
+    {
+        return $this->belongsTo(AgreementTemplate::class, 'agreement_template_id')
+            ->withoutGlobalScope(TenantScope::class);
     }
 
     /**

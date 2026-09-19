@@ -1,7 +1,7 @@
 <script setup>
 // New mechanic form (tenant admin). Design-system pass.
 import { computed } from 'vue';
-import { Head, router, useForm, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import PageHeader from '@/Components/UI/PageHeader.vue';
@@ -37,6 +37,18 @@ function submit() {
                 <Button variant="ghost" @click="router.visit(base)">{{ t('common.back') }}</Button>
             </template>
         </PageHeader>
+
+        <!-- Plan limit reached (max_mechanics) — hard block, upgrade path -->
+        <div
+            v-if="form.errors.plan_limit"
+            class="mb-6 flex max-w-2xl flex-wrap items-center justify-between gap-3 rounded-card border border-warning-100 bg-warning-50 p-4 dark:border-warning-900 dark:bg-warning-900/40"
+            role="alert"
+        >
+            <p class="text-sm text-warning-700 dark:text-warning-500">{{ form.errors.plan_limit }}</p>
+            <Link :href="`/app/${page.props.tenant.slug}/billing`" class="text-sm font-medium text-ink-900 underline-offset-2 hover:underline dark:text-ink-100">
+                {{ t('common.view_plans') }}
+            </Link>
+        </div>
 
         <form class="grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-2" @submit.prevent="submit">
             <Input v-model="form.name" :label="t('mechanic.fields.name')" :error="form.errors.name" />

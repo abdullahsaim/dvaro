@@ -1,7 +1,7 @@
 <script setup>
 // Customer detail — design-system pass. Blacklist / unblacklist use their own
 // endpoints (Blacklist/UnblacklistCustomerAction), never the edit form.
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { Head, router, useForm, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -14,6 +14,7 @@ import { useCurrency } from '@/composables/useCurrency';
 const props = defineProps({
     customer: { type: Object, required: true },
     outstandingBalance: { type: Number, required: true }, // cents; positive = owes
+    documents: { type: Object, default: () => ({}) }, // type => bool (on file)
     hasPortalAccess: { type: Boolean, default: false },
     rentalHistory: { type: Array, default: () => [] },
 });
@@ -62,6 +63,35 @@ const unblacklistForm = useForm({});
 
 function unblacklist() {
     unblacklistForm.post(`${base.value}/${props.customer.id}/unblacklist`, { preserveScroll: true });
+}
+
+// Identity documents — three private upload slots. Paths never reach the page
+// (only `documents[type]` booleans); View hits the auth-checked route, which
+// redirects to a 15-minute signed URL.
+const documentTypes = ['license_front', 'license_back', 'proof_of_address'];
+const documentForms = Object.fromEntries(documentTypes.map((type) => [type, useForm({ file: null })]));
+const fileInputs = ref({});
+
+function documentUrl(type) {
+    return `${base.value}/${props.customer.id}/documents/${type}`;
+}
+
+function pickDocument(type) {
+    fileInputs.value[type]?.click();
+}
+
+function uploadDocument(type, event) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    const form = documentForms[type];
+    form.file = file;
+    form.post(documentUrl(type), {
+        forceFormData: true,
+        preserveScroll: true,
+        onSuccess: () => form.reset('file'),
+    });
 }
 </script>
 
@@ -132,6 +162,70 @@ function unblacklist() {
                         {{ t('customer.blacklist_action') }}
                     </Button>
                 </form>
+            </div>
+
+            <!-- Identity documents (private; signed-URL access only) -->
+            <div class="rounded-card border border-ink-200 bg-white shadow-subtle dark:border-ink-800 dark:bg-ink-900">
+                <div class="border-b border-ink-200 p-4 dark:border-ink-800">
+                    <p class="text-sm font-medium text-ink-900 dark:text-ink-100">{{ t('customer.documents.title') }}</p>
+                    <p class="mt-0.5 text-sm text-ink-500">{{ t('customer.documents.hint') }}</p>
+                </div>
+                <ul class="divide-y divide-ink-200 dark:divide-ink-800">
+                    <li v-for="type in documentTypes" :key="type" class="p-4">
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <div class="min-w-0">
+                                <p class="text-sm font-medium text-ink-900 dark:text-ink-100">{{ t(`customer.documents.${type}`) }}</p>
+                                <p class="mt-0.5 flex items-center gap-1.5 text-sm text-ink-500">
+                                    <span
+                                        class="inline-block h-1.5 w-1.5 rounded-full transition-colors duration-200"
+                                        :class="documents[type] ? 'bg-success-600' : 'bg-ink-300 dark:bg-ink-700'"
+                                    />
+                                    {{ documentForms[type].processing
+                                        ? t('customer.documents.uploading')
+                                        : documents[type] ? t('customer.documents.on_file') : t('customer.documents.missing') }}
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <a
+                                    v-if="documents[type]"
+                                    :href="documentUrl(type)"
+                                    target="_blank"
+                                    rel="noopener"
+                                    class="inline-flex h-8 items-center rounded-control px-3 text-sm font-medium text-ink-700 transition-colors duration-150 hover:bg-ink-100 dark:text-ink-300 dark:hover:bg-ink-800"
+                                >
+                                    {{ t('customer.documents.view') }}
+                                </a>
+                                <Button
+                                    size="sm"
+                                    :variant="documents[type] ? 'secondary' : 'primary'"
+                                    :loading="documentForms[type].processing"
+                                    @click="pickDocument(type)"
+                                >
+                                    {{ documents[type] ? t('customer.documents.replace') : t('customer.documents.upload') }}
+                                </Button>
+                                <input
+                                    :ref="(el) => (fileInputs[type] = el)"
+                                    type="file"
+                                    accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
+                                    class="hidden"
+                                    @change="uploadDocument(type, $event)"
+                                />
+                            </div>
+                        </div>
+                        <div
+                            v-if="documentForms[type].progress"
+                            class="mt-3 h-1 overflow-hidden rounded-full bg-ink-100 dark:bg-ink-800"
+                        >
+                            <div
+                                class="h-full bg-ink-950 transition-all duration-200 dark:bg-ink-50"
+                                :style="{ width: `${documentForms[type].progress.percentage}%` }"
+                            />
+                        </div>
+                        <p v-if="documentForms[type].errors.file" class="mt-2 text-sm text-danger-600">
+                            {{ documentForms[type].errors.file }}
+                        </p>
+                    </li>
+                </ul>
             </div>
 
             <!-- Details -->

@@ -23,6 +23,16 @@ class Customer extends Model
     use HasTenant;
     use SoftDeletes;
 
+    /**
+     * Identity document type => path column. The single source of truth for
+     * valid document types (route constraint, request, action, page).
+     */
+    public const DOCUMENT_TYPES = [
+        'license_front' => 'license_front_path',
+        'license_back' => 'license_back_path',
+        'proof_of_address' => 'proof_of_address_path',
+    ];
+
     protected $fillable = [
         'tenant_id',
         'name',
@@ -38,6 +48,18 @@ class Customer extends Model
         'risk_notes',
         'is_blacklisted',
         'blacklisted_reason',
+        // Document *_path columns deliberately NOT fillable — they change only
+        // via UploadCustomerDocumentAction.
+    ];
+
+    /**
+     * Internal storage paths never leave the server (Inertia props / JSON).
+     * The UI gets documentStatus() booleans; files are served via signed URL.
+     */
+    protected $hidden = [
+        'license_front_path',
+        'license_back_path',
+        'proof_of_address_path',
     ];
 
     protected function casts(): array
@@ -53,6 +75,18 @@ class Customer extends Model
     }
 
     // The tenant() relationship is provided by the HasTenant trait.
+
+    /**
+     * type => whether a document is on file. Safe to send to the frontend.
+     *
+     * @return array<string, bool>
+     */
+    public function documentStatus(): array
+    {
+        return collect(self::DOCUMENT_TYPES)
+            ->map(fn (string $column) => $this->{$column} !== null)
+            ->all();
+    }
 
     public function scopeBlacklisted(Builder $query): Builder
     {

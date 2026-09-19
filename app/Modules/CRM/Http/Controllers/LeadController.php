@@ -45,8 +45,14 @@ class LeadController extends Controller
 
         $search = trim((string) $request->query('search', ''));
 
+        // ?source= link | public_form | embed (anything else = no filter).
+        $source = in_array($request->query('source'), Lead::SOURCES, true)
+            ? $request->query('source')
+            : null;
+
         $leads = Lead::query()
             ->when($status !== null, fn ($query) => $query->where('status', $status))
+            ->when($source !== null, fn ($query) => $query->where('source', $source))
             ->when($search !== '', fn ($query) => $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('phone', 'like', "%{$search}%");
@@ -66,7 +72,9 @@ class LeadController extends Controller
             'filters' => [
                 'status' => $status,
                 'search' => $search,
+                'source' => $source,
             ],
+            'sources' => Lead::SOURCES,
             'counts' => [
                 'all' => (int) $counts->sum(),
                 ...collect(Lead::STATUSES)

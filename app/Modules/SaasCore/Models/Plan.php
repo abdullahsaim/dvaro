@@ -47,6 +47,7 @@ class Plan extends Model
         'max_customers',
         'max_storage_gb',
         'max_file_size_mb',
+        'max_mechanics',
     ];
 
     protected $fillable = [

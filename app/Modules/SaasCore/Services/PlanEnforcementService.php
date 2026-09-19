@@ -45,6 +45,41 @@ class PlanEnforcementService extends BaseService
     }
 
     /**
+     * Assert a single upload of $bytes is within the plan's max_file_size_mb.
+     * Absent / negative limit = unlimited (same convention as check()).
+     *
+     * @throws PlanLimitExceededException when the file is larger than allowed
+     */
+    public function checkFileSize(int $bytes): void
+    {
+        $limitMb = $this->fileSizeLimitMb();
+
+        if ($limitMb === null) {
+            return;
+        }
+
+        if ($bytes > $limitMb * 1024 * 1024) {
+            throw new PlanLimitExceededException(
+                'max_file_size_mb',
+                $limitMb,
+                (int) ceil($bytes / 1024 / 1024),
+                __('common.plan.file_too_large', ['limit' => $limitMb]),
+            );
+        }
+    }
+
+    /**
+     * The plan's per-upload file size limit in MB, or null when unlimited or
+     * no plan is resolved.
+     */
+    public function fileSizeLimitMb(): ?int
+    {
+        $limit = $this->resolveCurrentPlan()?->getLimit('max_file_size_mb') ?? -1;
+
+        return $limit < 0 ? null : $limit;
+    }
+
+    /**
      * The active plan of the tenant bound to the current request context.
      */
     private function resolveCurrentPlan(): ?Plan

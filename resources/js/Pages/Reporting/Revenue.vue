@@ -52,16 +52,28 @@ function barHeight(revenue) {
         <p v-else class="text-sm text-ink-400">{{ t('reporting.revenue.empty') }}</p>
 
         <h2 class="mb-3 mt-8 text-lg font-medium text-ink-900 dark:text-ink-50">{{ t('reporting.revenue.by_vehicle') }}</h2>
-        <DataTable :columns="3" :empty="!byVehicle.length">
+        <p class="-mt-1 mb-3 text-sm text-ink-500">{{ t('reporting.revenue.profit_hint') }}</p>
+        <DataTable :columns="6" :empty="!byVehicle.length">
             <template #head>
                 <th class="px-4 py-2">{{ t('reporting.revenue.vehicle') }}</th>
                 <th class="px-4 py-2 text-right">{{ t('reporting.revenue.days_rented') }}</th>
                 <th class="px-4 py-2 text-right">{{ t('reporting.revenue.amount') }}</th>
+                <th class="px-4 py-2 text-right">{{ t('reporting.revenue.expenses') }}</th>
+                <th class="px-4 py-2 text-right">{{ t('reporting.revenue.maintenance') }}</th>
+                <th class="px-4 py-2 text-right">{{ t('reporting.revenue.profit') }}</th>
             </template>
             <tr v-for="row in byVehicle" :key="row.vehicle" class="text-ink-700 dark:text-ink-200">
                 <td class="px-4 py-2">{{ row.vehicle }}</td>
                 <td class="px-4 py-2 text-right tabular-nums">{{ row.days_rented }}</td>
                 <td class="px-4 py-2 text-right tabular-nums">{{ formatAUD(row.revenue) }}</td>
+                <td class="px-4 py-2 text-right tabular-nums text-ink-500">{{ formatAUD(row.expenses ?? 0) }}</td>
+                <td class="px-4 py-2 text-right tabular-nums text-ink-500">{{ formatAUD(row.maintenance ?? 0) }}</td>
+                <td
+                    class="px-4 py-2 text-right font-medium tabular-nums"
+                    :class="(row.profit ?? 0) < 0 ? 'text-danger-600 dark:text-danger-500' : 'text-ink-900 dark:text-ink-50'"
+                >
+                    {{ formatAUD(row.profit ?? row.revenue) }}
+                </td>
             </tr>
             <template #empty>
                 <div class="px-4 py-6 text-center text-sm text-ink-400">{{ t('reporting.revenue.empty') }}</div>

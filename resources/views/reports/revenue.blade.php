@@ -29,7 +29,7 @@
     <h2>Revenue by vehicle</h2>
     <table>
         <thead>
-            <tr><th>Vehicle</th><th class="num">Days rented</th><th class="num">Revenue</th></tr>
+            <tr><th>Vehicle</th><th class="num">Days rented</th><th class="num">Revenue</th><th class="num">Expenses</th><th class="num">Workshop</th><th class="num">Profit</th></tr>
         </thead>
         <tbody>
             @forelse ($data['by_vehicle'] ?? [] as $row)
@@ -37,9 +37,12 @@
                     <td>{{ $row['vehicle'] }}</td>
                     <td class="num">{{ $row['days_rented'] }}</td>
                     <td class="num">{{ $money($row['revenue']) }}</td>
+                    <td class="num">{{ $money($row['expenses'] ?? 0) }}</td>
+                    <td class="num">{{ $money($row['maintenance'] ?? 0) }}</td>
+                    <td class="num">{{ $money($row['profit'] ?? $row['revenue']) }}</td>
                 </tr>
             @empty
-                <tr><td colspan="3">No vehicle revenue in this period.</td></tr>
+                <tr><td colspan="6">No vehicle revenue or costs in this period.</td></tr>
             @endforelse
         </tbody>
     </table>

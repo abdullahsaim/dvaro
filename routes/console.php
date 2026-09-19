@@ -31,9 +31,17 @@ Schedule::command('invoices:apply-late-fees')
     ->timezone('Australia/Sydney')
     ->withoutOverlapping();
 
-// Send 14-day expiry reminders to tenant admins (registration, insurance,
-// service due, agreement end). Tenant-aware, idempotent, never throws.
+// Send 14-day agreement-end reminders to tenant admins. (Vehicle reminders
+// moved to the fleet digest below.) Tenant-aware, idempotent, never throws.
 Schedule::command('notifications:send-expiry-reminders')
     ->dailyAt('00:10')
+    ->timezone('Australia/Sydney')
+    ->withoutOverlapping();
+
+// Daily fleet reminder digest to ALL tenant staff — registration, insurance and
+// service by date OR km (due soon + overdue, each sent once per due value).
+// 07:00 so it lands at the start of the working day.
+Schedule::command('notifications:send-fleet-reminders')
+    ->dailyAt('07:00')
     ->timezone('Australia/Sydney')
     ->withoutOverlapping();

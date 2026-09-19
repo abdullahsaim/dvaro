@@ -203,6 +203,9 @@ class CustomerPortalController extends Controller
                 'signed_at' => $agreement->signed_at?->toDateTimeString(),
                 'has_pdf' => $agreement->pdf_path !== null,
             ],
+            // The terms the customer agreed to: frozen at creation, sanitised
+            // when the template was saved — safe to render as HTML.
+            'terms' => $agreement->terms_html,
         ]);
     }
 

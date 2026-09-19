@@ -15,7 +15,8 @@ import { UserPlusIcon, CheckIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
     leads: { type: Object, required: true }, // Laravel paginator payload
-    filters: { type: Object, required: true }, // { status, search }
+    filters: { type: Object, required: true }, // { status, search, source }
+    sources: { type: Array, default: () => ['link', 'public_form', 'embed'] },
     counts: { type: Object, required: true }, // { all, new, contacted, ... }
 });
 
@@ -44,6 +45,7 @@ function query(overrides = {}) {
     const params = {
         search: search.value || undefined,
         status: props.filters.status || undefined,
+        source: props.filters.source || undefined,
         ...overrides,
     };
     router.get(base.value, params, { preserveState: true, preserveScroll: true, replace: true });
@@ -56,6 +58,13 @@ function submitSearch() {
 function filterBy(key) {
     query({ status: key || undefined });
 }
+
+function filterSource(event) {
+    query({ source: event.target.value || undefined });
+}
+
+// lead source → badge variant (direct link = neutral).
+const sourceVariants = { link: 'neutral', public_form: 'info', embed: 'info' };
 
 function convert(lead) {
     router.post(`${base.value}/${lead.id}/convert`, {}, { preserveScroll: true });
@@ -83,6 +92,7 @@ function isConvertible(lead) {
 
         <PageHeader :title="t('crm.title')">
             <template #actions>
+                <Button variant="secondary" @click="router.visit(`${base}/form`)">{{ t('crm.lead_form.nav') }}</Button>
                 <Button @click="router.visit(`${base}/create`)">{{ t('crm.add_lead') }}</Button>
             </template>
         </PageHeader>
@@ -105,18 +115,28 @@ function isConvertible(lead) {
                 </button>
             </div>
 
-            <!-- Search -->
-            <form class="flex items-end gap-2" @submit.prevent="submitSearch">
+            <!-- Source filter + search -->
+            <form class="flex flex-wrap items-end gap-2" @submit.prevent="submitSearch">
+                <select
+                    :value="filters.source ?? ''"
+                    :aria-label="t('crm.source_label')"
+                    class="h-10 rounded-control border border-ink-200 bg-white px-3 text-sm text-ink-900 shadow-subtle dark:border-ink-800 dark:bg-ink-900 dark:text-ink-100"
+                    @change="filterSource"
+                >
+                    <option value="">{{ t('crm.sources.all') }}</option>
+                    <option v-for="src in sources" :key="src" :value="src">{{ t(`crm.sources.${src}`) }}</option>
+                </select>
                 <Input v-model="search" type="search" :placeholder="t('crm.search_placeholder')" class="w-64" />
                 <Button type="submit" variant="secondary">{{ t('common.search') }}</Button>
             </form>
         </div>
 
-        <DataTable :columns="6" :empty="leads.data.length === 0" :pagination="leads">
+        <DataTable :columns="7" :empty="leads.data.length === 0" :pagination="leads">
             <template #head>
                 <th class="px-4 py-3">{{ t('crm.fields.name') }}</th>
                 <th class="px-4 py-3">{{ t('crm.fields.email') }}</th>
                 <th class="px-4 py-3">{{ t('crm.fields.phone') }}</th>
+                <th class="px-4 py-3">{{ t('crm.source_label') }}</th>
                 <th class="px-4 py-3">{{ t('crm.status_label') }}</th>
                 <th class="px-4 py-3">{{ t('crm.submitted') }}</th>
                 <th class="px-4 py-3 text-right">{{ t('common.actions') }}</th>
@@ -126,6 +146,17 @@ function isConvertible(lead) {
                 <td class="px-4 py-3 font-medium text-ink-900 dark:text-ink-50">{{ lead.name }}</td>
                 <td class="px-4 py-3">{{ lead.email }}</td>
                 <td class="px-4 py-3">{{ lead.phone }}</td>
+                <td class="px-4 py-3">
+                    <span class="inline-flex flex-wrap items-center gap-1.5">
+                        <StatusBadge :variant="sourceVariants[lead.source] ?? 'neutral'" :label="t(`crm.sources.${lead.source ?? 'link'}`)" />
+                        <StatusBadge
+                            v-if="lead.captcha_status === 'unverified'"
+                            variant="warning"
+                            :label="t('crm.unverified')"
+                            :title="t('crm.unverified_hint')"
+                        />
+                    </span>
+                </td>
                 <td class="px-4 py-3">
                     <StatusBadge :variant="statusVariants[lead.status]" :label="t(`crm.statuses.${lead.status}`)" />
                 </td>

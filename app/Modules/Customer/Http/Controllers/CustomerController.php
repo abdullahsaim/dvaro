@@ -8,15 +8,18 @@ use App\Modules\Customer\Actions\CreateCustomerAction;
 use App\Modules\Customer\Actions\InviteCustomerToPortalAction;
 use App\Modules\Customer\Actions\UnblacklistCustomerAction;
 use App\Modules\Customer\Actions\UpdateCustomerAction;
+use App\Modules\Customer\Actions\UploadCustomerDocumentAction;
 use App\Modules\Customer\DTOs\CreateCustomerDTO;
 use App\Modules\Customer\DTOs\UpdateCustomerDTO;
 use App\Modules\Customer\Http\Requests\BlacklistRequest;
 use App\Modules\Customer\Http\Requests\StoreCustomerRequest;
 use App\Modules\Customer\Http\Requests\UpdateCustomerRequest;
+use App\Modules\Customer\Http\Requests\UploadDocumentRequest;
 use App\Modules\Customer\Models\Customer;
 use App\Modules\Customer\Models\CustomerUser;
 use App\Modules\Finance\Models\LedgerEntry;
 use App\Modules\Finance\Services\LedgerService;
+use App\Services\FileUrlService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -30,7 +33,7 @@ use Inertia\Response;
  * ──────────────────────────────────────────────────────────────────────────
  * AUTHORIZATION — READ BEFORE EDITING:
  * Every action that touches a SPECIFIC customer (show, edit, update, destroy,
- * blacklist, unblacklist) MUST authorize via:
+ * blacklist, unblacklist, uploadDocument, downloadDocument) MUST authorize via:
  *
  *     Gate::forUser(auth('tenant')->user())->authorize($ability, $customer);
  *
@@ -119,6 +122,8 @@ class CustomerController extends Controller
             // Cents; positive = owes. Web request has current_tenant bound, so
             // LedgerService (TenantScope) is safe here.
             'outstandingBalance' => $ledger->getBalance($customer->id),
+            // type => bool only; raw storage paths are $hidden on the model.
+            'documents' => $customer->documentStatus(),
             // Drives the portal button state ("Invite" vs "Already has access").
             'hasPortalAccess' => CustomerUser::where('customer_id', $customer->id)->exists(),
             // Rentals module not built yet — placeholder rendered by the page.
@@ -205,5 +210,42 @@ class CustomerController extends Controller
         $action->execute($customer);
 
         return back()->with('success', __('common.customer.unblacklisted'));
+    }
+
+    /**
+     * Upload (or replace) an identity document. {type} is constrained to
+     * Customer::DOCUMENT_TYPES at the route; the action does all the work.
+     */
+    public function uploadDocument(
+        UploadDocumentRequest $request,
+        Customer $customer,
+        string $type,
+        UploadCustomerDocumentAction $action,
+    ): RedirectResponse {
+        Gate::forUser(auth('tenant')->user())->authorize('update', $customer);
+
+        $action->execute($customer, $type, $request->file('file'));
+
+        return back()->with('success', __('common.customer.document_uploaded'));
+    }
+
+    /**
+     * Serve an identity document. SENSITIVE: auth-checked here, then a redirect
+     * to a 15-minute signed URL on the default disk (FileUrlService) — never a
+     * direct or permanent path. Cross-tenant {customer} already 404s via
+     * TenantScope binding; the policy is defense-in-depth.
+     */
+    public function downloadDocument(
+        Customer $customer,
+        string $type,
+        FileUrlService $fileUrls,
+    ): RedirectResponse {
+        Gate::forUser(auth('tenant')->user())->authorize('view', $customer);
+
+        $path = $customer->{Customer::DOCUMENT_TYPES[$type]};
+
+        abort_if($path === null, 404);
+
+        return redirect()->away($fileUrls->temporaryUrl($path));
     }
 }

@@ -22,11 +22,12 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
  *   fleet    → ['rows' => [...]]
  *   overdue  → ['rows' => [...]]
  *   workshop → ['total_jobs'=>, 'total_labour_cost'=>, ..., 'by_mechanic'=>[...]]
+ *   expenses → ['totals'=>[...], 'by_category'=>[...], 'by_month'=>[...]] (Session 32)
  */
 class ExportService extends BaseService
 {
     /** Report types that can be exported (each has a Blade view + tabulariser). */
-    public const TYPES = ['revenue', 'fleet', 'overdue', 'workshop'];
+    public const TYPES = ['revenue', 'fleet', 'overdue', 'workshop', 'expenses'];
 
     /**
      * Render the report-specific Blade view to a PDF and store it on the
@@ -141,6 +142,22 @@ class ExportService extends BaseService
                     fn ($r) => [$r['mechanic'], $r['jobs'], $this->aud($r['labour_cost']), $this->aud($r['parts_cost']), $this->aud($r['total_cost'])],
                     $data['by_mechanic'] ?? [],
                 ),
+            ],
+            'expenses' => [
+                'columns' => ['Category', 'Count', 'Total incl. GST (AUD)', 'GST (AUD)', 'Ex GST (AUD)'],
+                'rows' => [
+                    ...array_map(
+                        fn ($r) => [$r['category'], $r['count'], $this->aud($r['total']), $this->aud($r['gst']), $this->aud($r['ex_gst'])],
+                        $data['by_category'] ?? [],
+                    ),
+                    [
+                        'TOTAL',
+                        $data['totals']['count'] ?? 0,
+                        $this->aud($data['totals']['total'] ?? 0),
+                        $this->aud($data['totals']['gst'] ?? 0),
+                        $this->aud($data['totals']['ex_gst'] ?? 0),
+                    ],
+                ],
             ],
             default => ['columns' => [], 'rows' => []],
         };

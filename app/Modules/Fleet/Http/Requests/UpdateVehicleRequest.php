@@ -31,6 +31,16 @@ class UpdateVehicleRequest extends StoreVehicleRequest
         // Status is never edited here.
         unset($rules['status']);
 
+        // The odometer is never edited here either — it only moves forward via
+        // the "Record odometer" endpoint (RecordOdometerReadingAction). The
+        // last-service reading can't be ahead of the vehicle's current reading.
+        unset($rules['current_odometer']);
+        $current = $this->route('vehicle')->current_odometer;
+        $rules['last_service_odometer'] = array_values(array_filter([
+            'nullable', 'integer', 'min:0',
+            $current !== null ? 'max:'.$current : 'max:9999999',
+        ]));
+
         return $rules;
     }
 }

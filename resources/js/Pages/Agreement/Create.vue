@@ -18,6 +18,11 @@ const props = defineProps({
     vehicles: { type: Array, required: true }, // [{ id, registration_number, make, model }]
     types: { type: Array, required: true },
     billingCycles: { type: Array, required: true },
+    states: { type: Array, default: () => [] },
+    defaultState: { type: String, default: null },
+    // Terms templates this company may use (own + platform defaults). Blank =
+    // let the server pick the best match for the type + state.
+    templates: { type: Array, default: () => [] },
 });
 
 const { t } = useI18n();
@@ -31,6 +36,8 @@ const form = useForm({
     type: props.types[0] ?? '',
     billing_cycle: props.billingCycles[0] ?? '',
     billing_cycle_day: '',
+    state: props.defaultState ?? '',
+    agreement_template_id: '',
     rate: '', // AUD dollars in the input; converted to cents on submit
     bond_amount: '', // AUD dollars
     start_date: '',
@@ -101,6 +108,17 @@ function submit() {
             </Select>
 
             <Input v-model="form.billing_cycle_day" :label="t('agreement.fields.billing_cycle_day')" :error="form.errors.billing_cycle_day" />
+
+            <Select v-model="form.state" :label="t('agreement.fields.state')" :error="form.errors.state">
+                <option value="">{{ t('agreement.no_state') }}</option>
+                <option v-for="s in states" :key="s" :value="s">{{ s }}</option>
+            </Select>
+            <Select v-model="form.agreement_template_id" :label="t('agreement.fields.terms_template')" :error="form.errors.agreement_template_id">
+                <option value="">{{ t('agreement.terms_automatic') }}</option>
+                <option v-for="tpl in templates" :key="tpl.id" :value="tpl.id">
+                    {{ tpl.name }}{{ tpl.tenant_id ? '' : ' · ' + t('agreement.platform_default') }}
+                </option>
+            </Select>
             <Input v-model="form.rate" type="number" step="0.01" min="0.01" :label="t('agreement.rate_aud')" :error="form.errors.rate" />
             <Input v-model="form.bond_amount" type="number" step="0.01" min="0" :label="t('agreement.bond_aud')" :error="form.errors.bond_amount" />
             <Input v-model="form.start_date" type="date" :label="t('agreement.fields.start_date')" :error="form.errors.start_date" />

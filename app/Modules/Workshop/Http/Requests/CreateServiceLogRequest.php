@@ -24,10 +24,16 @@ class CreateServiceLogRequest extends FormRequest
     public function rules(): array
     {
         return [
+            // Target vehicle: id (vehicle page) or legacy QR token. Existence is
+            // checked tenant-scoped in VehicleLookupService (cross-tenant → 404).
+            'vehicle_id' => ['required_without:token', 'nullable', 'integer'],
+            'token' => ['required_without:vehicle_id', 'nullable', 'string', 'max:255'],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'odometer_reading' => ['nullable', 'integer', 'min:0'],
             'labour_cost' => ['nullable', 'integer', 'min:0'],
+            // Only a scheduled service resets the vehicle's service schedule.
+            'is_scheduled_service' => ['nullable', 'boolean'],
         ];
     }
 }
