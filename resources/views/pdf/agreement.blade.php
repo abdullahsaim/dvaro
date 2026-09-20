@@ -1,12 +1,28 @@
 {{--
-    Agreement PDF — FUNCTIONAL ONLY, design pass later.
-    Rendered by GenerateAgreementPdfJob via dompdf (pure PHP). Keep markup
-    dompdf-friendly: simple tables, inline styles, no flexbox/grid.
+    Agreement PDF. Rendered by GenerateAgreementPdfJob via dompdf (pure PHP).
+    Keep markup dompdf-friendly: simple tables, inline styles, no flexbox/grid.
     Monetary values are stored in cents; divide by 100 for display.
+
+    Carries the company's own letterhead (TenantBranding: logo, accent colour,
+    company details) so an agreement looks like it came from the rental company
+    rather than from nobody. CONTENT is untouched by any of that — this is a
+    signed legal document, and branding may only ever change how it looks.
+
+    Each agreement's PDF is generated once, at signing, and kept. A company that
+    rebrands later does NOT retro-change agreements people have already signed,
+    which is exactly right: the stored file stays the document they saw.
 --}}
 @php
+    $branding = $branding ?? ['logo' => null, 'accent' => '#1a1a1a', 'company' => [], 'date_format' => 'd/m/Y'];
+    $company = $branding['company'];
+    $accent = $branding['accent'];
+
     $money = static fn ($cents) => '$' . number_format(((int) $cents) / 100, 2);
-    $date = static fn ($value) => $value ? \Illuminate\Support\Carbon::parse($value)->format('d/m/Y') : '—';
+    $date = static function ($value) use ($branding) {
+        return $value
+            ? \Illuminate\Support\Carbon::parse($value)->format($branding['date_format'] ?? 'd/m/Y')
+            : '—';
+    };
 @endphp
 <!DOCTYPE html>
 <html lang="en">
@@ -14,9 +30,16 @@
     <meta charset="utf-8">
     <title>Agreement #{{ $agreement->id }} v{{ $agreement->version }}</title>
     <style>
-        body { font-family: DejaVu Sans, sans-serif; font-size: 12px; color: #1a1a1a; }
-        h1 { font-size: 20px; margin: 0 0 4px; }
-        h2 { font-size: 14px; margin: 20px 0 6px; border-bottom: 1px solid #ccc; padding-bottom: 2px; }
+        @page { margin: 34px 40px; }
+        /* The page margin comes from @page; a body margin on top of it would
+           push the layout off the right edge. */
+        body { margin: 0; font-family: DejaVu Sans, sans-serif; font-size: 12px; color: #1a1a1a; }
+        h1 { font-size: 20px; margin: 0 0 4px; color: {{ $accent }}; }
+        h2 { font-size: 14px; margin: 20px 0 6px; border-bottom: 1px solid #ccc; padding-bottom: 2px; color: {{ $accent }}; }
+        .head td { padding: 0; vertical-align: top; }
+        .company { font-size: 11px; line-height: 1.5; color: #444; }
+        .company strong { font-size: 13px; color: #1a1a1a; }
+        .logo { max-height: 56px; max-width: 200px; }
         table { width: 100%; border-collapse: collapse; }
         td { padding: 4px 6px; vertical-align: top; }
         td.label { width: 40%; color: #555; }
@@ -32,14 +55,36 @@
     </style>
 </head>
 <body>
-    <h1>Rental Agreement</h1>
-    <p class="meta">
-        Agreement #{{ $agreement->id }} &middot; Version {{ $agreement->version }}
-        &middot; Status: {{ ucfirst($agreement->status) }}
-        @if ($agreement->parent_agreement_id)
-            &middot; Supersedes agreement #{{ $agreement->parent_agreement_id }}
-        @endif
-    </p>
+    <table class="head">
+        <tr>
+            <td style="width: 58%;">
+                @if ($branding['logo'])
+                    <img src="{{ $branding['logo'] }}" class="logo" alt="">
+                @endif
+                @if (! empty($company))
+                    <div class="company" style="margin-top: 6px;">
+                        <strong>{{ $company['name'] ?? '' }}</strong><br>
+                        @if (! empty($company['trading_as']))trading as {{ $company['trading_as'] }}<br>@endif
+                        @if (! empty($company['abn']))ABN {{ $company['abn'] }}<br>@endif
+                        @if (! empty($company['address'])){{ $company['address'] }}<br>@endif
+                        @if (! empty($company['phone'])){{ $company['phone'] }}@endif
+                        @if (! empty($company['phone']) && ! empty($company['email'])) &middot; @endif
+                        @if (! empty($company['email'])){{ $company['email'] }}@endif
+                    </div>
+                @endif
+            </td>
+            <td style="width: 42%; text-align: right;">
+                <h1>Rental Agreement</h1>
+                <p class="meta" style="line-height: 1.6;">
+                    Agreement #{{ $agreement->id }} &middot; Version {{ $agreement->version }}<br>
+                    {{ ucfirst($agreement->status) }}
+                    @if ($agreement->parent_agreement_id)
+                        <br>Supersedes agreement #{{ $agreement->parent_agreement_id }}
+                    @endif
+                </p>
+            </td>
+        </tr>
+    </table>
 
     <h2>Parties</h2>
     <table>

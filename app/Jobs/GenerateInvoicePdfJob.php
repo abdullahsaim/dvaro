@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Modules\Invoice\Models\Invoice;
+use App\Modules\Invoice\Services\InvoiceTemplateService;
 use App\Modules\SaasCore\Models\Tenant;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Bus\Queueable;
@@ -72,9 +73,13 @@ class GenerateInvoicePdfJob implements ShouldQueue
                 return;
             }
 
+            // The company's chosen layout, logo, colour and wording
+            // (Settings → Invoices). Presentation only — resolve() never
+            // touches an amount.
             $pdf = Pdf::loadView('pdf.invoice', [
                 'invoice' => $invoice,
                 'tenant' => $tenant,
+                'template' => app(InvoiceTemplateService::class)->resolve($tenant),
             ]);
 
             // tenants/{tenant_id}/invoices/{invoice_id}/invoice.pdf

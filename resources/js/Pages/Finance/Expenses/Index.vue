@@ -26,6 +26,7 @@ import Select from '@/Components/UI/Select.vue';
 import Textarea from '@/Components/UI/Textarea.vue';
 import Modal from '@/Components/UI/Modal.vue';
 import { useCurrency } from '@/composables/useCurrency';
+import { useTenantFormat } from '@/composables/useTenantFormat';
 
 const props = defineProps({
     expenses: { type: Object, required: true }, // paginator
@@ -43,12 +44,10 @@ const page = usePage();
 const base = computed(() => `/app/${page.props.tenant.slug}/expenses`);
 
 // ── Formatting ───────────────────────────────────────────────────────────────
-const dateFormat = new Intl.DateTimeFormat('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
-function formatDate(value) {
-    if (!value) return '';
-    const [y, m, d] = String(value).slice(0, 10).split('-').map(Number);
-    return dateFormat.format(new Date(y, m - 1, d));
-}
+// The company's date format (Settings → Regional). An expense date is a date,
+// not a moment, so it is shown exactly as recorded.
+const { date } = useTenantFormat();
+const formatDate = (value) => date(value) ?? '';
 const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const vehicleLabel = (v) => (v ? `${v.registration_number} · ${v.make} ${v.model}` : '');
 

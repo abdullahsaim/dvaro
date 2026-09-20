@@ -17,6 +17,7 @@ const props = defineProps({
     invoice: { type: Object, required: true },
     customerBalance: { type: Number, default: 0 },
     methods: { type: Array, default: () => [] },
+    canRegeneratePdf: { type: Boolean, default: false },
 });
 
 const { t } = useI18n();
@@ -66,6 +67,14 @@ function recordPayment() {
 const overdueForm = useForm({});
 function markOverdue() {
     overdueForm.post(`${base.value}/${props.invoice.id}/overdue`, { preserveScroll: true });
+}
+
+// Re-render this invoice's PDF with the company's current template. Queued —
+// the file is replaced shortly after, the amounts never change.
+const pdfForm = useForm({});
+
+function regeneratePdf() {
+    pdfForm.post(`${base.value}/${props.invoice.id}/pdf`, { preserveScroll: true });
 }
 </script>
 
@@ -142,6 +151,16 @@ function markOverdue() {
             <div class="flex flex-wrap items-center gap-4">
                 <a v-if="invoice.pdf_path" :href="`${base}/${invoice.id}/pdf`" class="text-sm font-medium text-ink-900 hover:underline dark:text-ink-100">{{ t('invoice.download_pdf') }}</a>
                 <span v-else class="text-sm text-ink-500">{{ t('invoice.pdf_pending') }}</span>
+                <!-- Re-render an older invoice with the current template
+                     (Settings → Invoices). Queued; amounts are untouched. -->
+                <button
+                    v-if="canRegeneratePdf"
+                    type="button"
+                    class="text-sm text-ink-500 underline underline-offset-4 hover:text-ink-900 dark:hover:text-ink-100"
+                    @click="regeneratePdf"
+                >
+                    {{ t('invoice.regenerate_pdf') }}
+                </button>
                 <Button
                     v-if="isPayable && invoice.status !== 'overdue'"
                     variant="secondary"

@@ -42,6 +42,17 @@ class InvoicePolicy
         return $this->sameTenant($user, $invoice);
     }
 
+    /**
+     * Re-rendering the PDF after the invoice template changed. Costs a queue
+     * job and replaces the stored file, so it is admin/accounts only — the same
+     * pair who own the template itself. Amounts are untouched either way.
+     */
+    public function regeneratePdf(TenantUser $user, Invoice $invoice): bool
+    {
+        return $this->sameTenant($user, $invoice)
+            && in_array($user->role, [TenantUser::ROLE_ADMIN, TenantUser::ROLE_ACCOUNTS], true);
+    }
+
     private function sameTenant(TenantUser $user, Invoice $invoice): bool
     {
         return (int) $user->tenant_id === (int) $invoice->tenant_id;

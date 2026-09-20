@@ -131,7 +131,6 @@
         "back_to_login": "Back to sign in",
         "register": "Create your account",
         "company_name": "Company name",
-        "confirm_password": "Confirm password",
         "create_account": "Create account",
         "have_account": "Already have an account?",
         "pin": "PIN",
@@ -148,7 +147,63 @@
         "active_rentals": "Active rentals",
         "vehicles_available": "Vehicles available",
         "view_reports": "View reports",
-        "manage_mechanics": "Manage mechanics"
+        "manage_mechanics": "Manage mechanics",
+        "refresh": "Refresh",
+        "attention": {
+            "title": "Needs attention",
+            "count": "{n} items",
+            "all_clear": "You're all caught up",
+            "all_clear_hint": "Nothing needs your attention right now.",
+            "and_more": "{n} more",
+            "days_overdue": "{n} days overdue",
+            "vehicle": "Vehicle",
+            "groups": {
+                "overdue_invoices": "Overdue invoices",
+                "fleet_expiries": "Registration, insurance and service",
+                "agreements_ending": "Rentals ending soon",
+                "unconverted_leads": "Leads waiting",
+                "vehicles_off_road": "Vehicles off the road",
+                "workshop_jobs": "Workshop jobs held up"
+            },
+            "due": {
+                "registration": "Registration due",
+                "insurance": "Insurance due",
+                "service": "Service due",
+                "service_km": "Service at"
+            }
+        },
+        "fleet": {
+            "title": "Fleet right now",
+            "on_road": "{pct}% on the road",
+            "empty": "No vehicles yet. Add your first one to see it here."
+        },
+        "week": {
+            "title": "The week ahead",
+            "hint": "The next seven days.",
+            "starting_today": "Starting today",
+            "ending_today": "Ending today",
+            "starting": "Starting this week",
+            "ending": "Ending this week",
+            "services_booked": "Services open",
+            "new_leads": "Leads waiting"
+        },
+        "money": {
+            "title": "Money in this month",
+            "hint": "Payments received",
+            "no_comparison": "First month",
+            "last_month": "last month {amount}",
+            "trend_label": "Payments received over the last six months",
+            "expenses": "Expenses this month",
+            "net": "Net",
+            "owed": "Owed to you",
+            "nothing_owed": "Nothing outstanding.",
+            "view_invoices": "View all invoices",
+            "ageing": {
+                "current": "Not yet due",
+                "late_30": "Up to 30 days late",
+                "late_over_30": "Over 30 days late"
+            }
+        }
     },
     "common": {
         "save": "Save",
@@ -160,6 +215,8 @@
         "all": "All",
         "none": "—",
         "search": "Search",
+        "yes": "Yes",
+        "no": "No",
         "view_plans": "View plans",
         "confirm_delete": "Remove this vehicle from your fleet?",
         "close": "Close",
@@ -168,7 +225,8 @@
         "toggle_theme": "Toggle theme",
         "notifications": "Notifications",
         "profile": "Profile",
-        "logout": "Log out"
+        "logout": "Log out",
+        "uploading": "Uploading…"
     },
     "nav": {
         "dashboard": "Dashboard",
@@ -210,7 +268,26 @@
         "appearance_hint": "Choose how DVARO looks on this account. System follows your device setting.",
         "color_light": "Light",
         "color_dark": "Dark",
-        "color_system": "System"
+        "color_system": "System",
+        "preferences": "Preferences",
+        "preferences_hint": "Just for you — these do not change anything for your colleagues.",
+        "preferences_updated": "Preferences saved.",
+        "landing_page": "Start me on",
+        "landing_page_help": "The screen you see straight after signing in.",
+        "rows_per_page": "Rows per page",
+        "rows_per_page_help": "How many records lists show at a time.",
+        "mute_fleet_digest": "Do not send me the daily fleet digest",
+        "mute_fleet_digest_help": "Registration, insurance and service reminders will still go to everyone else.",
+        "landing": {
+            "dashboard": "Dashboard",
+            "fleet": "Fleet",
+            "agreements": "Rentals",
+            "invoices": "Invoices",
+            "customers": "Customers",
+            "leads": "Leads",
+            "tenants": "Companies",
+            "subscriptions": "Subscriptions"
+        }
     },
     "billing": {
         "title": "Billing & plan",
@@ -725,7 +802,8 @@
             "bank_transfer": "Bank transfer",
             "stripe": "Stripe",
             "paypal": "PayPal"
-        }
+        },
+        "regenerate_pdf": "Rebuild with current template"
     },
     "notifications": {
         "fleet": {
@@ -739,15 +817,14 @@
             "email_off": "Email notifications are switched off above, so no reminders will be sent."
         },
         "title": "Notification settings",
-        "intro": "Choose how your company sends emails and text messages to customers.",
-        "providers": "Providers",
+        "intro": "Decide what DVARO sends, to whom, and on which channel.",
         "email_provider": "Email provider",
         "sms_provider": "SMS provider",
         "whatsapp_note": "WhatsApp is sent platform-wide via ClickSend when configured.",
         "channels": "Channels",
-        "channel_email": "Send notifications by email",
-        "channel_sms": "Send notifications by SMS",
-        "channel_whatsapp": "Send notifications by WhatsApp",
+        "channel_email": "Email",
+        "channel_sms": "SMS",
+        "channel_whatsapp": "WhatsApp",
         "email_providers": {
             "log": "Log only (no real sending)",
             "mailgun": "Mailgun",
@@ -758,6 +835,17 @@
             "log": "Log only (no real sending)",
             "clicksend": "ClickSend",
             "cellcast": "Cellcast"
+        },
+        "channels_hint": "Master switches. A channel that is off here sends nothing, whatever the table below says.",
+        "matrix": {
+            "title": "What gets sent",
+            "hint": "One row per notification. Untick anything your company does not want to send.",
+            "trigger": "Notification",
+            "to_customers": "To your customers",
+            "to_team": "To your team",
+            "channel_off": "switched off",
+            "always_on": "Always sent — this protects your own account.",
+            "not_supported": "Not available on this channel."
         }
     },
     "superadmin": {
@@ -1163,6 +1251,240 @@
             "card": "Card",
             "bank_transfer": "Bank transfer",
             "other": "Other"
+        }
+    },
+    "settings": {
+        "title": "Settings",
+        "intro": "Your company details, people, and how DVARO behaves for your business.",
+        "admin_only": "Only an admin can change these settings.",
+        "recent_changes": "Recent changes",
+        "view_all_activity": "View all activity",
+        "no_activity": "No changes recorded yet.",
+        "cards": {
+            "company": "Company profile",
+            "company_hint": "Name, ABN, contact details, logo and brand colour.",
+            "staff": "Staff",
+            "staff_hint": "Invite people, set roles, deactivate accounts.",
+            "staff_value": "{n} active · {pending} pending invitations",
+            "finance": "Invoicing & late fees",
+            "finance_hint": "Late fee rules, invoice numbering and payment terms.",
+            "late_fees_on": "Late fees on",
+            "late_fees_off": "Late fees off",
+            "regional": "Regional",
+            "regional_hint": "Timezone, currency and date format.",
+            "notifications": "Notifications",
+            "notifications_hint": "Providers, channels and which events send messages.",
+            "provider_value": "Email via {provider}",
+            "integrations": "Integrations",
+            "integrations_hint": "AI assistant, messaging providers and payment status.",
+            "ai_value": "AI: {provider}",
+            "agreement_templates": "Agreement terms",
+            "agreement_templates_value": "Terms per agreement type and state",
+            "lead_form": "Lead form",
+            "lead_form_on": "Accepting submissions",
+            "lead_form_off": "Switched off",
+            "lead_form_hint": "Your public enquiry form, link and embed code.",
+            "personal": "Your preferences",
+            "personal_hint": "Your profile, password and appearance.",
+            "personal_value": "Only affects your account",
+            "invoice_template": "Invoices",
+            "invoice_template_hint": "Layout, logo, colour and wording for invoice PDFs"
+        },
+        "company": {
+            "title": "Company profile",
+            "intro": "These details appear on invoices, agreements and the emails you send.",
+            "trading_name": "Trading name",
+            "legal_name": "Legal name",
+            "abn": "ABN",
+            "phone": "Phone",
+            "email": "Email",
+            "website": "Website",
+            "address": "Business address",
+            "default_state": "Default state",
+            "no_state": "Not set",
+            "branding": "Branding",
+            "branding_hint": "Used on invoices and customer-facing documents.",
+            "upload_logo": "Upload logo",
+            "replace_logo": "Replace logo",
+            "logo_hint": "PNG, JPG, SVG or WebP, up to {mb} MB.",
+            "brand_colour": "Brand colour",
+            "brand_colour_hint": "Used for headings and accents on your documents."
+        },
+        "staff": {
+            "title": "Staff",
+            "intro": "The people who can sign in to your workspace.",
+            "invite": "Invite someone",
+            "invite_hint": "They'll get an email and choose their own password. You never see or set it.",
+            "send_invite": "Send invitation",
+            "name": "Full name",
+            "email": "Email",
+            "role": "Role",
+            "person": "Person",
+            "status": "Status",
+            "last_login": "Last signed in",
+            "never": "Never",
+            "you": "(you)",
+            "active": "Active",
+            "inactive": "Deactivated",
+            "deactivate": "Deactivate",
+            "reactivate": "Reactivate",
+            "last_admin_note": "Only admin",
+            "seats": "{used} of {limit} staff seats used",
+            "invitations": "Invitations",
+            "resend": "Resend",
+            "revoke": "Revoke",
+            "expires": "expires {date}",
+            "invite_status": {
+                "pending": "Pending",
+                "accepted": "Accepted",
+                "revoked": "Revoked",
+                "expired": "Expired"
+            },
+            "roles": {
+                "tenant_admin": "Admin",
+                "tenant_staff": "Staff",
+                "tenant_accounts": "Accounts"
+            },
+            "role_hints": {
+                "tenant_admin": "Full access, including settings, staff and billing.",
+                "tenant_staff": "Day-to-day operations: fleet, customers, agreements, leads.",
+                "tenant_accounts": "Finance: invoices, payments and expenses."
+            },
+            "accept_title": "Join your team on DVARO",
+            "accept_heading": "Join {company} on DVARO",
+            "accept_body": "Hi {name} — choose a password for {email} and you're in.",
+            "accept_submit": "Set password and sign in",
+            "invite_unavailable": "This invitation can't be used",
+            "invite_unavailable_pending": "Something went wrong. Please ask for a new invitation.",
+            "invite_unavailable_accepted": "This invitation has already been used. Try signing in instead.",
+            "invite_unavailable_revoked": "This invitation was withdrawn. Ask your admin for a new one.",
+            "invite_unavailable_expired": "This invitation has expired. Ask your admin to send another.",
+            "invite_unavailable_missing": "We couldn't find this invitation. Check the link in your email."
+        },
+        "finance": {
+            "title": "Invoicing & late fees",
+            "intro": "How overdue invoices are charged, and the defaults printed on every invoice.",
+            "admin_only": "Only an admin or accounts user can change these settings.",
+            "late_fees": "Late fees",
+            "late_fees_hint": "Applied automatically once an invoice passes its grace period.",
+            "late_fees_enabled": "Charge late fees on overdue invoices",
+            "grace_days": "Grace period (days)",
+            "grace_days_hint": "Days after the due date before a fee applies.",
+            "fee_type": "Fee type",
+            "type_fixed": "Fixed amount",
+            "type_percentage": "Percentage of invoice",
+            "fee_amount": "Fee amount (AUD)",
+            "fee_percentage": "Fee percentage (%)",
+            "example": "Example: a {invoice} invoice, {days} days past due (grace {grace} days), would add {fee}.",
+            "example_off": "Late fees are switched off — overdue invoices are never charged extra.",
+            "invoicing": "Invoicing defaults",
+            "invoice_prefix": "Invoice number prefix",
+            "invoice_prefix_hint": "Shown before the number, e.g. INV-1042.",
+            "payment_terms": "Payment terms (days)",
+            "payment_terms_hint": "Default days until an invoice is due.",
+            "footer_note": "Note printed on invoices",
+            "footer_note_placeholder": "e.g. Please include the invoice number with your payment."
+        },
+        "regional": {
+            "title": "Regional",
+            "intro": "Timezone, currency and how dates are shown.",
+            "timezone": "Timezone",
+            "date_format": "Date format",
+            "currency": "Currency",
+            "currency_hint": "AUD only for now.",
+            "effect": "Times show in {zone} (currently {now}). Daily fleet reminders are sent at 7:00 am your time."
+        },
+        "integrations": {
+            "title": "Integrations",
+            "intro": "The services DVARO uses on your behalf.",
+            "providers": "Your providers",
+            "providers_hint": "Pick who sends your messages and powers the AI assistant.",
+            "ai": "AI assistant",
+            "email": "Email provider",
+            "sms": "SMS provider",
+            "not_configured": "not set up on this server",
+            "fallback_warning": "A provider without credentials on this server won't send anything real — messages are written to the log instead. Ask your DVARO contact to add the keys.",
+            "platform": "Managed by DVARO",
+            "platform_hint": "Set up for the whole platform, not per company.",
+            "platform_note": "Contact DVARO if you need one of these enabled.",
+            "stripe": "Card payments (Stripe)",
+            "recaptcha": "Lead form spam check (reCAPTCHA)",
+            "live": "Live",
+            "ai_providers": {
+                "log": "None (assistant replies with a setup notice)",
+                "groq": "Groq",
+                "qwen": "Qwen",
+                "deepseek": "DeepSeek"
+            }
+        },
+        "activity": {
+            "title": "Activity log",
+            "intro": "Every settings and staff change, with who made it. This record can't be edited or deleted.",
+            "what": "What changed",
+            "changes": "Details",
+            "who": "Who",
+            "when": "When",
+            "empty": "Nothing recorded yet."
+        },
+        "actions": {
+            "settings.company_profile.updated": "Company profile updated",
+            "settings.company_profile.renamed": "Company name changed",
+            "settings.finance.updated": "Invoicing & late fees updated",
+            "settings.regional.updated": "Regional settings updated",
+            "settings.notifications.updated": "Notification settings updated",
+            "settings.integrations.updated": "Integrations updated",
+            "settings.lead_form.updated": "Lead form settings updated",
+            "staff.invited": "Staff invited",
+            "staff.joined": "Staff joined",
+            "staff.updated": "Staff updated",
+            "staff.invite_revoked": "Invitation revoked"
+        },
+        "invoice_template": {
+            "title": "Invoices",
+            "intro": "Choose how your invoices look — layout, logo, colour and the wording around the numbers.",
+            "layout": "Layout",
+            "layout_hint": "Four ready-made designs. Every one shows exactly the same figures.",
+            "layouts": {
+                "classic": "Classic",
+                "modern": "Modern",
+                "minimal": "Minimal",
+                "compact": "Compact"
+            },
+            "layout_hints": {
+                "classic": "Traditional and familiar",
+                "modern": "Colour header band",
+                "minimal": "Quiet, lots of space",
+                "compact": "Fits long invoices on one page"
+            },
+            "branding": "Logo and colour",
+            "no_logo": "No logo",
+            "logo_company": "Using your company logo.",
+            "logo_invoice": "Using an invoice-specific logo.",
+            "logo_none": "No logo yet — add one here or in Company profile.",
+            "upload_logo": "Upload a logo for invoices",
+            "remove_logo": "Remove",
+            "logo_hint": "PNG, JPG, SVG or WebP, up to {kb} KB. Leave it empty to use your company logo.",
+            "accent": "Accent colour",
+            "use_brand_colour": "Use my brand colour",
+            "show_logo": "Show the logo on invoices",
+            "show_company_details": "Show my company details (ABN, address, contact)",
+            "gst": "GST",
+            "gst_hint": "Rental prices are treated as GST-inclusive, so GST is shown as 1/11 of the total. This changes what the invoice states, never what is owed.",
+            "gst_registered": "My company is registered for GST",
+            "abn_missing": "An Australian tax invoice must show your ABN — add it in Settings → Company profile.",
+            "wording": "Wording",
+            "wording_hint": "Plain text. Leave a field empty to use the default.",
+            "doc_title": "Document title",
+            "intro_text": "Opening line",
+            "payment_instructions": "How to pay",
+            "payment_instructions_help": "Bank details, payment reference, anything your customers need.",
+            "footer_note": "Footer note",
+            "thank_you": "Closing line",
+            "preview": "Preview",
+            "preview_hint": "Sample invoice, rendered by the same template your PDFs use.",
+            "refresh_preview": "Refresh",
+            "applies_hint": "Applies to invoices issued from now on.",
+            "read_only": "Only an admin or accounts user can change how invoices look."
         }
     },
     "agreement_template": {

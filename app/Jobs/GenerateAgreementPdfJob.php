@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Modules\Agreement\Models\Agreement;
 use App\Modules\SaasCore\Models\Tenant;
+use App\Services\TenantBranding;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -73,7 +74,12 @@ class GenerateAgreementPdfJob implements ShouldQueue
                 return;
             }
 
-            $pdf = Pdf::loadView('pdf.agreement', ['agreement' => $agreement]);
+            // The company's letterhead (logo, colour, details). Presentation
+            // only — the agreement's content is frozen and untouched by it.
+            $pdf = Pdf::loadView('pdf.agreement', [
+                'agreement' => $agreement,
+                'branding' => app(TenantBranding::class)->forDocument($tenant),
+            ]);
 
             // tenants/{tenant_id}/agreements/{agreement_id}/agreement-v{version}.pdf
             $path = "tenants/{$this->tenantId}/agreements/{$agreement->id}"

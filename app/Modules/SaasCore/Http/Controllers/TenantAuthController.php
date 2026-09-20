@@ -4,6 +4,7 @@ namespace App\Modules\SaasCore\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\SaasCore\Http\Requests\LoginRequest;
+use App\Services\UserPreferences;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -50,6 +51,11 @@ class TenantAuthController extends Controller
             'tenant_id' => $tenant->id,
         ];
 
+        // Deactivated staff keep their history but can never sign in. The
+        // flag is part of the credentials so a wrong password and a disabled
+        // account are indistinguishable from outside (no account probing).
+        $credentials['is_active'] = true;
+
         if (! Auth::guard('tenant')->attempt($credentials, $request->boolean('remember'))) {
             RateLimiter::hit($request->throttleKey(), self::LOCKOUT_SECONDS);
 
@@ -61,7 +67,15 @@ class TenantAuthController extends Controller
         RateLimiter::clear($request->throttleKey());
         $request->session()->regenerate();
 
-        return redirect()->route('tenant.dashboard', ['tenant_slug' => $tenant->slug]);
+        $user = Auth::guard('tenant')->user();
+        $user->forceFill(['last_login_at' => now()])->save();
+
+        // Staff choose where they start (Profile → Preferences): the owner may
+        // want the dashboard, the front desk wants Rentals.
+        return redirect()->route(
+            app(UserPreferences::class)->landingRoute($user, 'tenant'),
+            ['tenant_slug' => $tenant->slug],
+        );
     }
 
     public function logout(Request $request): RedirectResponse

@@ -5,6 +5,7 @@ namespace App\Modules\Invoice\Services;
 use App\Modules\Invoice\Actions\ApplyLateFeeAction;
 use App\Modules\Invoice\Models\Invoice;
 use App\Modules\SaasCore\Models\Tenant;
+use App\Modules\SaasCore\Services\TenantSettingsService;
 use App\Services\BaseService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -49,7 +50,16 @@ class LateFeeService extends BaseService
             app()->instance('current_tenant', $tenant);
 
             try {
-                $graceDays = (int) (($tenant->settings['late_fee_grace_days'] ?? self::DEFAULT_GRACE_DAYS));
+                $settings = app(TenantSettingsService::class)->all($tenant);
+
+                // Tenants can now switch late fees off entirely (Settings →
+                // Invoicing & late fees). Default stays ON, so nothing changes
+                // for tenants that never open the screen.
+                if (! (bool) $settings['late_fees_enabled']) {
+                    continue;
+                }
+
+                $graceDays = (int) $settings['late_fee_grace_days'];
                 $cutoff = $today->copy()->subDays(max($graceDays, 0));
 
                 $invoices = Invoice::query()

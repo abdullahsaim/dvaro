@@ -15,15 +15,20 @@ use Illuminate\Console\Command;
  */
 class SendFleetRemindersCommand extends Command
 {
-    protected $signature = 'notifications:send-fleet-reminders';
+    protected $signature = 'notifications:send-fleet-reminders {--hour= : Only sweep tenants whose LOCAL time is this hour (0-23); omit to sweep every tenant now}';
 
     protected $description = 'Send the daily fleet reminder digest (rego, insurance, service by date/km) to all tenant staff.';
 
     public function handle(FleetReminderService $service): int
     {
-        $this->info('Sending fleet reminders…');
+        // Scheduled HOURLY with --hour=7: each tenant is swept when its own
+        // timezone reads 7am, so everyone gets the digest at the same LOCAL
+        // time. Run without --hour to send immediately (support/manual use).
+        $hour = $this->option('hour');
 
-        $service->sweep();
+        $this->info($hour === null ? 'Sending fleet reminders…' : "Sending fleet reminders for tenants at {$hour}:00 local…");
+
+        $service->sweep($hour === null ? null : (int) $hour);
 
         $this->info('Done.');
 

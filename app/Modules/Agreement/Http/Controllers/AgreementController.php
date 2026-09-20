@@ -2,14 +2,15 @@
 
 namespace App\Modules\Agreement\Http\Controllers;
 
+use App\Http\Controllers\Concerns\PaginatesForUser;
 use App\Http\Controllers\Controller;
 use App\Modules\Agreement\DTOs\CreateAgreementDTO;
 use App\Modules\Agreement\Http\Requests\SignAgreementRequest;
 use App\Modules\Agreement\Http\Requests\StoreAgreementRequest;
 use App\Modules\Agreement\Models\Agreement;
 use App\Modules\Agreement\Models\AgreementTemplate;
-use App\Modules\Agreement\Services\AgreementTemplateService;
 use App\Modules\Agreement\Services\AgreementService;
+use App\Modules\Agreement\Services\AgreementTemplateService;
 use App\Modules\Customer\Models\Customer;
 use App\Modules\Fleet\Models\Vehicle;
 use Illuminate\Http\RedirectResponse;
@@ -17,9 +18,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Agreement management (tenant app). Thin controller: validate → Service →
@@ -43,6 +44,8 @@ use Inertia\Response;
  */
 class AgreementController extends Controller
 {
+    use PaginatesForUser;
+
     public function index(Request $request): Response
     {
         Gate::forUser(auth('tenant')->user())->authorize('viewAny', Agreement::class);
@@ -71,7 +74,7 @@ class AgreementController extends Controller
                 fn ($q) => $q->where('name', 'like', "%{$search}%"),
             ))
             ->latest()
-            ->paginate(15)
+            ->paginate($this->perPage(15))
             ->withQueryString();
 
         // Per-status tab counts in ONE grouped query (tenant-scoped via HasTenant).

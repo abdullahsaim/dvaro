@@ -14,6 +14,7 @@ import Select from '@/Components/UI/Select.vue';
 import Textarea from '@/Components/UI/Textarea.vue';
 import DataTable from '@/Components/UI/DataTable.vue';
 import { useCurrency } from '@/composables/useCurrency.js';
+import { useTenantFormat } from '@/composables/useTenantFormat';
 
 const props = defineProps({
     currentPlan: { type: Object, default: null },
@@ -64,9 +65,9 @@ function barWidth(m) {
     return `${m.limit < 0 ? 4 : Math.max(2, m.percentage)}%`;
 }
 
-function formatDate(value) {
-    return value ? new Date(value).toLocaleDateString('en-AU') : '—';
-}
+// The company's timezone and date format (Settings → Regional).
+const { date } = useTenantFormat();
+const formatDate = (value) => date(value) ?? '—';
 
 function moduleLabel(key) {
     return t(`superadmin.plans.module_keys.${key}`);

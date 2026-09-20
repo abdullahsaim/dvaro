@@ -2,6 +2,7 @@
 
 namespace App\Modules\Invoice\Http\Controllers;
 
+use App\Http\Controllers\Concerns\PaginatesForUser;
 use App\Http\Controllers\Controller;
 use App\Jobs\GenerateInvoicePdfJob;
 use App\Modules\Agreement\Models\Agreement;
@@ -42,6 +43,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class InvoiceController extends Controller
 {
+    use PaginatesForUser;
+
     public function index(Request $request): Response
     {
         Gate::forUser(auth('tenant')->user())->authorize('viewAny', Invoice::class);
@@ -61,7 +64,7 @@ class InvoiceController extends Controller
                 fn ($q) => $q->where('name', 'like', "%{$search}%"),
             ))
             ->latest()
-            ->paginate(15)
+            ->paginate($this->perPage(15))
             ->withQueryString();
 
         // Per-status tab counts in ONE grouped query (tenant-scoped via HasTenant).
@@ -102,6 +105,10 @@ class InvoiceController extends Controller
             // The customer's whole-ledger balance, for context on this invoice.
             'customerBalance' => $ledger->getBalance($invoice->customer_id),
             'methods' => Payment::METHODS,
+            // Re-rendering the PDF with the current template is admin/accounts
+            // only — the button is hidden for everyone else, and the policy
+            // refuses it regardless.
+            'canRegeneratePdf' => Gate::forUser(auth('tenant')->user())->allows('regeneratePdf', $invoice),
         ]);
     }
 
@@ -205,5 +212,22 @@ class InvoiceController extends Controller
             $invoice->pdf_path,
             "invoice-{$invoice->id}.pdf",
         );
+    }
+
+    /**
+     * Re-queue this invoice's PDF so it picks up the current invoice template
+     * (Settings → Invoices). New invoices get the template automatically; this
+     * is for the ones issued before the design was changed.
+     *
+     * pdf_path is a cached artefact, not a financial record — regenerating it
+     * re-renders the SAME stored amounts and touches nothing else.
+     */
+    public function regeneratePdf(Invoice $invoice): RedirectResponse
+    {
+        Gate::forUser(auth('tenant')->user())->authorize('regeneratePdf', $invoice);
+
+        GenerateInvoicePdfJob::dispatch((int) $invoice->id, (int) $invoice->tenant_id);
+
+        return back()->with('success', __('common.invoice.pdf_queued'));
     }
 }

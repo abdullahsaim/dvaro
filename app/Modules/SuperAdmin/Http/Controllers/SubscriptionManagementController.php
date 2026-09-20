@@ -2,6 +2,7 @@
 
 namespace App\Modules\SuperAdmin\Http\Controllers;
 
+use App\Http\Controllers\Concerns\PaginatesForUser;
 use App\Http\Controllers\Controller;
 use App\Modules\SaasCore\Models\Plan;
 use App\Modules\SaasCore\Models\Subscription;
@@ -19,6 +20,8 @@ use Inertia\Response;
  */
 class SubscriptionManagementController extends Controller
 {
+    use PaginatesForUser;
+
     public function index(Request $request): Response
     {
         Gate::forUser(auth('superadmin')->user())->authorize('billingAccess');
@@ -43,7 +46,7 @@ class SubscriptionManagementController extends Controller
             ->when($status, fn ($q) => $q->where('status', $status))
             ->when($planId, fn ($q) => $q->where('plan_id', $planId))
             ->latest()
-            ->paginate(20)
+            ->paginate($this->perPage(20))
             ->withQueryString()
             ->through(fn (Subscription $sub) => [
                 'id' => $sub->id,

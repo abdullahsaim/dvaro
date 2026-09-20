@@ -55,6 +55,8 @@ Route::middleware('auth:customer')->group(function () {
     Route::put('profile', [CustomerProfileController::class, 'updateProfile'])->name('profile.update');
     Route::put('profile/password', [CustomerProfileController::class, 'updatePassword'])
         ->name('profile.password');
+    Route::put('profile/preferences', [CustomerProfileController::class, 'updatePreferences'])
+        ->name('profile.preferences');
 
     Route::get('dashboard', [CustomerPortalController::class, 'dashboard'])->name('dashboard');
 

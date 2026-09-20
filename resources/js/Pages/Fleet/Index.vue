@@ -13,6 +13,7 @@ import EmptyState from '@/Components/UI/EmptyState.vue';
 import Button from '@/Components/UI/Button.vue';
 import { TruckIcon, ChevronUpIcon, ChevronDownIcon } from '@heroicons/vue/24/outline';
 import { useCurrency } from '@/composables/useCurrency';
+import { useTenantFormat } from '@/composables/useTenantFormat';
 
 const props = defineProps({
     vehicles: { type: Object, required: true }, // Laravel paginator payload
@@ -89,13 +90,9 @@ function sortBy(column) {
     visit({ sort: null, direction: null });
 }
 
-const dateFormatter = new Intl.DateTimeFormat('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
-
-function formatDate(value) {
-    if (!value) return null;
-    const [y, m, d] = String(value).slice(0, 10).split('-').map(Number);
-    return dateFormatter.format(new Date(y, m - 1, d));
-}
+// The company's date format (Settings → Regional). A due date is a date, not a
+// moment, so it is rendered exactly as stored — never shifted by a timezone.
+const { date: formatDate } = useTenantFormat();
 
 // expiry state → StatusBadge variant (ok renders as plain text).
 const expiryVariants = { overdue: 'danger', due_soon: 'warning' };

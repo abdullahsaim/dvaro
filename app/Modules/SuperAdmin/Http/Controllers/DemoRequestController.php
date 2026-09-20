@@ -2,6 +2,7 @@
 
 namespace App\Modules\SuperAdmin\Http\Controllers;
 
+use App\Http\Controllers\Concerns\PaginatesForUser;
 use App\Http\Controllers\Controller;
 use App\Modules\CMS\Models\DemoRequest;
 use Illuminate\Http\RedirectResponse;
@@ -20,6 +21,8 @@ use Inertia\Response;
  */
 class DemoRequestController extends Controller
 {
+    use PaginatesForUser;
+
     public function index(Request $request): Response
     {
         Gate::forUser(auth('superadmin')->user())->authorize('contentAccess');
@@ -31,7 +34,7 @@ class DemoRequestController extends Controller
         $requests = DemoRequest::query()
             ->when($status, fn ($q) => $q->where('status', $status))
             ->latest()
-            ->paginate(20)
+            ->paginate($this->perPage(20))
             ->withQueryString();
 
         // Per-status counts for the filter tabs, in one grouped query.

@@ -26,17 +26,27 @@ use Illuminate\Support\Facades\Log;
 class ReportCacheService extends BaseService
 {
     private const TTL_DEFAULT = 1800; // 30 minutes
+
     private const TTL_OVERDUE = 300;  // 5 minutes
+
     private const TTL_INDEX = 86400;  // key-index lives a day (cheap bookkeeping)
 
     public const TYPE_REVENUE = 'revenue';
+
     public const TYPE_REVENUE_BY_VEHICLE = 'revenue_by_vehicle';
+
     public const TYPE_FLEET = 'fleet';
+
     public const TYPE_OVERDUE = 'overdue';
+
     public const TYPE_WORKSHOP = 'workshop';
+
     public const TYPE_CUSTOMERS = 'customers';
+
     public const TYPE_MAINTENANCE = 'maintenance';
+
     public const TYPE_DASHBOARD = 'dashboard';
+
     public const TYPE_EXPENSES = 'expenses';
 
     public function __construct(private readonly ReportingService $reporting) {}
@@ -93,6 +103,34 @@ class ReportCacheService extends BaseService
     {
         return $this->remember(self::TYPE_DASHBOARD, [], self::TTL_DEFAULT,
             fn () => $this->reporting->dashboardStats());
+    }
+
+    /**
+     * The dashboard's operational blocks. A SHORT ttl on purpose: this is a
+     * to-do list someone is working through, so it must reflect an invoice
+     * they just paid or a vehicle they just booked in — but it is also the
+     * most-hit page in the app, so it must not re-run every query on every
+     * poll either. Money is cached under its own key: the same tenant serves
+     * different payloads to staff and to admins.
+     */
+    public function dashboardOperational(bool $includeMoney): array
+    {
+        return $this->remember(
+            self::TYPE_DASHBOARD,
+            ['block' => 'operational', 'money' => $includeMoney ? 1 : 0],
+            self::TTL_OVERDUE,
+            function () use ($includeMoney) {
+                $dashboard = app(DashboardService::class);
+
+                return [
+                    'attention' => $dashboard->needsAttention($includeMoney),
+                    'fleet' => $dashboard->fleetSnapshot(),
+                    'week' => $dashboard->thisWeek(),
+                    // Absent entirely for staff — not null, not zeroes.
+                    'money' => $includeMoney ? $dashboard->money() : null,
+                ];
+            },
+        );
     }
 
     /**

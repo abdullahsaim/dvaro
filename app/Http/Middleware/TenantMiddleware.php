@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Modules\SaasCore\Models\Tenant;
+use App\Modules\SaasCore\Services\TenantSettingsService;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -49,6 +50,11 @@ class TenantMiddleware
             'name' => $tenant->name,
             'slug' => $tenant->slug,
             'status' => $tenant->status,
+            // Regional settings drive EVERY date/time the front end renders
+            // (useTenantFormat) so staff always see their own local time.
+            'timezone' => app(TenantSettingsService::class)->timezone($tenant),
+            'date_format' => $tenant->settings['date_format'] ?? TenantSettingsService::DEFAULTS['date_format'],
+            'currency' => $tenant->settings['currency'] ?? TenantSettingsService::DEFAULTS['currency'],
         ]);
 
         // Resolved lazily at render time (after the guard has run): the current

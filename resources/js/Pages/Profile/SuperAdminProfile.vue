@@ -10,8 +10,12 @@ import Input from '@/Components/UI/Input.vue';
 import Button from '@/Components/UI/Button.vue';
 import PasswordCard from '@/Components/Profile/PasswordCard.vue';
 import AppearanceCard from '@/Components/Profile/AppearanceCard.vue';
+import PreferencesCard from '@/Components/Profile/PreferencesCard.vue';
 
 const props = defineProps({
+    preferences: { type: Object, required: true },
+    landingPages: { type: Array, default: () => ['dashboard'] },
+    rowsPerPageOptions: { type: Array, default: () => [15, 25, 50, 100] },
     user: { type: Object, required: true },
 });
 
@@ -68,6 +72,12 @@ function saveInfo() {
 
             <PasswordCard :action="`${base}/password`" />
 
+            <PreferencesCard
+                :action="`${base}/preferences`"
+                :preferences="preferences"
+                :landing-pages="landingPages"
+                :rows-per-page-options="rowsPerPageOptions"
+            />
             <AppearanceCard />
         </div>
     </SuperAdminLayout>

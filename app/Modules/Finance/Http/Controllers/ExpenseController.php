@@ -2,6 +2,7 @@
 
 namespace App\Modules\Finance\Http\Controllers;
 
+use App\Http\Controllers\Concerns\PaginatesForUser;
 use App\Http\Controllers\Controller;
 use App\Modules\Finance\Actions\RecordExpenseAction;
 use App\Modules\Finance\Actions\UpdateExpenseAction;
@@ -33,6 +34,8 @@ use Inertia\Response;
  */
 class ExpenseController extends Controller
 {
+    use PaginatesForUser;
+
     public function index(
         Request $request,
         ExpenseReportService $reports,
@@ -62,7 +65,7 @@ class ExpenseController extends Controller
             ->when(! $showVoided, fn ($q) => $q->active())
             ->orderByDesc('expense_date')
             ->orderByDesc('id')
-            ->paginate(20)
+            ->paginate($this->perPage(20))
             ->withQueryString();
 
         $gate = Gate::forUser($user);

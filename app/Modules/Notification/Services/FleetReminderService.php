@@ -8,7 +8,9 @@ use App\Modules\Notification\Models\NotificationLog;
 use App\Modules\Notification\Templates\FleetReminderDigestTemplate;
 use App\Modules\SaasCore\Models\Tenant;
 use App\Modules\SaasCore\Models\TenantUser;
+use App\Modules\SaasCore\Services\TenantSettingsService;
 use App\Services\BaseService;
+use App\Services\UserPreferences;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -37,14 +39,28 @@ class FleetReminderService extends BaseService
 
     public function __construct(
         private readonly NotificationService $notifications,
+        private readonly NotificationMatrix $matrix,
     ) {}
 
-    public function sweep(): void
+    /**
+     * Sweep every tenant.
+     *
+     * $localHour makes the digest land at the same LOCAL time for everyone:
+     * the command runs hourly and each tenant is only swept when the clock in
+     * ITS timezone reads that hour. A Perth company is no longer woken at
+     * 4am by a Sydney-scheduled job. Pass null to sweep regardless (tests,
+     * manual runs).
+     */
+    public function sweep(?int $localHour = null): void
     {
         foreach (Tenant::all() as $tenant) {
             app()->instance('current_tenant', $tenant);
 
             try {
+                if ($localHour !== null && $this->localHourFor($tenant) !== $localHour) {
+                    continue;
+                }
+
                 $this->sweepTenant($tenant);
             } catch (Throwable $e) {
                 Log::error('FleetReminderService: tenant sweep failed', [
@@ -63,17 +79,21 @@ class FleetReminderService extends BaseService
      */
     public function sweepTenant(Tenant $tenant): int
     {
-        $settings = $tenant->settings ?? [];
-
-        if (! (bool) ($settings['notify_email_enabled'] ?? true)
-            || ! (bool) ($settings['fleet_reminders_enabled'] ?? true)) {
+        // Two ways to switch the digest off: the notification matrix row
+        // (Settings → Notifications) and the fleet-specific master toggle.
+        if (! $this->matrix->allows($tenant, self::EVENT_TYPE, NotificationLog::CHANNEL_EMAIL)
+            || ! (bool) app(TenantSettingsService::class)->get($tenant, 'fleet_reminders_enabled')) {
             return 0;
         }
 
+        // Anyone may mute the digest for themselves (Profile → Preferences)
+        // without affecting their colleagues. Filtered in PHP: a tenant's staff
+        // list is small, and this keeps the JSON query portable.
         $recipients = TenantUser::query()
             ->whereNotNull('email')
             ->where('email', '!=', '')
-            ->get(['id', 'email']);
+            ->get(['id', 'email', 'preferences'])
+            ->reject(fn (TenantUser $user) => (bool) app(UserPreferences::class)->get($user, 'mute_fleet_digest'));
 
         if ($recipients->isEmpty()) {
             return 0;
@@ -85,7 +105,7 @@ class FleetReminderService extends BaseService
             return 0;
         }
 
-        $content = (new FleetReminderDigestTemplate())->build(
+        $content = (new FleetReminderDigestTemplate)->build(
             $tenant->name,
             array_map(fn (array $i) => $i['display'], $items),
         );
@@ -213,6 +233,12 @@ class FleetReminderService extends BaseService
         }
 
         return $out;
+    }
+
+    /** The hour of day (0–23) right now in the tenant's own timezone. */
+    private function localHourFor(Tenant $tenant): int
+    {
+        return (int) Carbon::now(app(TenantSettingsService::class)->timezone($tenant))->hour;
     }
 
     private function isActionable(?string $state): bool

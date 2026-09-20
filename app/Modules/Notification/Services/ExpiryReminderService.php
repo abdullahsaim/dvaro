@@ -36,8 +36,12 @@ class ExpiryReminderService extends BaseService
 {
     private const WINDOW_DAYS = 14;
 
+    /** Matches the notification matrix row and the notification_logs entries. */
+    public const EVENT_TYPE = 'agreement.expiry';
+
     public function __construct(
         private readonly NotificationService $notifications,
+        private readonly NotificationMatrix $matrix,
     ) {}
 
     public function sweep(): void
@@ -48,9 +52,9 @@ class ExpiryReminderService extends BaseService
             app()->instance('current_tenant', $tenant);
 
             try {
-                // Reminders are admin ops notices, gated by the tenant's email
-                // toggle (admins have no phone — email-only).
-                if (! (bool) ($tenant->settings['notify_email_enabled'] ?? true)) {
+                // Reminders are admin ops notices — email-only (admins have no
+                // phone), and switchable off in Settings → Notifications.
+                if (! $this->matrix->allows($tenant, self::EVENT_TYPE, NotificationLog::CHANNEL_EMAIL)) {
                     continue;
                 }
 
@@ -84,7 +88,7 @@ class ExpiryReminderService extends BaseService
             $customer = $agreement->customer?->name ?? 'customer';
 
             $this->send($tenant, $admin, NotificationLog::TYPE_AGREEMENT, (int) $agreement->id,
-                'agreement.expiry',
+                self::EVENT_TYPE,
                 'Agreement expiring', "Agreement #{$agreement->id} for {$customer}", $agreement->end_date);
         }
     }
@@ -113,7 +117,7 @@ class ExpiryReminderService extends BaseService
             return;
         }
 
-        $content = (new ExpiryReminderTemplate())->build($heading, $label, $expiryDate);
+        $content = (new ExpiryReminderTemplate)->build($heading, $label, $expiryDate);
 
         $this->notifications->sendEmail(
             $tenant,

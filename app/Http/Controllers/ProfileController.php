@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Profile\UpdatePasswordRequest;
+use App\Services\UserPreferences;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -47,7 +49,30 @@ abstract class ProfileController extends Controller
     {
         $this->authorizeProfile();
 
-        return Inertia::render($this->profileView(), $this->profileProps());
+        return Inertia::render($this->profileView(), [
+            ...$this->profileProps(),
+            // Personal settings — same card on every guard's profile page.
+            'preferences' => app(UserPreferences::class)->all($this->profileUser()),
+            'landingPages' => UserPreferences::LANDING_PAGES[$this->guard()] ?? ['dashboard'],
+            'rowsPerPageOptions' => UserPreferences::ROWS_PER_PAGE,
+        ]);
+    }
+
+    /**
+     * Save this person's own preferences (landing page, rows per page, personal
+     * opt-outs). Values are whitelisted per guard by UserPreferences.
+     */
+    public function updatePreferences(Request $request): RedirectResponse
+    {
+        $this->authorizeProfile();
+
+        app(UserPreferences::class)->save(
+            $this->profileUser(),
+            (array) $request->input('preferences', []),
+            $this->guard(),
+        );
+
+        return back()->with('success', __('common.profile.preferences_updated'));
     }
 
     /**

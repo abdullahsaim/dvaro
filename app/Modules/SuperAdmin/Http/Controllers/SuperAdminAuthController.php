@@ -4,6 +4,7 @@ namespace App\Modules\SuperAdmin\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\SuperAdmin\Http\Requests\SuperAdminLoginRequest;
+use App\Services\UserPreferences;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -58,7 +59,7 @@ class SuperAdminAuthController extends Controller
         $admin = Auth::guard('superadmin')->user();
         $admin->forceFill(['last_login_at' => now()])->save();
 
-        return redirect()->route('superadmin.dashboard');
+        return redirect()->route(app(UserPreferences::class)->landingRoute($admin, 'superadmin'));
     }
 
     public function logout(Request $request): RedirectResponse

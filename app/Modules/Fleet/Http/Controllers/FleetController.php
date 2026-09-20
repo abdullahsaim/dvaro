@@ -2,6 +2,7 @@
 
 namespace App\Modules\Fleet\Http\Controllers;
 
+use App\Http\Controllers\Concerns\PaginatesForUser;
 use App\Http\Controllers\Controller;
 use App\Modules\Finance\Models\Expense;
 use App\Modules\Finance\Services\ExpenseReportService;
@@ -49,6 +50,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class FleetController extends Controller
 {
+    use PaginatesForUser;
+
     public function index(Request $request): Response
     {
         Gate::forUser(auth('tenant')->user())->authorize('viewAny', Vehicle::class);
@@ -75,7 +78,7 @@ class FleetController extends Controller
                 fn ($query) => $query->orderByRaw("{$sort} {$direction} NULLS LAST")->orderBy('id'),
                 fn ($query) => $query->latest(),
             )
-            ->paginate(15)
+            ->paginate($this->perPage(15))
             ->withQueryString();
 
         $vehicles->through(fn (Vehicle $vehicle) => tap($vehicle, function (Vehicle $v) {

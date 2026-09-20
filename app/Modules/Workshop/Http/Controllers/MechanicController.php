@@ -2,6 +2,7 @@
 
 namespace App\Modules\Workshop\Http\Controllers;
 
+use App\Http\Controllers\Concerns\PaginatesForUser;
 use App\Http\Controllers\Controller;
 use App\Modules\Workshop\Actions\CreateMechanicAction;
 use App\Modules\Workshop\Actions\UpdateMechanicAction;
@@ -34,13 +35,15 @@ use Inertia\Response;
  */
 class MechanicController extends Controller
 {
+    use PaginatesForUser;
+
     public function index(): Response
     {
         Gate::forUser(auth('tenant')->user())->authorize('viewAny', Mechanic::class);
 
         $mechanics = Mechanic::query()
             ->latest()
-            ->paginate(15)
+            ->paginate($this->perPage(15))
             ->withQueryString();
 
         return Inertia::render('Mechanic/Index', [

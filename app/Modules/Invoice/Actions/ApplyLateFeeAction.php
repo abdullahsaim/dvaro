@@ -7,6 +7,7 @@ use App\Modules\Finance\Models\LedgerEntry;
 use App\Modules\Finance\Services\LedgerService;
 use App\Modules\Invoice\Events\LateFeeApplied;
 use App\Modules\Invoice\Models\Invoice;
+use App\Modules\SaasCore\Services\TenantSettingsService;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -84,9 +85,11 @@ class ApplyLateFeeAction extends BaseAction
     {
         // The tenant is bound by LateFeeService while iterating; fall back to the
         // invoice's own tenant relationship for robustness.
-        $settings = (app()->bound('current_tenant')
-            ? app('current_tenant')->settings
-            : $invoice->tenant?->settings) ?? [];
+        // Read through the settings service so defaults live in ONE place.
+        $tenant = app()->bound('current_tenant') ? app('current_tenant') : $invoice->tenant;
+        $settings = $tenant === null
+            ? TenantSettingsService::DEFAULTS
+            : app(TenantSettingsService::class)->all($tenant);
 
         $type = $settings['late_fee_type'] ?? 'fixed';
 

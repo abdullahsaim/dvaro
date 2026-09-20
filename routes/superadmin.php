@@ -46,6 +46,8 @@ Route::middleware('superadmin.auth')->group(function () {
     Route::put('profile', [SuperAdminProfileController::class, 'updateProfile'])->name('profile.update');
     Route::put('profile/password', [SuperAdminProfileController::class, 'updatePassword'])
         ->name('profile.password');
+    Route::put('profile/preferences', [SuperAdminProfileController::class, 'updatePreferences'])
+        ->name('profile.preferences');
 
     Route::get('dashboard', [SuperAdminDashboardController::class, 'index'])->name('dashboard');
 

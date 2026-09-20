@@ -4,6 +4,7 @@ namespace App\Modules\Customer\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Customer\Http\Requests\CustomerLoginRequest;
+use App\Services\UserPreferences;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -57,7 +58,12 @@ class CustomerAuthController extends Controller
         RateLimiter::clear($request->throttleKey());
         $request->session()->regenerate();
 
-        return redirect()->route('customer.dashboard', ['tenant_slug' => $tenant->slug]);
+        // Customers choose their own starting screen (Profile → Preferences) —
+        // someone who only ever pays invoices can land straight on them.
+        return redirect()->route(
+            app(UserPreferences::class)->landingRoute(Auth::guard('customer')->user(), 'customer'),
+            ['tenant_slug' => $tenant->slug],
+        );
     }
 
     public function logout(Request $request): RedirectResponse

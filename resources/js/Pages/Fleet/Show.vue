@@ -11,6 +11,7 @@ import Button from '@/Components/UI/Button.vue';
 import Select from '@/Components/UI/Select.vue';
 import Input from '@/Components/UI/Input.vue';
 import { useCurrency } from '@/composables/useCurrency';
+import { useTenantFormat } from '@/composables/useTenantFormat';
 
 const props = defineProps({
     vehicle: { type: Object, required: true },
@@ -52,17 +53,13 @@ function generateQr() {
 }
 
 const numberFormat = new Intl.NumberFormat('en-AU');
-const dateFormat = new Intl.DateTimeFormat('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
+// The company's date format (Settings → Regional).
+const { date: formatDate } = useTenantFormat();
 
 function km(value) {
     return value === null || value === undefined ? null : `${numberFormat.format(value)} km`;
 }
 
-function formatDate(value) {
-    if (!value) return null;
-    const [y, m, d] = String(value).slice(0, 10).split('-').map(Number);
-    return dateFormat.format(new Date(y, m - 1, d));
-}
 
 // Service schedule summary — "whichever comes first".
 const kmToGo = computed(() => {

@@ -55,6 +55,8 @@ Route::middleware('auth:mechanic')->group(function () {
         ->name('profile.password');
     Route::put('profile/pin', [MechanicProfileController::class, 'updatePin'])
         ->name('profile.pin');
+    Route::put('profile/preferences', [MechanicProfileController::class, 'updatePreferences'])
+        ->name('profile.preferences');
 
     Route::get('dashboard', [MechanicPortalController::class, 'dashboard'])->name('dashboard');
 

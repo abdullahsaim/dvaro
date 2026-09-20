@@ -3,16 +3,24 @@
 namespace App\Modules\Notification\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Modules\Fleet\Models\Vehicle;
 use App\Modules\Notification\Http\Requests\UpdateNotificationSettingsRequest;
+use App\Modules\Notification\Services\NotificationMatrix;
 use App\Modules\SaasCore\Models\TenantUser;
+use App\Modules\SaasCore\Services\TenantSettingsService;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Tenant notification settings — provider selection + per-channel toggles.
- * Thin controller: authorize → read/write tenant settings → render/redirect.
+ * Settings → Notifications: the master channel switches, the fleet reminder
+ * lead times, and the per-trigger matrix (who hears about what, on which
+ * channel).
+ *
+ * Providers (Mailgun / ClickSend / …) moved to Settings → Integrations; this
+ * page decides WHAT is sent, that one decides HOW it leaves the building.
+ *
+ * Thin controller: authorize → read/write through TenantSettingsService (which
+ * audits every change) → render/redirect.
  *
  * ──────────────────────────────────────────────────────────────────────────
  * AUTHORIZATION: notification settings are TENANT-WIDE configuration, not a
@@ -23,26 +31,33 @@ use Inertia\Response;
  */
 class NotificationSettingsController extends Controller
 {
+    public function __construct(
+        private readonly TenantSettingsService $settings,
+        private readonly NotificationMatrix $matrix,
+    ) {}
+
     public function edit(): Response
     {
         $this->authorizeAdmin();
 
         $tenant = app('current_tenant');
-        $settings = $tenant->settings ?? [];
+        $settings = $this->settings->all($tenant);
 
         return Inertia::render('Notification/Settings', [
             'settings' => [
-                'email_provider' => $settings['email_provider'] ?? 'log',
-                'sms_provider' => $settings['sms_provider'] ?? 'log',
-                'notify_email_enabled' => (bool) ($settings['notify_email_enabled'] ?? true),
-                'notify_sms_enabled' => (bool) ($settings['notify_sms_enabled'] ?? false),
-                'notify_whatsapp_enabled' => (bool) ($settings['notify_whatsapp_enabled'] ?? false),
-                'fleet_reminders_enabled' => (bool) ($settings['fleet_reminders_enabled'] ?? true),
-                'fleet_reminder_days' => (int) ($settings['fleet_reminder_days'] ?? Vehicle::DEFAULT_REMINDER_DAYS),
-                'fleet_reminder_km' => (int) ($settings['fleet_reminder_km'] ?? Vehicle::DEFAULT_REMINDER_KM),
+                'notify_email_enabled' => (bool) $settings['notify_email_enabled'],
+                'notify_sms_enabled' => (bool) $settings['notify_sms_enabled'],
+                'notify_whatsapp_enabled' => (bool) $settings['notify_whatsapp_enabled'],
+                'fleet_reminders_enabled' => (bool) $settings['fleet_reminders_enabled'],
+                'fleet_reminder_days' => (int) $settings['fleet_reminder_days'],
+                'fleet_reminder_km' => (int) $settings['fleet_reminder_km'],
             ],
-            'emailProviders' => UpdateNotificationSettingsRequest::EMAIL_PROVIDERS,
-            'smsProviders' => UpdateNotificationSettingsRequest::SMS_PROVIDERS,
+            'matrix' => $this->matrix->forUi($tenant),
+            'channels' => [
+                NotificationMatrix::EMAIL,
+                NotificationMatrix::SMS,
+                NotificationMatrix::WHATSAPP,
+            ],
         ]);
     }
 
@@ -52,20 +67,17 @@ class NotificationSettingsController extends Controller
 
         $tenant = app('current_tenant');
 
-        // Merge into existing settings so unrelated keys (plan/limits/etc.) are
-        // preserved. settings is an array cast on the Tenant model.
-        $tenant->settings = [
-            ...($tenant->settings ?? []),
-            'email_provider' => $request->string('email_provider')->toString(),
-            'sms_provider' => $request->string('sms_provider')->toString(),
+        $this->settings->update($tenant, [
             'notify_email_enabled' => $request->boolean('notify_email_enabled'),
             'notify_sms_enabled' => $request->boolean('notify_sms_enabled'),
             'notify_whatsapp_enabled' => $request->boolean('notify_whatsapp_enabled'),
             'fleet_reminders_enabled' => $request->boolean('fleet_reminders_enabled'),
             'fleet_reminder_days' => $request->integer('fleet_reminder_days'),
             'fleet_reminder_km' => $request->integer('fleet_reminder_km'),
-        ];
-        $tenant->save();
+            // Unknown triggers, unsupported channels and locked rows are
+            // dropped here — the form can never widen what it controls.
+            'notification_matrix' => $this->matrix->sanitize((array) $request->input('matrix', [])),
+        ], 'notifications');
 
         return redirect()
             ->route('tenant.notifications.settings', ['tenant_slug' => $tenant->slug])

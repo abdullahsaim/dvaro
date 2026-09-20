@@ -53,6 +53,7 @@ class CustomerUser extends Authenticatable
     {
         return [
             'password' => 'hashed',
+            'preferences' => 'array',
         ];
     }
 

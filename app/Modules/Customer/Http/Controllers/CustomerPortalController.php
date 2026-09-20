@@ -2,6 +2,7 @@
 
 namespace App\Modules\Customer\Http\Controllers;
 
+use App\Http\Controllers\Concerns\PaginatesForUser;
 use App\Http\Controllers\Controller;
 use App\Modules\Agreement\Models\Agreement;
 use App\Modules\Customer\Http\Requests\AcceptInvitationRequest;
@@ -44,6 +45,8 @@ use Inertia\Response;
  */
 class CustomerPortalController extends Controller
 {
+    use PaginatesForUser;
+
     public function __construct(
         private readonly LedgerService $ledger,
     ) {}
@@ -128,7 +131,7 @@ class CustomerPortalController extends Controller
     {
         $invoices = Invoice::where('customer_id', $this->customerId())
             ->orderByDesc('id')
-            ->paginate(15)
+            ->paginate($this->perPage(15))
             ->withQueryString()
             ->through(fn (Invoice $i) => $this->invoiceSummary($i));
 
@@ -180,7 +183,7 @@ class CustomerPortalController extends Controller
         $agreements = Agreement::with('vehicle')
             ->where('customer_id', $this->customerId())
             ->orderByDesc('id')
-            ->paginate(15)
+            ->paginate($this->perPage(15))
             ->withQueryString()
             ->through(fn (Agreement $a) => $this->agreementSummary($a));
 

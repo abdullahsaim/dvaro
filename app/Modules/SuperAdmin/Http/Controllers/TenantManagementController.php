@@ -2,13 +2,14 @@
 
 namespace App\Modules\SuperAdmin\Http\Controllers;
 
+use App\Http\Controllers\Concerns\PaginatesForUser;
 use App\Http\Controllers\Controller;
-use App\Modules\Invoice\Models\Invoice;
 use App\Modules\Fleet\Models\Vehicle;
+use App\Modules\Invoice\Models\Invoice;
 use App\Modules\SaasCore\Models\Plan;
 use App\Modules\SaasCore\Models\SubscriptionPayment;
-use App\Modules\SaasCore\Models\TenantUser;
 use App\Modules\SaasCore\Models\Tenant;
+use App\Modules\SaasCore\Models\TenantUser;
 use App\Modules\SaasCore\Services\AssignPlanService;
 use App\Modules\SuperAdmin\Events\TenantActivated;
 use App\Modules\SuperAdmin\Events\TenantSuspended;
@@ -44,6 +45,8 @@ use Inertia\Response;
  */
 class TenantManagementController extends Controller
 {
+    use PaginatesForUser;
+
     public function index(Request $request): Response
     {
         Gate::forUser(auth('superadmin')->user())->authorize('supportAccess');
@@ -68,7 +71,7 @@ class TenantManagementController extends Controller
                 });
             })
             ->latest()
-            ->paginate(20)
+            ->paginate($this->perPage(20))
             ->withQueryString()
             ->through(fn (Tenant $tenant) => [
                 'id' => $tenant->id,

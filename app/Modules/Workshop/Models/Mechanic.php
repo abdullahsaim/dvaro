@@ -31,6 +31,7 @@ class Mechanic extends Authenticatable
     use SoftDeletes;
 
     public const ROLE_MECHANIC = 'mechanic';
+
     public const ROLE_SENIOR = 'senior_mechanic';
 
     /**
@@ -64,6 +65,7 @@ class Mechanic extends Authenticatable
             'password' => 'hashed',
             'is_active' => 'boolean',
             'last_login_at' => 'datetime',
+            'preferences' => 'array',
         ];
     }
 

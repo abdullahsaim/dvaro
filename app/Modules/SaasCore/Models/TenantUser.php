@@ -22,14 +22,23 @@ use Spatie\Permission\Traits\HasRoles;
  */
 class TenantUser extends Authenticatable
 {
-    use HasTenant;
     use HasRoles;
+    use HasTenant;
     use Notifiable;
     use ResetsPasswordWithinTenant;
 
     public const ROLE_ADMIN = 'tenant_admin';
+
     public const ROLE_STAFF = 'tenant_staff';
+
     public const ROLE_ACCOUNTS = 'tenant_accounts';
+
+    /** Assignable staff roles (mechanics live on their own guard). */
+    public const ROLES = [
+        self::ROLE_ADMIN,
+        self::ROLE_STAFF,
+        self::ROLE_ACCOUNTS,
+    ];
 
     /**
      * Spatie resolves roles/permissions against THIS guard. Without it, roles
@@ -44,6 +53,9 @@ class TenantUser extends Authenticatable
         'password',
         'role',
         'color_mode',
+        'is_active',
+        'last_login_at',
+        'preferences',
     ];
 
     protected $hidden = [
@@ -56,6 +68,9 @@ class TenantUser extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
+            'last_login_at' => 'datetime',
+            'preferences' => 'array',
         ];
     }
 

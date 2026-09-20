@@ -1,20 +1,28 @@
 <?php
 
 use App\Http\Controllers\UserPreferenceController;
-use App\Modules\AI\Http\Controllers\AiController;
 use App\Modules\Agreement\Http\Controllers\AgreementController;
 use App\Modules\Agreement\Http\Controllers\AgreementTemplateController;
+use App\Modules\AI\Http\Controllers\AiController;
 use App\Modules\CRM\Http\Controllers\LeadController;
 use App\Modules\CRM\Http\Controllers\LeadFormController;
-use App\Modules\Finance\Http\Controllers\ExpenseCategoryController;
-use App\Modules\Finance\Http\Controllers\ExpenseController;
 use App\Modules\Customer\Http\Controllers\CustomerController;
 use App\Modules\Customer\Models\Customer;
+use App\Modules\Finance\Http\Controllers\ExpenseCategoryController;
+use App\Modules\Finance\Http\Controllers\ExpenseController;
 use App\Modules\Fleet\Http\Controllers\FleetController;
 use App\Modules\Invoice\Http\Controllers\InvoiceController;
+use App\Modules\Invoice\Http\Controllers\InvoiceTemplateController;
 use App\Modules\Notification\Http\Controllers\NotificationSettingsController;
 use App\Modules\Reporting\Http\Controllers\ReportingController;
 use App\Modules\SaasCore\Http\Controllers\BillingController;
+use App\Modules\SaasCore\Http\Controllers\CompanyProfileController;
+use App\Modules\SaasCore\Http\Controllers\FinanceSettingsController;
+use App\Modules\SaasCore\Http\Controllers\IntegrationSettingsController;
+use App\Modules\SaasCore\Http\Controllers\RegionalSettingsController;
+use App\Modules\SaasCore\Http\Controllers\SettingsController;
+use App\Modules\SaasCore\Http\Controllers\StaffController;
+use App\Modules\SaasCore\Http\Controllers\StaffInvitationController;
 use App\Modules\SaasCore\Http\Controllers\StripeCheckoutController;
 use App\Modules\SaasCore\Http\Controllers\TenantAuthController;
 use App\Modules\SaasCore\Http\Controllers\TenantDashboardController;
@@ -56,6 +64,13 @@ Route::get('reset-password/{token}', [TenantPasswordResetController::class, 'sho
 Route::post('reset-password', [TenantPasswordResetController::class, 'reset'])
     ->name('password.update');
 
+// Staff invitation acceptance (PUBLIC — the invitee has no account yet; the
+// unguessable token is the only credential). Tenant is bound by TenantMiddleware.
+Route::get('invitation/{token}', [StaffInvitationController::class, 'show'])
+    ->name('staff.invite.show');
+Route::post('invitation/{token}', [StaffInvitationController::class, 'accept'])
+    ->middleware('throttle:6,1')->name('staff.invite.accept');
+
 // Authenticated tenant area.
 Route::middleware('auth:tenant')->group(function () {
     Route::post('logout', [TenantAuthController::class, 'logout'])->name('logout');
@@ -69,6 +84,9 @@ Route::middleware('auth:tenant')->group(function () {
     Route::put('profile', [TenantProfileController::class, 'updateProfile'])->name('profile.update');
     Route::put('profile/password', [TenantProfileController::class, 'updatePassword'])
         ->name('profile.password');
+    // Personal settings — own row only (landing page, rows per page, opt-outs).
+    Route::put('profile/preferences', [TenantProfileController::class, 'updatePreferences'])
+        ->name('profile.preferences');
 
     Route::get('dashboard', [TenantDashboardController::class, 'index'])->name('dashboard');
 
@@ -195,6 +213,9 @@ Route::middleware('auth:tenant')->group(function () {
         ->name('invoices.overdue');
     Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])
         ->name('invoices.pdf');
+    // Re-render an older invoice with the current template (queued).
+    Route::post('invoices/{invoice}/pdf', [InvoiceController::class, 'regeneratePdf'])
+        ->name('invoices.pdf.regenerate');
 
     // Billing portal — tenant_admin only (BillingPolicy via the 'viewBilling' /
     // 'requestUpgrade' / 'manageSubscription' gates in the controllers).
@@ -217,6 +238,47 @@ Route::middleware('auth:tenant')->group(function () {
     Route::post('billing/cancel', [BillingController::class, 'cancelSubscription'])
         ->name('billing.cancel');
 
+    // Settings hub + the sections that live under it. Each controller enforces
+    // its own permissions (most writes are tenant_admin-only); the hub only
+    // decides which cards are shown.
+    Route::get('settings', [SettingsController::class, 'index'])->name('settings');
+    Route::get('settings/activity', [SettingsController::class, 'activity'])->name('settings.activity');
+
+    Route::get('settings/company', [CompanyProfileController::class, 'show'])->name('settings.company');
+    Route::put('settings/company', [CompanyProfileController::class, 'update'])->name('settings.company.update');
+    Route::post('settings/company/logo', [CompanyProfileController::class, 'updateLogo'])->name('settings.company.logo');
+    Route::delete('settings/company/logo', [CompanyProfileController::class, 'removeLogo'])->name('settings.company.logo.remove');
+
+    // Staff — the first way for a rental company to add its own users.
+    // {staff}/{invitation} bind through TenantScope (cross-tenant id => 404).
+    Route::get('settings/staff', [StaffController::class, 'index'])->name('settings.staff');
+    Route::post('settings/staff/invite', [StaffController::class, 'invite'])->name('settings.staff.invite');
+    Route::put('settings/staff/{staff}', [StaffController::class, 'update'])->name('settings.staff.update');
+    Route::post('settings/staff/invitations/{invitation}/resend', [StaffController::class, 'resendInvitation'])
+        ->name('settings.staff.invite.resend');
+    Route::delete('settings/staff/invitations/{invitation}', [StaffController::class, 'revokeInvitation'])
+        ->name('settings.staff.invite.revoke');
+
+    Route::get('settings/finance', [FinanceSettingsController::class, 'show'])->name('settings.finance');
+    Route::put('settings/finance', [FinanceSettingsController::class, 'update'])->name('settings.finance.update');
+    Route::get('settings/regional', [RegionalSettingsController::class, 'show'])->name('settings.regional');
+    Route::put('settings/regional', [RegionalSettingsController::class, 'update'])->name('settings.regional.update');
+    // Settings → Invoices: layout, logo, colour and wording for invoice PDFs.
+    // The preview renders the chosen layout as HTML with sample data (a PDF
+    // would have to be queued — CLAUDE.md).
+    Route::get('settings/invoice-template', [InvoiceTemplateController::class, 'show'])
+        ->name('settings.invoice-template');
+    Route::put('settings/invoice-template', [InvoiceTemplateController::class, 'update'])
+        ->name('settings.invoice-template.update');
+    Route::get('settings/invoice-template/preview', [InvoiceTemplateController::class, 'preview'])
+        ->name('settings.invoice-template.preview');
+    Route::post('settings/invoice-template/logo', [InvoiceTemplateController::class, 'updateLogo'])
+        ->name('settings.invoice-template.logo');
+    Route::delete('settings/invoice-template/logo', [InvoiceTemplateController::class, 'removeLogo'])
+        ->name('settings.invoice-template.logo.remove');
+
+    Route::get('settings/integrations', [IntegrationSettingsController::class, 'show'])->name('settings.integrations');
+    Route::put('settings/integrations', [IntegrationSettingsController::class, 'update'])->name('settings.integrations.update');
     // Notification settings — tenant-wide provider selection + channel toggles.
     // Not a resource (single settings page); tenant_admin-gated in the controller.
     Route::get('notifications/settings', [NotificationSettingsController::class, 'edit'])

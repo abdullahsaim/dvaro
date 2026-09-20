@@ -63,7 +63,7 @@ const navItems = computed(() => {
         ...(user.value?.role === 'tenant_admin'
             ? [{ key: 'billing', label: t('nav.billing'), href: `${base}/billing`, icon: CreditCardIcon }]
             : []),
-        { key: 'settings', label: t('nav.settings'), href: `${base}/notifications/settings`, icon: Cog6ToothIcon },
+        { key: 'settings', label: t('nav.settings'), href: `${base}/settings`, icon: Cog6ToothIcon },
     ];
     return items.map((item) => ({ ...item, active: isActive(item.href, item.exact) }));
 });

@@ -11,8 +11,12 @@ import Input from '@/Components/UI/Input.vue';
 import Button from '@/Components/UI/Button.vue';
 import PasswordCard from '@/Components/Profile/PasswordCard.vue';
 import AppearanceCard from '@/Components/Profile/AppearanceCard.vue';
+import PreferencesCard from '@/Components/Profile/PreferencesCard.vue';
 
 const props = defineProps({
+    preferences: { type: Object, required: true },
+    landingPages: { type: Array, default: () => ['dashboard'] },
+    rowsPerPageOptions: { type: Array, default: () => [15, 25, 50, 100] },
     user: { type: Object, required: true },
     hasPassword: { type: Boolean, default: false },
     hasPin: { type: Boolean, default: false },
@@ -127,6 +131,12 @@ function savePin() {
                 <Button type="submit" class="mt-4" :loading="pinForm.processing">{{ t('profile.update_pin') }}</Button>
             </form>
 
+            <PreferencesCard
+                :action="`${base}/preferences`"
+                :preferences="preferences"
+                :landing-pages="landingPages"
+                :rows-per-page-options="rowsPerPageOptions"
+            />
             <AppearanceCard />
         </div>
     </MechanicLayout>

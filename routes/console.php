@@ -38,10 +38,12 @@ Schedule::command('notifications:send-expiry-reminders')
     ->timezone('Australia/Sydney')
     ->withoutOverlapping();
 
-// Daily fleet reminder digest to ALL tenant staff — registration, insurance and
+// Fleet reminder digest to ALL tenant staff — registration, insurance and
 // service by date OR km (due soon + overdue, each sent once per due value).
-// 07:00 so it lands at the start of the working day.
-Schedule::command('notifications:send-fleet-reminders')
-    ->dailyAt('07:00')
-    ->timezone('Australia/Sydney')
+//
+// Runs HOURLY and sweeps only the tenants whose OWN timezone reads 07:00, so
+// every company gets it at 7am local (Settings → Regional). A single daily
+// Sydney run would reach Perth at 4am.
+Schedule::command('notifications:send-fleet-reminders --hour=7')
+    ->hourly()
     ->withoutOverlapping();

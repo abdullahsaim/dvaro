@@ -2,6 +2,7 @@
 
 namespace App\Modules\Workshop\Http\Controllers;
 
+use App\Http\Controllers\Concerns\PaginatesForUser;
 use App\Http\Controllers\Controller;
 use App\Modules\Fleet\Models\Vehicle;
 use App\Modules\Workshop\Models\ServiceLog;
@@ -23,6 +24,8 @@ use Inertia\Response;
  */
 class WorkshopController extends Controller
 {
+    use PaginatesForUser;
+
     public function index(Request $request): Response
     {
         Gate::forUser(auth('tenant')->user())->authorize('viewAny', ServiceLog::class);
@@ -75,7 +78,7 @@ class WorkshopController extends Controller
             ->when($vehicleId, fn ($q) => $q->where('vehicle_id', $vehicleId))
             ->with(['vehicle:id,make,model,registration_number', 'mechanic:id,name'])
             ->latest()
-            ->paginate(15)
+            ->paginate($this->perPage(15))
             ->withQueryString();
 
         $counts = ServiceLog::query()

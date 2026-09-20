@@ -25,8 +25,11 @@ class SuperAdmin extends Authenticatable
     use SoftDeletes;
 
     public const ROLE_PLATFORM_OWNER = 'platform_owner';
+
     public const ROLE_BILLING_MANAGER = 'billing_manager';
+
     public const ROLE_SUPPORT_AGENT = 'support_agent';
+
     public const ROLE_CONTENT_MANAGER = 'content_manager';
 
     public const ROLES = [
@@ -63,6 +66,7 @@ class SuperAdmin extends Authenticatable
             'password' => 'hashed',
             'is_active' => 'boolean',
             'last_login_at' => 'datetime',
+            'preferences' => 'array',
         ];
     }
 

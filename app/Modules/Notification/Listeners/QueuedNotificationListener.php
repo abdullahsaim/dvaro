@@ -4,6 +4,7 @@ namespace App\Modules\Notification\Listeners;
 
 use App\Modules\Customer\Models\Customer;
 use App\Modules\Notification\Models\NotificationLog;
+use App\Modules\Notification\Services\NotificationMatrix;
 use App\Modules\Notification\Services\NotificationService;
 use App\Modules\Notification\Templates\NotificationContent;
 use App\Modules\SaasCore\Models\Tenant;
@@ -40,6 +41,7 @@ abstract class QueuedNotificationListener implements ShouldQueue
 
     public function __construct(
         protected readonly NotificationService $notifications,
+        protected readonly NotificationMatrix $matrix,
     ) {}
 
     /**
@@ -66,19 +68,14 @@ abstract class QueuedNotificationListener implements ShouldQueue
         app()->forgetInstance('current_tenant');
     }
 
-    protected function emailEnabled(Tenant $tenant): bool
+    /**
+     * May this trigger send on this channel? Asks the matrix, which checks the
+     * tenant's global channel switch AND the per-trigger row (Settings →
+     * Notifications). A trigger with no row keeps the global behaviour.
+     */
+    protected function allows(Tenant $tenant, string $eventType, string $channel): bool
     {
-        return (bool) ($tenant->settings['notify_email_enabled'] ?? true);
-    }
-
-    protected function smsEnabled(Tenant $tenant): bool
-    {
-        return (bool) ($tenant->settings['notify_sms_enabled'] ?? false);
-    }
-
-    protected function whatsappEnabled(Tenant $tenant): bool
-    {
-        return (bool) ($tenant->settings['notify_whatsapp_enabled'] ?? false);
+        return $this->matrix->allows($tenant, $eventType, $channel);
     }
 
     /**
@@ -93,19 +90,19 @@ abstract class QueuedNotificationListener implements ShouldQueue
         $id = (int) $customer->id;
         $type = NotificationLog::TYPE_CUSTOMER;
 
-        if ($this->emailEnabled($tenant) && filled($customer->email)) {
+        if ($this->allows($tenant, $eventType, NotificationLog::CHANNEL_EMAIL) && filled($customer->email)) {
             $this->notifications->sendEmail(
                 $tenant, $customer->email, $content->subject, $content->emailBody, $eventType, $id, $type,
             );
         }
 
-        if ($this->smsEnabled($tenant) && filled($customer->phone)) {
+        if ($this->allows($tenant, $eventType, NotificationLog::CHANNEL_SMS) && filled($customer->phone)) {
             $this->notifications->sendSms(
                 $tenant, $customer->phone, $content->smsBody, $eventType, $id, $type,
             );
         }
 
-        if ($this->whatsappEnabled($tenant) && filled($customer->phone)) {
+        if ($this->allows($tenant, $eventType, NotificationLog::CHANNEL_WHATSAPP) && filled($customer->phone)) {
             $this->notifications->sendWhatsApp(
                 $tenant, $customer->phone, $content->whatsappBody(), $eventType, $id, $type,
             );
@@ -121,7 +118,7 @@ abstract class QueuedNotificationListener implements ShouldQueue
         NotificationContent $content,
         string $eventType,
     ): void {
-        if (! $this->emailEnabled($tenant)) {
+        if (! $this->allows($tenant, $eventType, NotificationLog::CHANNEL_EMAIL)) {
             return;
         }
 

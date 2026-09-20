@@ -2,6 +2,7 @@
 
 namespace App\Modules\Customer\Http\Controllers;
 
+use App\Http\Controllers\Concerns\PaginatesForUser;
 use App\Http\Controllers\Controller;
 use App\Modules\Customer\Actions\BlacklistCustomerAction;
 use App\Modules\Customer\Actions\CreateCustomerAction;
@@ -48,6 +49,8 @@ use Inertia\Response;
  */
 class CustomerController extends Controller
 {
+    use PaginatesForUser;
+
     public function index(Request $request): Response
     {
         Gate::forUser(auth('tenant')->user())->authorize('viewAny', Customer::class);
@@ -70,7 +73,7 @@ class CustomerController extends Controller
             }))
             ->when($blacklisted !== null, fn ($query) => $query->where('is_blacklisted', $blacklisted))
             ->latest()
-            ->paginate(15)
+            ->paginate($this->perPage(15))
             ->withQueryString();
 
         // Outstanding balance indicator for the rows on this page, in ONE query

@@ -2,6 +2,7 @@
 
 namespace App\Modules\CRM\Http\Controllers;
 
+use App\Http\Controllers\Concerns\PaginatesForUser;
 use App\Http\Controllers\Controller;
 use App\Modules\CRM\Actions\ConvertLeadAction;
 use App\Modules\CRM\Actions\CreateLeadAction;
@@ -34,6 +35,8 @@ use Inertia\Response;
  */
 class LeadController extends Controller
 {
+    use PaginatesForUser;
+
     public function index(Request $request): Response
     {
         Gate::forUser(auth('tenant')->user())->authorize('viewAny', Lead::class);
@@ -58,7 +61,7 @@ class LeadController extends Controller
                     ->orWhere('phone', 'like', "%{$search}%");
             }))
             ->latest()
-            ->paginate(15)
+            ->paginate($this->perPage(15))
             ->withQueryString();
 
         // Per-status tab counts in ONE grouped query (tenant-scoped via HasTenant).
