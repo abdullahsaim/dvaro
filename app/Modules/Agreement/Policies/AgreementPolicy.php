@@ -53,6 +53,20 @@ class AgreementPolicy
         return $this->sameTenant($user, $agreement);
     }
 
+    /**
+     * Re-queue a MISSING agreement PDF.
+     *
+     * Deliberately not a general "regenerate": an agreement PDF is written once
+     * at signing and kept, so a company that rebrands later must not be able to
+     * re-render documents people have already signed. This only recovers a PDF
+     * that is absent — the controller enforces that part.
+     */
+    public function rebuildPdf(TenantUser $user, Agreement $agreement): bool
+    {
+        return $this->sameTenant($user, $agreement)
+            && in_array($user->role, [TenantUser::ROLE_ADMIN, TenantUser::ROLE_ACCOUNTS], true);
+    }
+
     private function sameTenant(TenantUser $user, Agreement $agreement): bool
     {
         return (int) $user->tenant_id === (int) $agreement->tenant_id;

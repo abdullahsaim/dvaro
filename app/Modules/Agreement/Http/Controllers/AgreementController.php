@@ -4,6 +4,7 @@ namespace App\Modules\Agreement\Http\Controllers;
 
 use App\Http\Controllers\Concerns\PaginatesForUser;
 use App\Http\Controllers\Controller;
+use App\Jobs\GenerateAgreementPdfJob;
 use App\Modules\Agreement\DTOs\CreateAgreementDTO;
 use App\Modules\Agreement\Http\Requests\SignAgreementRequest;
 use App\Modules\Agreement\Http\Requests\StoreAgreementRequest;
@@ -146,6 +147,9 @@ class AgreementController extends Controller
 
         return Inertia::render('Agreement/Show', [
             'agreement' => $agreement,
+            // Offered only when the PDF is genuinely absent — see rebuildPdf().
+            'canRebuildPdf' => $agreement->pdf_path === null
+                && Gate::forUser(auth('tenant')->user())->allows('rebuildPdf', $agreement),
             // FROZEN terms (sanitised when the template was saved, merge fields
             // already resolved) + provenance for the "from template" line.
             'terms' => $agreement->terms_html,
@@ -227,6 +231,36 @@ class AgreementController extends Controller
             $agreement->pdf_path,
             "agreement-{$agreement->id}-v{$agreement->version}.pdf",
         );
+    }
+
+    /**
+     * Re-queue the PDF for an agreement that hasn't got one.
+     *
+     * The generation job runs on the queue, so an agreement signed while no
+     * worker was running is left saying "the PDF is being generated" forever.
+     * This is the recovery path for exactly that.
+     *
+     * ONLY when the PDF is missing. An agreement's PDF is written once at
+     * signing and kept — re-rendering a document someone has already signed,
+     * after the company has changed its logo or colours, would hand them a
+     * different-looking record of the same agreement. Content cannot change
+     * (the terms are frozen), but appearance would, and that is not ours to
+     * alter.
+     */
+    public function rebuildPdf(Agreement $agreement): RedirectResponse
+    {
+        Gate::forUser(auth('tenant')->user())->authorize('rebuildPdf', $agreement);
+
+        abort_if(
+            $agreement->pdf_path !== null
+                && Storage::disk(config('filesystems.default'))->exists($agreement->pdf_path),
+            403,
+            __('common.agreement.pdf_already_exists'),
+        );
+
+        GenerateAgreementPdfJob::dispatch((int) $agreement->id, (int) $agreement->tenant_id);
+
+        return back()->with('success', __('common.agreement.pdf_queued'));
     }
 
     /**

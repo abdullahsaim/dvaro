@@ -21,6 +21,7 @@ const props = defineProps({
     terms: { type: String, default: null },
     termsSource: { type: Object, default: null }, // { name, revision }
     availableVehicles: { type: Array, default: () => [] },
+    canRebuildPdf: { type: Boolean, default: false },
 });
 
 const { t } = useI18n();
@@ -100,6 +101,14 @@ function clearPad() {
     ctx.clearRect(0, 0, canvas.value.width, canvas.value.height);
     hasDrawn.value = false;
     signForm.clearErrors();
+}
+
+// Re-queue a PDF that never generated. Refused server-side if one exists — a
+// signed document is never re-rendered, only recovered when absent.
+const pdfForm = useForm({});
+
+function rebuildPdf() {
+    pdfForm.post(`${base.value}/${props.agreement.id}/pdf`, { preserveScroll: true });
 }
 
 const signForm = useForm({ signature_data: '' });
@@ -183,7 +192,20 @@ function cancelChange() {
                 >
                     {{ t('agreement.download_pdf') }}
                 </a>
-                <p v-else class="text-sm text-ink-500">{{ t('agreement.pdf_pending') }}</p>
+                <div v-else class="flex flex-wrap items-center gap-3">
+                    <p class="text-sm text-ink-500">{{ t('agreement.pdf_pending') }}</p>
+                    <!-- Recovery: the PDF is queued, so it never arrives if no
+                         worker was running when this was signed. -->
+                    <button
+                        v-if="canRebuildPdf"
+                        type="button"
+                        class="text-sm font-medium text-ink-900 underline underline-offset-4 disabled:opacity-50 dark:text-ink-100"
+                        :disabled="pdfForm.processing"
+                        @click="rebuildPdf"
+                    >
+                        {{ pdfForm.processing ? t('agreement.pdf_rebuilding') : t('agreement.rebuild_pdf') }}
+                    </button>
+                </div>
             </div>
 
             <!-- Sign (draft only) -->

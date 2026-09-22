@@ -743,7 +743,9 @@
         "proration_old_vehicle": "Outgoing vehicle ({days} days)",
         "proration_new_vehicle": "Incoming vehicle ({days} days)",
         "proration_total": "Total (unchanged)",
-        "proration_note": "These two amounts sum exactly to the original invoice total. Confirm to apply the change."
+        "proration_note": "These two amounts sum exactly to the original invoice total. Confirm to apply the change.",
+        "rebuild_pdf": "Generate it now",
+        "pdf_rebuilding": "Queued…"
     },
     "invoice": {
         "title": "Invoices",

@@ -95,6 +95,8 @@ return [
         'created' => 'Agreement created as a draft.',
         'signed' => 'Agreement signed. The PDF is being generated.',
         'version_created' => 'New agreement version created — it needs to be signed.',
+        'pdf_queued' => 'Generating the PDF — refresh in a moment.',
+        'pdf_already_exists' => 'This agreement already has a PDF.',
     ],
 
     'invoice' => [

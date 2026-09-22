@@ -196,6 +196,10 @@ Route::middleware('auth:tenant')->group(function () {
     // Stream the queued-and-stored PDF (read-only). pdf_path null => 404.
     Route::get('agreements/{agreement}/pdf', [AgreementController::class, 'downloadPdf'])
         ->name('agreements.pdf');
+    // Recovery for a PDF that never generated (queue worker down at signing).
+    // Refused when the file already exists — a signed document is not re-rendered.
+    Route::post('agreements/{agreement}/pdf', [AgreementController::class, 'rebuildPdf'])
+        ->name('agreements.pdf.rebuild');
 
     // Mid-cycle vehicle change lives on InvoiceController (it is fundamentally an
     // invoice/proration operation). Two-step: preview (no writes) then confirm.
