@@ -22,6 +22,7 @@ const props = defineProps({
     termsSource: { type: Object, default: null }, // { name, revision }
     availableVehicles: { type: Array, default: () => [] },
     canRebuildPdf: { type: Boolean, default: false },
+    pdfReady: { type: Boolean, default: false },
 });
 
 const { t } = useI18n();
@@ -185,8 +186,11 @@ function cancelChange() {
 
             <!-- PDF -->
             <div class="rounded-card border border-ink-200 bg-white p-4 shadow-subtle dark:border-ink-800 dark:bg-ink-900">
+                <!-- pdf_path being set does not mean the file exists — the
+                     server checks that too (PdfAvailability) and this link
+                     only renders when it is genuinely there. -->
                 <a
-                    v-if="agreement.pdf_path"
+                    v-if="pdfReady"
                     :href="`${base}/${agreement.id}/pdf`"
                     class="text-sm font-medium text-ink-900 hover:underline dark:text-ink-100"
                 >

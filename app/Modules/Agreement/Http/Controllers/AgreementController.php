@@ -14,6 +14,7 @@ use App\Modules\Agreement\Services\AgreementService;
 use App\Modules\Agreement\Services\AgreementTemplateService;
 use App\Modules\Customer\Models\Customer;
 use App\Modules\Fleet\Models\Vehicle;
+use App\Services\PdfAvailability;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -145,10 +146,17 @@ class AgreementController extends Controller
 
         $agreement->load(['customer', 'vehicle', 'template']);
 
+        // pdf_path being set does NOT mean the file exists — see
+        // PdfAvailability. Both the download link and the rebuild button key
+        // off this, not the raw column, so a row that outlived its file
+        // always shows "generate it" rather than a link that 500s.
+        $pdfReady = app(PdfAvailability::class)->exists($agreement->pdf_path);
+
         return Inertia::render('Agreement/Show', [
             'agreement' => $agreement,
-            // Offered only when the PDF is genuinely absent — see rebuildPdf().
-            'canRebuildPdf' => $agreement->pdf_path === null
+            'pdfReady' => $pdfReady,
+            // Offered whenever the PDF is genuinely absent — see rebuildPdf().
+            'canRebuildPdf' => ! $pdfReady
                 && Gate::forUser(auth('tenant')->user())->allows('rebuildPdf', $agreement),
             // FROZEN terms (sanitised when the template was saved, merge fields
             // already resolved) + provenance for the "from template" line.
@@ -220,12 +228,18 @@ class AgreementController extends Controller
      * (local download + s3 download behave identically). Read-only; the PDF is
      * produced asynchronously by GenerateAgreementPdfJob after signing, so
      * pdf_path may still be null briefly (→ 404 until it lands).
+     *
+     * IMPORTANT: pdf_path being set does not mean the file is actually there
+     * (a database row can outlive its file). Storage::download() throws an
+     * UNCAUGHT exception on a missing file — a raw 500 rather than a clean
+     * 404 — so existence is checked via PdfAvailability first, never the
+     * column alone.
      */
     public function downloadPdf(Agreement $agreement): StreamedResponse
     {
         Gate::forUser(auth('tenant')->user())->authorize('view', $agreement);
 
-        abort_if($agreement->pdf_path === null, 404);
+        abort_unless(app(PdfAvailability::class)->exists($agreement->pdf_path), 404);
 
         return Storage::disk(config('filesystems.default'))->download(
             $agreement->pdf_path,
@@ -252,8 +266,7 @@ class AgreementController extends Controller
         Gate::forUser(auth('tenant')->user())->authorize('rebuildPdf', $agreement);
 
         abort_if(
-            $agreement->pdf_path !== null
-                && Storage::disk(config('filesystems.default'))->exists($agreement->pdf_path),
+            app(PdfAvailability::class)->exists($agreement->pdf_path),
             403,
             __('common.agreement.pdf_already_exists'),
         );

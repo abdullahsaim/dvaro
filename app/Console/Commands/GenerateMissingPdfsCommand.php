@@ -7,8 +7,8 @@ use App\Jobs\GenerateInvoicePdfJob;
 use App\Modules\Agreement\Models\Agreement;
 use App\Modules\Invoice\Models\Invoice;
 use App\Modules\SaasCore\Models\Tenant;
+use App\Services\PdfAvailability;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Storage;
 use Throwable;
 
 /**
@@ -128,14 +128,11 @@ class GenerateMissingPdfsCommand extends Command
     /**
      * Missing means no path OR a path whose file is gone — a record can point
      * at a file that was deleted from the disk, and that reads to the user
-     * exactly like a PDF that never generated.
+     * exactly like a PDF that never generated. Shared with the controllers
+     * via PdfAvailability so "missing" can never drift between them.
      */
     private function missing(?string $path): bool
     {
-        if ($path === null || $path === '') {
-            return true;
-        }
-
-        return ! Storage::disk(config('filesystems.default'))->exists($path);
+        return ! app(PdfAvailability::class)->exists($path);
     }
 }

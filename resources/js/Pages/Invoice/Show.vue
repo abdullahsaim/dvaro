@@ -18,6 +18,7 @@ const props = defineProps({
     customerBalance: { type: Number, default: 0 },
     methods: { type: Array, default: () => [] },
     canRegeneratePdf: { type: Boolean, default: false },
+    pdfReady: { type: Boolean, default: false },
 });
 
 const { t } = useI18n();
@@ -149,7 +150,10 @@ function regeneratePdf() {
 
             <!-- PDF + manual overdue -->
             <div class="flex flex-wrap items-center gap-4">
-                <a v-if="invoice.pdf_path" :href="`${base}/${invoice.id}/pdf`" class="text-sm font-medium text-ink-900 hover:underline dark:text-ink-100">{{ t('invoice.download_pdf') }}</a>
+                <!-- pdf_path being set does not mean the file exists — the
+                     server checks that too (PdfAvailability) and this link
+                     only renders when it is genuinely there. -->
+                <a v-if="pdfReady" :href="`${base}/${invoice.id}/pdf`" class="text-sm font-medium text-ink-900 hover:underline dark:text-ink-100">{{ t('invoice.download_pdf') }}</a>
                 <span v-else class="text-sm text-ink-500">{{ t('invoice.pdf_pending') }}</span>
                 <!-- Re-render an older invoice with the current template
                      (Settings → Invoices). Queued; amounts are untouched. -->

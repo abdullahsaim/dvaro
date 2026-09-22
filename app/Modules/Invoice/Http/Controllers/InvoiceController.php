@@ -16,6 +16,7 @@ use App\Modules\Invoice\Models\Invoice;
 use App\Modules\Invoice\Models\Payment;
 use App\Modules\Invoice\Services\ProrationService;
 use App\Modules\Invoice\Services\VehicleChangeService;
+use App\Services\PdfAvailability;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -105,6 +106,10 @@ class InvoiceController extends Controller
             // The customer's whole-ledger balance, for context on this invoice.
             'customerBalance' => $ledger->getBalance($invoice->customer_id),
             'methods' => Payment::METHODS,
+            // pdf_path being set does NOT mean the file is there to download —
+            // see PdfAvailability. The download link only renders when this is
+            // true; the page falls back to "pending" otherwise.
+            'pdfReady' => app(PdfAvailability::class)->exists($invoice->pdf_path),
             // Re-rendering the PDF with the current template is admin/accounts
             // only — the button is hidden for everyone else, and the policy
             // refuses it regardless.
@@ -201,12 +206,21 @@ class InvoiceController extends Controller
      * action is auth-checked, so streaming directly is safe on both drivers.
      * Read-only; the PDF is produced asynchronously by GenerateInvoicePdfJob,
      * so pdf_path may be null briefly.
+     *
+     * IMPORTANT: pdf_path being set does not mean the file is actually there
+     * (a database row can outlive its file — a deploy that didn't carry
+     * storage/ across, a deleted file, a disk that got reconfigured).
+     * Storage::download() throws an UNCAUGHT exception on a missing file,
+     * which would otherwise surface to the user as a raw 500. Checked via
+     * PdfAvailability first so this is always a clean 404 instead — opened
+     * from a plain link in a new tab, so a redirect-with-flash here would
+     * have nowhere useful to land.
      */
     public function downloadPdf(Invoice $invoice): StreamedResponse
     {
         Gate::forUser(auth('tenant')->user())->authorize('view', $invoice);
 
-        abort_if($invoice->pdf_path === null, 404);
+        abort_unless(app(PdfAvailability::class)->exists($invoice->pdf_path), 404);
 
         return Storage::disk(config('filesystems.default'))->download(
             $invoice->pdf_path,

@@ -118,10 +118,14 @@ class MissingPdfRecoveryTest extends TestCase
 
     public function test_the_rebuild_option_is_offered_only_when_the_pdf_is_missing(): void
     {
+        $disk = Storage::fake('local');
         $t = $this->makeTenant('pdfrec-a');
         $admin = $this->user($t);
         $missing = $this->agreement($t);
-        $has = $this->agreement($t, 'tenants/1/agreements/1/agreement-v1.pdf');
+
+        $path = "tenants/{$t->id}/agreements/1/agreement-v1.pdf";
+        $disk->put($path, '%PDF-1.4'); // the file must genuinely exist to count as "has one"
+        $has = $this->agreement($t, $path);
 
         $this->actingAs($admin, 'tenant')->get("/app/{$t->slug}/agreements/{$missing->id}")
             ->assertOk()
@@ -197,6 +201,81 @@ class MissingPdfRecoveryTest extends TestCase
             ->assertNotFound();
 
         Queue::assertNothingPushed();
+    }
+
+    // ── The actual live bug: a recorded path whose file is missing ─────────
+    //
+    // pdf_path being set does NOT mean the file exists — a row can outlive
+    // its file (a deploy that never carried storage/ across, a deleted file).
+    // Storage::download() on a missing file throws an UNCAUGHT exception,
+    // which is exactly the "server error" this reproduces and fixes.
+
+    public function test_downloading_a_recorded_but_missing_agreement_pdf_404s_cleanly(): void
+    {
+        Storage::fake('local'); // path recorded in DB, no file behind it
+        $t = $this->makeTenant('pdfrec-crash-a');
+        $admin = $this->user($t);
+        $agreement = $this->agreement($t, "tenants/{$t->id}/agreements/1/agreement-v1.pdf");
+
+        $this->actingAs($admin, 'tenant')
+            ->get("/app/{$t->slug}/agreements/{$agreement->id}/pdf")
+            ->assertNotFound(); // never a 500
+    }
+
+    public function test_downloading_a_recorded_but_missing_invoice_pdf_404s_cleanly(): void
+    {
+        Storage::fake('local');
+        $t = $this->makeTenant('pdfrec-crash-b');
+        $admin = $this->user($t);
+        $invoice = $this->invoice($t, "tenants/{$t->id}/invoices/1/invoice.pdf");
+
+        $this->actingAs($admin, 'tenant')
+            ->get("/app/{$t->slug}/invoices/{$invoice->id}/pdf")
+            ->assertNotFound();
+    }
+
+    public function test_the_agreement_page_offers_to_rebuild_when_the_file_is_missing_even_though_pdf_path_is_set(): void
+    {
+        Storage::fake('local');
+        $t = $this->makeTenant('pdfrec-crash-c');
+        $admin = $this->user($t);
+        $agreement = $this->agreement($t, "tenants/{$t->id}/agreements/1/agreement-v1.pdf");
+
+        // Before the fix this stayed false whenever pdf_path was non-null,
+        // so the page showed a download link that would 500 when clicked.
+        $this->actingAs($admin, 'tenant')->get("/app/{$t->slug}/agreements/{$agreement->id}")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('pdfReady', false)
+                ->where('canRebuildPdf', true));
+    }
+
+    public function test_the_agreement_page_hides_rebuild_once_the_file_genuinely_exists(): void
+    {
+        $disk = Storage::fake('local');
+        $t = $this->makeTenant('pdfrec-crash-d');
+        $admin = $this->user($t);
+
+        $path = "tenants/{$t->id}/agreements/2/agreement-v1.pdf";
+        $disk->put($path, '%PDF-1.4');
+        $agreement = $this->agreement($t, $path);
+
+        $this->actingAs($admin, 'tenant')->get("/app/{$t->slug}/agreements/{$agreement->id}")
+            ->assertInertia(fn ($page) => $page
+                ->where('pdfReady', true)
+                ->where('canRebuildPdf', false));
+    }
+
+    public function test_the_invoice_page_hides_the_download_link_when_the_file_is_missing(): void
+    {
+        Storage::fake('local');
+        $t = $this->makeTenant('pdfrec-crash-e');
+        $admin = $this->user($t);
+        $invoice = $this->invoice($t, "tenants/{$t->id}/invoices/2/invoice.pdf");
+
+        $this->actingAs($admin, 'tenant')->get("/app/{$t->slug}/invoices/{$invoice->id}")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('pdfReady', false));
     }
 
     // ── The command ────────────────────────────────────────────────────────
