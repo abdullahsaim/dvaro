@@ -20,6 +20,10 @@ return [
             'label' => 'Agreement signed',
             'description' => 'Sent to the customer with their signed rental agreement.',
         ],
+        'bond_refunded' => [
+            'label' => 'Bond refunded',
+            'description' => 'Sent to the customer once their vehicle return is recorded and the bond is settled.',
+        ],
         'invoice_generated' => [
             'label' => 'Invoice issued',
             'description' => 'Sent to the customer when an invoice is raised.',

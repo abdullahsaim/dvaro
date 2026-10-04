@@ -788,6 +788,43 @@
             "unavailable_body": "It may have expired, already been used, or the link may be incorrect. Please contact the rental company directly."
         }
     },
+    "rental": {
+        "return_heading": "Record vehicle return",
+        "return_hint": "Close out this rental: record the vehicle's condition at return and settle the bond.",
+        "odometer_reading": "Odometer reading (km)",
+        "fuel_level": "Fuel level",
+        "fuel_levels": {
+            "empty": "Empty",
+            "quarter": "Quarter",
+            "half": "Half",
+            "three_quarter": "Three-quarter",
+            "full": "Full"
+        },
+        "condition_notes": "Condition notes",
+        "condition_notes_placeholder": "General condition at return (optional)",
+        "damage_found": "Damage found",
+        "damage_description": "Damage description",
+        "damage_description_placeholder": "Describe the damage",
+        "needs_workshop": "Needs workshop attention",
+        "needs_workshop_hint": "Puts the vehicle into maintenance instead of back on the road.",
+        "deduction_amount": "Bond deduction (AUD)",
+        "deduction_reason": "Deduction reason",
+        "deduction_reason_placeholder": "Why this amount is being deducted",
+        "bond_held": "Bond held",
+        "refund_preview": "Refund due",
+        "submit": "Record return",
+        "record": {
+            "title": "Vehicle return",
+            "odometer_reading": "Odometer reading",
+            "fuel_level": "Fuel level",
+            "condition_notes": "Condition notes",
+            "damage": "Damage",
+            "no_damage": "None reported",
+            "deduction_amount": "Bond deduction",
+            "refund_amount": "Refund",
+            "completed_at": "Completed"
+        }
+    },
     "invoice": {
         "title": "Invoices",
         "invoice_details": "Invoice details",

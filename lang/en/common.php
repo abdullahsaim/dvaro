@@ -36,6 +36,13 @@ return [
         'odometer_negative' => 'The odometer reading must be zero or more.',
     ],
 
+    'rental' => [
+        'return_recorded' => 'Vehicle return recorded.',
+        'deduction_exceeds_bond' => 'The deduction cannot exceed the bond amount held for this agreement.',
+        'already_returned' => 'This agreement already has a recorded return.',
+        'not_returnable' => 'Only a signed or active agreement can be returned.',
+    ],
+
     'workshop' => [
         'log_created' => 'Service log created. The vehicle is now in maintenance.',
         'status_changed' => 'Service log status updated.',

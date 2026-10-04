@@ -4,11 +4,13 @@ namespace App\Modules\Agreement\Models;
 
 use App\Modules\Customer\Models\Customer;
 use App\Modules\Fleet\Models\Vehicle;
+use App\Modules\Rental\Models\ReturnInspection;
 use App\Scopes\TenantScope;
 use App\Traits\HasTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * Agreement — the source of truth for a rental (CLAUDE.md).
@@ -156,6 +158,15 @@ class Agreement extends Model
     public function versions(): HasMany
     {
         return $this->hasMany(self::class, 'parent_agreement_id');
+    }
+
+    /**
+     * The vehicle-return record that closes out this rental (null until a
+     * return is filed; see RentalReturnService::completeReturn).
+     */
+    public function returnInspection(): HasOne
+    {
+        return $this->hasOne(ReturnInspection::class);
     }
 
     public function isSigned(): bool

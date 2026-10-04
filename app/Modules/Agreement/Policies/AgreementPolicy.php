@@ -60,6 +60,18 @@ class AgreementPolicy
     }
 
     /**
+     * Record the vehicle return / inspection that closes out this rental.
+     * Only a signed/active agreement can be returned — not a draft (nothing
+     * to return) and not one already completed (DB-unique on agreement_id
+     * backs this up, but the policy gives a clean 403 instead of a 500).
+     */
+    public function returnVehicle(TenantUser $user, Agreement $agreement): bool
+    {
+        return $this->sameTenant($user, $agreement)
+            && in_array($agreement->status, [Agreement::STATUS_SIGNED, Agreement::STATUS_ACTIVE], true);
+    }
+
+    /**
      * Re-queue a MISSING agreement PDF.
      *
      * Deliberately not a general "regenerate": an agreement PDF is written once

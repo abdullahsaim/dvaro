@@ -10,7 +10,12 @@ use App\Modules\Agreement\Events\AgreementSigned;
 use App\Modules\Agreement\Events\AgreementVersionCreated;
 use App\Modules\Agreement\Models\Agreement;
 use App\Modules\Agreement\Models\AgreementTemplate;
+use App\Modules\Finance\Models\LedgerEntry;
+use App\Modules\Finance\Services\LedgerService;
+use App\Modules\Fleet\Actions\ChangeVehicleStatusAction;
+use App\Modules\Fleet\Models\Vehicle;
 use App\Modules\Invoice\Services\NextBillingDateService;
+use App\Modules\Rental\Events\BondCollected;
 use App\Services\BaseService;
 use Illuminate\Support\Facades\DB;
 
@@ -32,6 +37,8 @@ class AgreementService extends BaseService
         private readonly NextBillingDateService $nextBilling,
         private readonly AgreementTemplateService $templates,
         private readonly AgreementTermsRenderer $renderer,
+        private readonly LedgerService $ledger,
+        private readonly ChangeVehicleStatusAction $changeVehicleStatus,
     ) {}
 
     /**
@@ -69,7 +76,7 @@ class AgreementService extends BaseService
     public function sign(Agreement $agreement, string $signatureData): Agreement
     {
         if ($agreement->status !== Agreement::STATUS_DRAFT) {
-            throw new AgreementNotSignableException();
+            throw new AgreementNotSignableException;
         }
 
         $signed = DB::transaction(function () use ($agreement, $signatureData): Agreement {
@@ -87,6 +94,43 @@ class AgreementService extends BaseService
                     ->calculate($agreement, $agreement->start_date)
                     ->toDateString(),
             ]);
+
+            // Bond is money held in trust against damage, not rental revenue —
+            // collected here (if any) via the dedicated bond ledger type, kept
+            // out of the rental balance (LedgerService::getBalance()).
+            if ($agreement->bond_amount > 0) {
+                $this->ledger->append(
+                    tenantId: $agreement->tenant_id,
+                    customerId: $agreement->customer_id,
+                    type: LedgerEntry::TYPE_BOND_COLLECTION,
+                    amount: $agreement->bond_amount,
+                    description: "Bond collected for agreement #{$agreement->id}",
+                    referenceType: 'agreement',
+                    referenceId: $agreement->id,
+                );
+            }
+
+            // Signing is the moment the vehicle actually goes out — flip it to
+            // Rented so the fleet-status dashboard reflects reality. Loaded
+            // independently (NOT via $agreement->vehicle) so the relation is
+            // never cached on $agreement: AgreementSigned carries $agreement
+            // through a serialize/restore round-trip for its queued listener
+            // (even under QUEUE_CONNECTION=sync), and restoring a cached
+            // relation re-runs its tenant-scoped query at that later point —
+            // which, per the footgun documented in
+            // PublicAgreementSigningController::submit(), may find no bound
+            // tenant and throw.
+            $this->changeVehicleStatus->execute(Vehicle::findOrFail($agreement->vehicle_id), Vehicle::STATUS_RENTED);
+
+            // Events dispatched LAST, after every tenant-scoped query this
+            // transaction needs has already run: under a sync queue
+            // connection, a listener's forgetTenant() (QueuedNotificationListener)
+            // clears the current_tenant binding for THIS request too — see
+            // PublicAgreementSigningController::submit()'s note on the same
+            // footgun. Dispatching last means nothing here is left needing it.
+            if ($agreement->bond_amount > 0) {
+                BondCollected::dispatch($agreement, $agreement->bond_amount);
+            }
 
             AgreementSigned::dispatch($agreement);
 

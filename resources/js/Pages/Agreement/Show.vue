@@ -13,6 +13,7 @@ import Button from '@/Components/UI/Button.vue';
 import Input from '@/Components/UI/Input.vue';
 import Select from '@/Components/UI/Select.vue';
 import SignatureCanvas from '@/Components/Agreement/SignatureCanvas.vue';
+import Textarea from '@/Components/UI/Textarea.vue';
 import { useCurrency } from '@/composables/useCurrency';
 
 const props = defineProps({
@@ -26,6 +27,9 @@ const props = defineProps({
     pdfReady: { type: Boolean, default: false },
     canSendForSigning: { type: Boolean, default: false },
     whatsappEnabled: { type: Boolean, default: false },
+    canReturnVehicle: { type: Boolean, default: false },
+    returnInspection: { type: Object, default: null },
+    fuelLevels: { type: Array, default: () => [] },
 });
 
 const { t } = useI18n();
@@ -141,6 +145,32 @@ function confirmChange() {
 function cancelChange() {
     showChangeForm.value = false;
     changeForm.reset();
+}
+
+// ── Record vehicle return (bond settlement) ─────────────────────────────────
+const returnForm = useForm({
+    odometer_reading: props.agreement.vehicle?.current_odometer ?? '',
+    fuel_level: '',
+    condition_notes: '',
+    damage_found: false,
+    damage_description: '',
+    needs_workshop: false,
+    deduction_amount: 0,
+    deduction_reason: '',
+});
+
+const refundPreview = computed(() => {
+    const deduction = Number(returnForm.deduction_amount) || 0;
+    return Math.max(0, Number(props.agreement.bond_amount) - deduction * 100);
+});
+
+function submitReturn() {
+    returnForm
+        .transform((data) => ({
+            ...data,
+            deduction_amount: Math.round((Number(data.deduction_amount) || 0) * 100),
+        }))
+        .post(`${base.value}/${props.agreement.id}/return`, { preserveScroll: true });
 }
 </script>
 
@@ -343,6 +373,121 @@ function cancelChange() {
                         </Button>
                     </div>
                 </div>
+            </div>
+
+            <!-- Record vehicle return (bond settlement) -->
+            <div v-if="canReturnVehicle && !returnInspection" class="rounded-card border border-ink-200 bg-white p-4 shadow-subtle dark:border-ink-800 dark:bg-ink-900">
+                <h2 class="text-lg font-semibold text-ink-900 dark:text-ink-50">{{ t('rental.return_heading') }}</h2>
+                <p class="mt-1 text-sm text-ink-500">{{ t('rental.return_hint') }}</p>
+
+                <div class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <Input
+                        v-model="returnForm.odometer_reading"
+                        type="number"
+                        min="0"
+                        :label="t('rental.odometer_reading')"
+                        :error="returnForm.errors.odometer_reading"
+                    />
+                    <Select v-model="returnForm.fuel_level" :label="t('rental.fuel_level')" :error="returnForm.errors.fuel_level">
+                        <option value="" disabled>{{ t('rental.fuel_level') }}</option>
+                        <option v-for="level in fuelLevels" :key="level" :value="level">
+                            {{ t(`rental.fuel_levels.${level}`) }}
+                        </option>
+                    </Select>
+                </div>
+
+                <Textarea
+                    v-model="returnForm.condition_notes"
+                    class="mt-3"
+                    :label="t('rental.condition_notes')"
+                    :placeholder="t('rental.condition_notes_placeholder')"
+                    :error="returnForm.errors.condition_notes"
+                    :rows="3"
+                />
+
+                <label class="mt-3 flex items-center gap-2 text-sm text-ink-700 dark:text-ink-200">
+                    <input v-model="returnForm.damage_found" type="checkbox" class="h-4 w-4 rounded border-ink-300 text-ink-900 focus:ring-ink-400" />
+                    {{ t('rental.damage_found') }}
+                </label>
+
+                <Textarea
+                    v-if="returnForm.damage_found"
+                    v-model="returnForm.damage_description"
+                    class="mt-3"
+                    :label="t('rental.damage_description')"
+                    :placeholder="t('rental.damage_description_placeholder')"
+                    :error="returnForm.errors.damage_description"
+                    :rows="2"
+                />
+
+                <label class="mt-3 flex items-center gap-2 text-sm text-ink-700 dark:text-ink-200">
+                    <input v-model="returnForm.needs_workshop" type="checkbox" class="h-4 w-4 rounded border-ink-300 text-ink-900 focus:ring-ink-400" />
+                    {{ t('rental.needs_workshop') }}
+                </label>
+                <p class="mt-1 text-xs text-ink-400">{{ t('rental.needs_workshop_hint') }}</p>
+
+                <div class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <Input
+                        v-model="returnForm.deduction_amount"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        :label="t('rental.deduction_amount')"
+                        :error="returnForm.errors.deduction_amount"
+                    />
+                    <Input
+                        v-model="returnForm.deduction_reason"
+                        :label="t('rental.deduction_reason')"
+                        :placeholder="t('rental.deduction_reason_placeholder')"
+                        :error="returnForm.errors.deduction_reason"
+                    />
+                </div>
+
+                <dl class="mt-4 flex flex-wrap gap-6 text-sm">
+                    <div>
+                        <dt class="text-ink-500">{{ t('rental.bond_held') }}</dt>
+                        <dd class="font-medium tabular-nums text-ink-900 dark:text-ink-50">{{ formatAUD(agreement.bond_amount) }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-ink-500">{{ t('rental.refund_preview') }}</dt>
+                        <dd class="font-medium tabular-nums text-ink-900 dark:text-ink-50">{{ formatAUD(refundPreview) }}</dd>
+                    </div>
+                </dl>
+
+                <Button class="mt-4" :loading="returnForm.processing" @click="submitReturn">{{ t('rental.submit') }}</Button>
+            </div>
+
+            <!-- Filed return record (read-only) -->
+            <div v-else-if="returnInspection" class="rounded-card border border-ink-200 bg-white p-4 shadow-subtle dark:border-ink-800 dark:bg-ink-900">
+                <h2 class="text-lg font-semibold text-ink-900 dark:text-ink-50">{{ t('rental.record.title') }}</h2>
+                <dl class="mt-3 grid grid-cols-1 gap-px overflow-hidden rounded-control border border-ink-200 bg-ink-200 sm:grid-cols-2 dark:border-ink-800 dark:bg-ink-800">
+                    <div class="bg-white p-3 dark:bg-ink-900">
+                        <dt class="text-sm text-ink-500">{{ t('rental.record.odometer_reading') }}</dt>
+                        <dd class="mt-1 font-medium text-ink-900 dark:text-ink-50">{{ returnInspection.odometer_reading }} km</dd>
+                    </div>
+                    <div class="bg-white p-3 dark:bg-ink-900">
+                        <dt class="text-sm text-ink-500">{{ t('rental.record.fuel_level') }}</dt>
+                        <dd class="mt-1 font-medium text-ink-900 dark:text-ink-50">{{ t(`rental.fuel_levels.${returnInspection.fuel_level}`) }}</dd>
+                    </div>
+                    <div class="bg-white p-3 dark:bg-ink-900">
+                        <dt class="text-sm text-ink-500">{{ t('rental.record.damage') }}</dt>
+                        <dd class="mt-1 font-medium text-ink-900 dark:text-ink-50">
+                            {{ returnInspection.damage_found ? returnInspection.damage_description : t('rental.record.no_damage') }}
+                        </dd>
+                    </div>
+                    <div class="bg-white p-3 dark:bg-ink-900">
+                        <dt class="text-sm text-ink-500">{{ t('rental.record.deduction_amount') }}</dt>
+                        <dd class="mt-1 font-medium text-ink-900 dark:text-ink-50">{{ formatAUD(returnInspection.deduction_amount) }}</dd>
+                    </div>
+                    <div class="bg-white p-3 dark:bg-ink-900">
+                        <dt class="text-sm text-ink-500">{{ t('rental.record.refund_amount') }}</dt>
+                        <dd class="mt-1 font-medium text-ink-900 dark:text-ink-50">{{ formatAUD(returnInspection.refund_amount) }}</dd>
+                    </div>
+                    <div class="bg-white p-3 dark:bg-ink-900">
+                        <dt class="text-sm text-ink-500">{{ t('rental.record.completed_at') }}</dt>
+                        <dd class="mt-1 font-medium text-ink-900 dark:text-ink-50">{{ toDate(returnInspection.completed_at) }}</dd>
+                    </div>
+                </dl>
             </div>
 
             <!-- Version history -->

@@ -52,6 +52,10 @@ class NotificationMatrix extends BaseService
             'audience' => self::AUDIENCE_CUSTOMER,
             'channels' => [self::EMAIL => true, self::SMS => true, self::WHATSAPP => true],
         ],
+        'bond.refunded' => [
+            'audience' => self::AUDIENCE_CUSTOMER,
+            'channels' => [self::EMAIL => true, self::SMS => true, self::WHATSAPP => true],
+        ],
         'invoice.generated' => [
             'audience' => self::AUDIENCE_CUSTOMER,
             'channels' => [self::EMAIL => true, self::SMS => true, self::WHATSAPP => true],

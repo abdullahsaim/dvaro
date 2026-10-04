@@ -17,6 +17,7 @@ use App\Modules\Agreement\Services\AgreementSigningService;
 use App\Modules\Agreement\Services\AgreementTemplateService;
 use App\Modules\Customer\Models\Customer;
 use App\Modules\Fleet\Models\Vehicle;
+use App\Modules\Rental\Models\ReturnInspection;
 use App\Services\PdfAvailability;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -147,7 +148,7 @@ class AgreementController extends Controller
     {
         Gate::forUser(auth('tenant')->user())->authorize('view', $agreement);
 
-        $agreement->load(['customer', 'vehicle', 'template']);
+        $agreement->load(['customer', 'vehicle', 'template', 'returnInspection']);
 
         // pdf_path being set does NOT mean the file exists — see
         // PdfAvailability. Both the download link and the rebuild button key
@@ -159,6 +160,9 @@ class AgreementController extends Controller
             'agreement' => $agreement,
             'pdfReady' => $pdfReady,
             'canSendForSigning' => Gate::forUser(auth('tenant')->user())->allows('sendForSigning', $agreement),
+            'canReturnVehicle' => Gate::forUser(auth('tenant')->user())->allows('returnVehicle', $agreement),
+            'returnInspection' => $agreement->returnInspection,
+            'fuelLevels' => ReturnInspection::FUEL_LEVELS,
             'whatsappEnabled' => (bool) (app('current_tenant')->settings['notify_whatsapp_enabled'] ?? false),
             // Offered whenever the PDF is genuinely absent — see rebuildPdf().
             'canRebuildPdf' => ! $pdfReady

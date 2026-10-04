@@ -4,17 +4,23 @@ namespace App\Providers;
 
 use App\Modules\Agreement\Events\AgreementSigned;
 use App\Modules\CRM\Events\LeadSubmitted;
+use App\Modules\Finance\Events\ExpenseRecorded;
+use App\Modules\Finance\Events\ExpenseUpdated;
+use App\Modules\Finance\Events\ExpenseVoided;
+use App\Modules\Finance\Listeners\ExpenseReportCacheListener;
 use App\Modules\Invoice\Events\InvoiceGenerated;
 use App\Modules\Invoice\Events\LateFeeApplied;
 use App\Modules\Invoice\Events\PaymentReceived;
 use App\Modules\Invoice\Listeners\GenerateFirstInvoice;
 use App\Modules\Notification\Listeners\SendAgreementSignedNotification;
+use App\Modules\Notification\Listeners\SendBondRefundedNotification;
 use App\Modules\Notification\Listeners\SendInvoiceGeneratedNotification;
 use App\Modules\Notification\Listeners\SendLateFeeNotification;
 use App\Modules\Notification\Listeners\SendLeadSubmittedNotification;
 use App\Modules\Notification\Listeners\SendPaymentReceivedNotification;
 use App\Modules\Notification\Listeners\SendSubscriptionCancelledNotification;
 use App\Modules\Notification\Listeners\SendSubscriptionPaymentFailedNotification;
+use App\Modules\Rental\Events\BondRefunded;
 use App\Modules\Reporting\Listeners\ReportCacheInvalidationListener;
 use App\Modules\SaasCore\Events\SubscriptionCancelled;
 use App\Modules\SaasCore\Events\SubscriptionPaymentFailed;
@@ -53,6 +59,9 @@ class EventServiceProvider extends ServiceProvider
         LeadSubmitted::class => [
             SendLeadSubmittedNotification::class,
         ],
+        BondRefunded::class => [
+            SendBondRefundedNotification::class,
+        ],
         // Stripe webhook outcomes — tenant-admin ops notices (queued, email-only).
         SubscriptionPaymentFailed::class => [
             SendSubscriptionPaymentFailedNotification::class,
@@ -61,14 +70,14 @@ class EventServiceProvider extends ServiceProvider
             SendSubscriptionCancelledNotification::class,
         ],
         // Expenses (Session 32) — sync; bust the expenses + profit-per-vehicle caches.
-        \App\Modules\Finance\Events\ExpenseRecorded::class => [
-            \App\Modules\Finance\Listeners\ExpenseReportCacheListener::class,
+        ExpenseRecorded::class => [
+            ExpenseReportCacheListener::class,
         ],
-        \App\Modules\Finance\Events\ExpenseUpdated::class => [
-            \App\Modules\Finance\Listeners\ExpenseReportCacheListener::class,
+        ExpenseUpdated::class => [
+            ExpenseReportCacheListener::class,
         ],
-        \App\Modules\Finance\Events\ExpenseVoided::class => [
-            \App\Modules\Finance\Listeners\ExpenseReportCacheListener::class,
+        ExpenseVoided::class => [
+            ExpenseReportCacheListener::class,
         ],
     ];
 
