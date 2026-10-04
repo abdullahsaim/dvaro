@@ -1,13 +1,15 @@
 <script setup>
 // First-run "Getting started" checklist on the tenant dashboard. Shown only
-// to an admin, only while at least one step is incomplete, and only until
-// dismissed (TenantDashboardController::onboardingChecklist / dismissOnboarding).
+// to an admin and only until explicitly dismissed — it does NOT auto-hide
+// once every step is done; instead it switches to a completed state so
+// finishing the last step reads as "you're all set", not a silent vanish
+// (TenantDashboardController::onboardingChecklist / dismissOnboarding).
 // Each row links straight to the screen that completes it — no separate
 // "setup wizard" to navigate, the real app IS the wizard.
 import { computed } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import { CheckCircleIcon, XMarkIcon, ArrowRightIcon } from '@heroicons/vue/24/outline';
+import { CheckCircleIcon, XMarkIcon, ArrowRightIcon, SparklesIcon } from '@heroicons/vue/24/outline';
 import { CheckCircleIcon as CheckCircleSolid } from '@heroicons/vue/24/solid';
 
 const props = defineProps({
@@ -16,6 +18,8 @@ const props = defineProps({
 });
 
 const { t } = useI18n();
+
+const isComplete = computed(() => props.checklist.completedCount === props.checklist.totalCount);
 
 const progressPct = computed(() =>
     props.checklist.totalCount > 0
@@ -41,9 +45,16 @@ function dismiss() {
 
         <div class="p-5 pr-12">
             <div class="flex flex-wrap items-baseline justify-between gap-2">
-                <div>
-                    <h2 class="text-base font-semibold text-ink-900 dark:text-ink-50">{{ t('dashboard.getting_started.title') }}</h2>
-                    <p class="mt-0.5 text-sm text-ink-500">{{ t('dashboard.getting_started.subtitle') }}</p>
+                <div class="flex items-center gap-2">
+                    <SparklesIcon v-if="isComplete" class="h-5 w-5 text-success-600" />
+                    <div>
+                        <h2 class="text-base font-semibold text-ink-900 dark:text-ink-50">
+                            {{ isComplete ? t('dashboard.getting_started.title_complete') : t('dashboard.getting_started.title') }}
+                        </h2>
+                        <p class="mt-0.5 text-sm text-ink-500">
+                            {{ isComplete ? t('dashboard.getting_started.subtitle_complete') : t('dashboard.getting_started.subtitle') }}
+                        </p>
+                    </div>
                 </div>
                 <span class="shrink-0 text-xs font-medium text-ink-500">
                     {{ t('dashboard.getting_started.progress', { completed: checklist.completedCount, total: checklist.totalCount }) }}

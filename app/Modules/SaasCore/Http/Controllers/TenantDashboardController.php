@@ -96,9 +96,14 @@ class TenantDashboardController extends Controller
     }
 
     /**
-     * The first-run setup checklist: null once dismissed, once every step is
-     * already done, or for anyone but an admin (the steps are all admin-level
-     * actions — a staff member can't invite teammates or see billing).
+     * The first-run setup checklist: null once dismissed, or for anyone but
+     * an admin (the steps are all admin-level actions — a staff member can't
+     * invite teammates or see billing).
+     *
+     * Deliberately does NOT auto-hide itself once every step is done — it
+     * keeps showing a completed state until the admin explicitly dismisses
+     * it, so finishing the last step reads as "nice, you're all set" rather
+     * than the card just silently vanishing with no acknowledgement.
      *
      * Every check is a cheap COUNT — no joins, nothing that needs the report
      * cache — so this costs nothing on the other 99% of dashboard loads once
@@ -122,10 +127,6 @@ class TenantDashboardController extends Controller
             ['key' => 'first_agreement', 'done' => Agreement::query()->exists(), 'url' => 'agreements/create'],
             ['key' => 'customize_company', 'done' => filled($settings->get($tenant, 'logo_path')), 'url' => 'settings/company'],
         ];
-
-        if (collect($items)->every(fn (array $item) => $item['done'])) {
-            return null;
-        }
 
         return [
             'items' => $items,

@@ -163,4 +163,38 @@ class TenantRegistrationTest extends TestCase
         // TenantNotResolvedException (no scoped lookup on this unbound route).
         $this->get('/register')->assertRedirect('/');
     }
+
+    public function test_two_companies_with_the_same_name_get_distinct_slugs(): void
+    {
+        $this->makePlan();
+        $company = $this->uniqueCompany();
+
+        $this->post('/register', [
+            'admin_name' => 'Jordan Blake',
+            'company_name' => $company,
+            'email' => 'owner-one@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ])->assertRedirect('/app/'.Str::slug($company).'/dashboard');
+
+        $firstTenant = Tenant::where('slug', Str::slug($company))->firstOrFail();
+
+        // Log the first admin out — guest.tenant would otherwise bounce a
+        // second /register attempt before it ever reaches the slug collision.
+        $this->post("/app/{$firstTenant->slug}/logout");
+
+        // Same company name again — must NOT crash on the unique slug
+        // constraint; it gets a distinguishing suffix instead.
+        $this->post('/register', [
+            'admin_name' => 'Casey Nguyen',
+            'company_name' => $company,
+            'email' => 'owner-two@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ])->assertRedirect('/app/'.Str::slug($company).'-2/dashboard');
+
+        $secondTenant = Tenant::where('slug', Str::slug($company).'-2')->firstOrFail();
+        $this->assertNotSame($firstTenant->id, $secondTenant->id);
+        $this->assertSame($company, $secondTenant->name, 'the NAME stays identical — only the slug disambiguates');
+    }
 }

@@ -169,6 +169,8 @@
         "getting_started": {
             "title": "Let's get your workspace ready",
             "subtitle": "A few quick steps to get DVARO working for your fleet.",
+            "title_complete": "You're all set",
+            "subtitle_complete": "Every setup step is done — your workspace is ready to go.",
             "progress": "{completed} of {total} done",
             "dismiss": "Dismiss",
             "items": {

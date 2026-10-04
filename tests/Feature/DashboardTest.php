@@ -613,7 +613,7 @@ class DashboardTest extends TestCase
             ->assertInertia(fn ($page) => $page->where('onboardingChecklist', null));
     }
 
-    public function test_the_checklist_tracks_real_progress_and_disappears_once_complete(): void
+    public function test_the_checklist_tracks_real_progress(): void
     {
         $t = $this->makeTenant('dash-onboard-progress');
         $admin = $this->user($t);
@@ -628,8 +628,31 @@ class DashboardTest extends TestCase
         app()->instance('current_tenant', $t);
         app(TenantSettingsService::class)->update($t, ['logo_path' => 'tenants/1/branding/logo.png'], 'company_profile');
 
-        // Every step done → the checklist stops being sent at all, not merely
-        // shown as "4 of 4" — it should get out of the admin's way for good.
+        // Every step done → the checklist is NOT hidden automatically; it
+        // switches to a completed state and stays until explicitly dismissed,
+        // so finishing the last step reads as "you're all set", not a silent
+        // vanish with no acknowledgement.
+        $this->actingAs($admin, 'tenant')->get("/app/{$t->slug}/dashboard")
+            ->assertInertia(fn ($page) => $page
+                ->where('onboardingChecklist.completedCount', 4)
+                ->where('onboardingChecklist.totalCount', 4));
+    }
+
+    public function test_the_completed_checklist_still_requires_an_explicit_dismiss(): void
+    {
+        $t = $this->makeTenant('dash-onboard-complete-dismiss');
+        $admin = $this->user($t);
+
+        $this->vehicle($t, 'OB002');
+        $this->agreement($t);
+        $this->user($t, TenantUser::ROLE_STAFF);
+        app()->instance('current_tenant', $t);
+        app(TenantSettingsService::class)->update($t, ['logo_path' => 'tenants/1/branding/logo.png'], 'company_profile');
+
+        $this->actingAs($admin, 'tenant')
+            ->post("/app/{$t->slug}/dashboard/onboarding/dismiss")
+            ->assertRedirect();
+
         $this->actingAs($admin, 'tenant')->get("/app/{$t->slug}/dashboard")
             ->assertInertia(fn ($page) => $page->where('onboardingChecklist', null));
     }
