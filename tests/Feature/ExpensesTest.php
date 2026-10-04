@@ -366,7 +366,7 @@ class ExpensesTest extends TestCase
         $company = 'Expense Co '.Str::random(5);
 
         $this->post('/register', [
-            'company_name' => $company, 'email' => 'owner@example.com',
+            'admin_name' => 'Jordan Blake', 'company_name' => $company, 'email' => 'owner@example.com',
             'password' => 'password123', 'password_confirmation' => 'password123',
         ])->assertRedirect();
 

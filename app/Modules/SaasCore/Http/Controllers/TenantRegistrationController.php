@@ -5,6 +5,7 @@ namespace App\Modules\SaasCore\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\SaasCore\DTOs\TenantOnboardingDTO;
 use App\Modules\SaasCore\Http\Requests\TenantRegistrationRequest;
+use App\Modules\SaasCore\Models\Plan;
 use App\Modules\SaasCore\Models\TenantUser;
 use App\Modules\SaasCore\Services\TenantOnboardingService;
 use Illuminate\Http\RedirectResponse;
@@ -25,7 +26,28 @@ class TenantRegistrationController extends Controller
 {
     public function showRegister(): Response
     {
-        return Inertia::render('Tenant/Register');
+        return Inertia::render('Tenant/Register', [
+            // Same shape as the public pricing page's plan cards — the signup
+            // wizard's plan step reuses that visual language. Free/cheapest
+            // plan first (sort_order), so the default selection is the least
+            // committal option.
+            'plans' => Plan::query()
+                ->where('is_active', true)
+                ->orderByDesc('is_free')
+                ->orderBy('sort_order')
+                ->get()
+                ->map(fn (Plan $plan) => [
+                    'id' => $plan->id,
+                    'name' => $plan->name,
+                    'description' => $plan->description,
+                    'price_monthly' => $plan->price_monthly,
+                    'price_annual' => $plan->price_annual,
+                    'is_free' => $plan->is_free,
+                    'trial_days' => $plan->trial_days,
+                    'limits' => $plan->limits ?? [],
+                ])
+                ->values(),
+        ]);
     }
 
     public function register(

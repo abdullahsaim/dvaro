@@ -17,6 +17,7 @@ use App\Modules\Reporting\Services\ReportCacheService;
 use App\Modules\SaasCore\Models\Plan;
 use App\Modules\SaasCore\Models\Tenant;
 use App\Modules\SaasCore\Models\TenantUser;
+use App\Modules\SaasCore\Services\TenantSettingsService;
 use App\Modules\Workshop\Models\Mechanic;
 use App\Modules\Workshop\Models\ServiceLog;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -588,5 +589,61 @@ class DashboardTest extends TestCase
         $this->assertArrayNotHasKey('planName', $props, 'a partial reload must not re-send the whole page');
         $this->assertArrayNotHasKey('summary', $props);
         $this->assertArrayHasKey('attention', $props['operational']);
+    }
+
+    // ── Getting-started checklist (first run) ───────────────────────────────
+
+    public function test_a_brand_new_admin_sees_the_getting_started_checklist(): void
+    {
+        $t = $this->makeTenant('dash-onboard-new');
+        $admin = $this->user($t);
+
+        $this->actingAs($admin, 'tenant')->get("/app/{$t->slug}/dashboard")
+            ->assertInertia(fn ($page) => $page
+                ->where('onboardingChecklist.completedCount', 0)
+                ->where('onboardingChecklist.totalCount', 4));
+    }
+
+    public function test_staff_never_see_the_getting_started_checklist(): void
+    {
+        $t = $this->makeTenant('dash-onboard-staff');
+        $staff = $this->user($t, TenantUser::ROLE_STAFF);
+
+        $this->actingAs($staff, 'tenant')->get("/app/{$t->slug}/dashboard")
+            ->assertInertia(fn ($page) => $page->where('onboardingChecklist', null));
+    }
+
+    public function test_the_checklist_tracks_real_progress_and_disappears_once_complete(): void
+    {
+        $t = $this->makeTenant('dash-onboard-progress');
+        $admin = $this->user($t);
+
+        $this->vehicle($t, 'OB001');
+        $this->agreement($t);
+        $this->user($t, TenantUser::ROLE_STAFF); // a second user → "invite your team" done
+
+        $this->actingAs($admin, 'tenant')->get("/app/{$t->slug}/dashboard")
+            ->assertInertia(fn ($page) => $page->where('onboardingChecklist.completedCount', 3));
+
+        app()->instance('current_tenant', $t);
+        app(TenantSettingsService::class)->update($t, ['logo_path' => 'tenants/1/branding/logo.png'], 'company_profile');
+
+        // Every step done → the checklist stops being sent at all, not merely
+        // shown as "4 of 4" — it should get out of the admin's way for good.
+        $this->actingAs($admin, 'tenant')->get("/app/{$t->slug}/dashboard")
+            ->assertInertia(fn ($page) => $page->where('onboardingChecklist', null));
+    }
+
+    public function test_dismissing_the_checklist_hides_it_even_with_nothing_done(): void
+    {
+        $t = $this->makeTenant('dash-onboard-dismiss');
+        $admin = $this->user($t);
+
+        $this->actingAs($admin, 'tenant')
+            ->post("/app/{$t->slug}/dashboard/onboarding/dismiss")
+            ->assertRedirect();
+
+        $this->actingAs($admin, 'tenant')->get("/app/{$t->slug}/dashboard")
+            ->assertInertia(fn ($page) => $page->where('onboardingChecklist', null));
     }
 }

@@ -135,10 +135,61 @@
         "have_account": "Already have an account?",
         "pin": "PIN",
         "use_pin": "Use PIN",
-        "use_password": "Use password"
+        "use_password": "Use password",
+        "onboarding": {
+            "step_label": "Step {current} of {total}",
+            "back": "Back",
+            "continue": "Continue",
+            "create_account_cta": "Start my free trial",
+            "steps": {
+                "account": "Your account",
+                "company": "Your company",
+                "plan": "Choose a plan"
+            },
+            "account_title": "Let's create your account",
+            "account_subtitle": "This is you — we'll use it to keep you signed in and send you important updates.",
+            "your_name": "Your full name",
+            "your_name_placeholder": "e.g. Jordan Blake",
+            "work_email": "Work email",
+            "work_email_placeholder": "name{'@'}yourcompany.com.au",
+            "password_hint": "At least 8 characters.",
+            "company_title": "Tell us about your company",
+            "company_subtitle": "This is how your company will appear on invoices, agreements, and your own workspace.",
+            "company_name_placeholder": "e.g. Sunset Car Rentals",
+            "workspace_preview": "Your workspace will live at",
+            "plan_title": "Choose your plan",
+            "plan_subtitle": "Start on a free trial — you can change plans anytime, no card required today.",
+            "plan_selected": "Selected",
+            "select_plan": "Select",
+            "creating_account": "Creating your account…"
+        }
     },
     "dashboard": {
         "welcome": "Welcome, {name}",
+        "getting_started": {
+            "title": "Let's get your workspace ready",
+            "subtitle": "A few quick steps to get DVARO working for your fleet.",
+            "progress": "{completed} of {total} done",
+            "dismiss": "Dismiss",
+            "items": {
+                "add_vehicle": {
+                    "title": "Add your first vehicle",
+                    "description": "Your fleet starts here — registration, daily rate, and status."
+                },
+                "invite_team": {
+                    "title": "Invite your team",
+                    "description": "Bring in staff or accounts roles to share the workload."
+                },
+                "first_agreement": {
+                    "title": "Create your first rental agreement",
+                    "description": "Sign a customer up and see the whole flow in action."
+                },
+                "customize_company": {
+                    "title": "Add your company logo",
+                    "description": "Your logo appears on every invoice and agreement PDF."
+                }
+            }
+        },
         "plan": "Plan",
         "subscription_status": "Subscription",
         "trial_days_remaining": "Trial days remaining",

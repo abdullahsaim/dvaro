@@ -74,9 +74,7 @@ class TenantOnboardingService extends BaseService
             // throwing here rolls the whole transaction back.
             $user = TenantUser::create([
                 'tenant_id' => $tenant->id,
-                // No separate user-name field is collected at signup yet; the
-                // company name doubles as the first admin's display name.
-                'name' => $dto->name,
+                'name' => $dto->admin_name,
                 'email' => $dto->email,
                 'password' => $dto->password, // hashed via model cast
                 'role' => TenantUser::ROLE_ADMIN,

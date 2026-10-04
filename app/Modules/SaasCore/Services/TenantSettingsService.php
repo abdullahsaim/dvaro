@@ -77,6 +77,10 @@ class TenantSettingsService extends BaseService
 
         // Per-trigger notification matrix (empty = the built-in defaults)
         'notification_matrix' => [],
+
+        // First-run dashboard "Getting started" checklist — dismissed early or
+        // once every step is complete, never shown again either way.
+        'onboarding_checklist_dismissed' => false,
     ];
 
     /** Australian timezones offered in the regional settings. */

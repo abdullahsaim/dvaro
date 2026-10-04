@@ -61,6 +61,7 @@ class TenantRegistrationTest extends TestCase
         $slug = Str::slug($company);
 
         $response = $this->post('/register', [
+            'admin_name' => 'Jordan Blake',
             'company_name' => $company,
             'email' => 'owner@example.com',
             'password' => 'password123',
@@ -84,6 +85,10 @@ class TenantRegistrationTest extends TestCase
         $user = TenantUser::where('email', 'owner@example.com')->firstOrFail();
         $this->assertSame(TenantUser::ROLE_ADMIN, $user->role);
         $this->assertTrue($user->hasRole(TenantUser::ROLE_ADMIN));
+        // The admin's own name — distinct from the company name — is what the
+        // dashboard greets them with, not the company's.
+        $this->assertSame('Jordan Blake', $user->name);
+        $this->assertSame($company, $tenant->name);
     }
 
     public function test_registration_logs_the_new_admin_in(): void
@@ -92,6 +97,7 @@ class TenantRegistrationTest extends TestCase
         $company = $this->uniqueCompany();
 
         $this->post('/register', [
+            'admin_name' => 'Jordan Blake',
             'company_name' => $company,
             'email' => 'owner@example.com',
             'password' => 'password123',
@@ -111,6 +117,7 @@ class TenantRegistrationTest extends TestCase
         $slug = Str::slug($company);
 
         $response = $this->post('/register', [
+            'admin_name' => 'Jordan Blake',
             'company_name' => $company,
             'email' => 'owner@example.com',
             'password' => 'password123',
@@ -127,6 +134,7 @@ class TenantRegistrationTest extends TestCase
         $this->makePlan();
 
         $this->post('/register', [
+            'admin_name' => 'Jordan Blake',
             'company_name' => $this->uniqueCompany(),
             'email' => 'owner@example.com',
             'password' => 'password123',
@@ -143,6 +151,7 @@ class TenantRegistrationTest extends TestCase
 
         // Register (this logs the admin into the tenant guard for the session).
         $this->post('/register', [
+            'admin_name' => 'Jordan Blake',
             'company_name' => $company,
             'email' => 'owner@example.com',
             'password' => 'password123',

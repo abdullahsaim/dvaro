@@ -3,12 +3,16 @@
 namespace App\Modules\SaasCore\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Agreement\Models\Agreement;
+use App\Modules\Fleet\Models\Vehicle;
 use App\Modules\Reporting\Services\DashboardService;
 use App\Modules\Reporting\Services\ReportCacheService;
 use App\Modules\Reporting\Services\ReportingService;
 use App\Modules\SaasCore\Models\Subscription;
 use App\Modules\SaasCore\Models\Tenant;
 use App\Modules\SaasCore\Models\TenantUser;
+use App\Modules\SaasCore\Services\TenantSettingsService;
+use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -34,6 +38,7 @@ class TenantDashboardController extends Controller
         ReportingService $reporting,
         ReportCacheService $cache,
         DashboardService $dashboard,
+        TenantSettingsService $settings,
     ): Response {
         /** @var Tenant $tenant */
         $tenant = app('current_tenant');
@@ -71,6 +76,61 @@ class TenantDashboardController extends Controller
             // evaluated on first load AND re-evaluated on a partial reload of
             // just this prop — which is what the 60s poll asks for.
             'operational' => fn () => $cache->dashboardOperational($seesMoney),
+            'onboardingChecklist' => $this->onboardingChecklist($tenant, $user, $settings),
         ]);
+    }
+
+    /**
+     * Dismiss the first-run "Getting started" checklist for good — either
+     * the admin ticked everything off already, or they just want it gone.
+     * Admin-only (same gate as seeing the checklist in the first place).
+     */
+    public function dismissOnboarding(TenantSettingsService $settings): RedirectResponse
+    {
+        /** @var Tenant $tenant */
+        $tenant = app('current_tenant');
+
+        $settings->update($tenant, ['onboarding_checklist_dismissed' => true], 'onboarding');
+
+        return back();
+    }
+
+    /**
+     * The first-run setup checklist: null once dismissed, once every step is
+     * already done, or for anyone but an admin (the steps are all admin-level
+     * actions — a staff member can't invite teammates or see billing).
+     *
+     * Every check is a cheap COUNT — no joins, nothing that needs the report
+     * cache — so this costs nothing on the other 99% of dashboard loads once
+     * a tenant is established and the checklist is dismissed.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function onboardingChecklist(Tenant $tenant, ?TenantUser $user, TenantSettingsService $settings): ?array
+    {
+        if ($user === null || $user->role !== TenantUser::ROLE_ADMIN) {
+            return null;
+        }
+
+        if ($settings->get($tenant, 'onboarding_checklist_dismissed') === true) {
+            return null;
+        }
+
+        $items = [
+            ['key' => 'add_vehicle', 'done' => Vehicle::query()->exists(), 'url' => 'fleet/create'],
+            ['key' => 'invite_team', 'done' => TenantUser::query()->count() > 1, 'url' => 'settings/staff'],
+            ['key' => 'first_agreement', 'done' => Agreement::query()->exists(), 'url' => 'agreements/create'],
+            ['key' => 'customize_company', 'done' => filled($settings->get($tenant, 'logo_path')), 'url' => 'settings/company'],
+        ];
+
+        if (collect($items)->every(fn (array $item) => $item['done'])) {
+            return null;
+        }
+
+        return [
+            'items' => $items,
+            'completedCount' => collect($items)->where('done', true)->count(),
+            'totalCount' => count($items),
+        ];
     }
 }

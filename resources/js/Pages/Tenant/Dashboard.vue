@@ -16,6 +16,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import PageHeader from '@/Components/UI/PageHeader.vue';
 import StatCard from '@/Components/UI/StatCard.vue';
 import Button from '@/Components/UI/Button.vue';
+import GettingStartedCard from '@/Components/Dashboard/GettingStartedCard.vue';
 import {
     ExclamationTriangleIcon,
     CheckCircleIcon,
@@ -33,6 +34,7 @@ const props = defineProps({
         type: Object,
         default: () => ({ attention: { groups: [], total: 0, urgent: 0 }, fleet: { statuses: [], total: 0, utilisation: 0 }, week: {} }),
     },
+    onboardingChecklist: { type: Object, default: null },
 });
 
 const { t } = useI18n();
@@ -214,6 +216,14 @@ const weekTiles = computed(() => [
                 </Button>
             </template>
         </PageHeader>
+
+        <!-- ── Getting started (first run only; dismissible) ───────────── -->
+        <GettingStartedCard
+            v-if="onboardingChecklist"
+            :checklist="onboardingChecklist"
+            :base="base"
+            class="mb-4"
+        />
 
         <!-- ── Needs attention ─────────────────────────────────────────── -->
         <section class="rounded-card border border-ink-200 bg-white shadow-subtle dark:border-ink-800 dark:bg-ink-900">

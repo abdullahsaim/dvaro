@@ -20,6 +20,7 @@ class TenantRegistrationRequest extends FormRequest
      * Registration is public. Decay window (seconds) for the IP throttle.
      */
     private const MAX_ATTEMPTS = 3;
+
     private const DECAY_SECONDS = 3600; // 1 hour
 
     public function authorize(): bool
@@ -33,11 +34,11 @@ class TenantRegistrationRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'admin_name' => ['required', 'string', 'max:255'],
             'company_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             // Optional — onboarding falls back to the default plan when omitted.
-            // No plan-selection UI yet (this session).
             'plan_id' => ['nullable', 'integer', 'exists:plans,id'],
         ];
     }

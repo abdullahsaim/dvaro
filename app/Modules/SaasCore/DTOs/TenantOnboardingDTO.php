@@ -15,6 +15,7 @@ class TenantOnboardingDTO extends BaseDTO
 {
     public function __construct(
         public readonly string $name,
+        public readonly string $admin_name,
         public readonly string $email,
         public readonly string $password,
         public readonly ?int $plan_id = null,
@@ -24,8 +25,11 @@ class TenantOnboardingDTO extends BaseDTO
     {
         return new self(
             // The registration form collects the tenant name as 'company_name';
-            // it maps onto the tenant's `name` here.
+            // it maps onto the tenant's `name` here. admin_name is the signing-up
+            // person's own name — kept separate so the dashboard can greet THEM,
+            // not the company.
             name: $request->string('company_name')->toString(),
+            admin_name: $request->string('admin_name')->toString(),
             email: $request->string('email')->toString(),
             password: $request->string('password')->toString(),
             plan_id: $request->filled('plan_id') ? (int) $request->input('plan_id') : null,

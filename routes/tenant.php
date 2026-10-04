@@ -90,6 +90,8 @@ Route::middleware('auth:tenant')->group(function () {
         ->name('profile.preferences');
 
     Route::get('dashboard', [TenantDashboardController::class, 'index'])->name('dashboard');
+    Route::post('dashboard/onboarding/dismiss', [TenantDashboardController::class, 'dismissOnboarding'])
+        ->name('dashboard.onboarding.dismiss');
 
     // Fleet — resource binds {vehicle} (instead of the default {fleet}) so model
     // binding resolves a Vehicle through TenantScope (cross-tenant id => 404).
