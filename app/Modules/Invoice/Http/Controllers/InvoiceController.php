@@ -14,8 +14,10 @@ use App\Modules\Invoice\Http\Requests\ChangeVehicleRequest;
 use App\Modules\Invoice\Http\Requests\RecordPaymentRequest;
 use App\Modules\Invoice\Models\Invoice;
 use App\Modules\Invoice\Models\Payment;
+use App\Modules\Invoice\Services\InvoiceTemplateService;
 use App\Modules\Invoice\Services\ProrationService;
 use App\Modules\Invoice\Services\VehicleChangeService;
+use App\Modules\SaasCore\Services\TenantSettingsService;
 use App\Services\PdfAvailability;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -101,11 +103,22 @@ class InvoiceController extends Controller
             'agreement:id,version',
         ]);
 
+        $templates = app(InvoiceTemplateService::class);
+        $gstRegistered = (bool) app(TenantSettingsService::class)->get(app('current_tenant'), 'gst_registered');
+
         return Inertia::render('Invoice/Show', [
             'invoice' => $invoice,
             // The customer's whole-ledger balance, for context on this invoice.
             'customerBalance' => $ledger->getBalance($invoice->customer_id),
             'methods' => Payment::METHODS,
+            // GST is a STATEMENT about the total (1/11, matching the PDF's
+            // treatment — prices are GST-inclusive), never an addition to it,
+            // and only shown at all when the company is GST-registered
+            // (Settings → Invoices). Per-payment GST uses the same divisor on
+            // that payment's own amount, for the same reason a receipt states
+            // the GST portion of what was actually paid.
+            'gstRegistered' => $gstRegistered,
+            'gstOnTotal' => $gstRegistered ? $templates->gstOf((int) $invoice->total) : null,
             // pdf_path being set does NOT mean the file is there to download —
             // see PdfAvailability. The download link only renders when this is
             // true; the page falls back to "pending" otherwise.

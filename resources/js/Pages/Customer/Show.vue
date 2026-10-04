@@ -36,6 +36,14 @@ function toDate(value) {
     return value ? String(value).slice(0, 10) : t('common.none');
 }
 
+const rentalStatusVariants = {
+    draft: 'neutral',
+    signed: 'info',
+    active: 'success',
+    completed: 'neutral',
+    cancelled: 'danger',
+};
+
 const rows = computed(() => [
     { label: t('customer.fields.name'), value: props.customer.name },
     { label: t('customer.fields.email'), value: props.customer.email },
@@ -236,12 +244,48 @@ function uploadDocument(type, event) {
                 </div>
             </dl>
 
-            <!-- Rental history placeholder -->
+            <!-- Rental history — one row per agreement LINEAGE (the latest
+                 version of each rental, not every amendment of it). -->
             <div>
                 <h2 class="text-lg font-semibold text-ink-900 dark:text-ink-50">{{ t('customer.rental_history') }}</h2>
-                <p class="mt-2 rounded-card border border-dashed border-ink-300 p-4 text-sm text-ink-500 dark:border-ink-700">
-                    {{ t('customer.rental_history_placeholder') }}
-                </p>
+
+                <div v-if="rentalHistory.length === 0" class="mt-2 rounded-card border border-dashed border-ink-300 p-4 text-sm text-ink-500 dark:border-ink-700">
+                    {{ t('customer.rental_history_empty') }}
+                </div>
+
+                <div v-else class="mt-2 overflow-hidden rounded-card border border-ink-200 dark:border-ink-800">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-ink-50 text-xs uppercase tracking-wide text-ink-500 dark:bg-ink-950/40">
+                            <tr>
+                                <th class="px-4 py-2">{{ t('customer.rental_table.vehicle') }}</th>
+                                <th class="px-4 py-2">{{ t('customer.rental_table.status') }}</th>
+                                <th class="px-4 py-2">{{ t('customer.rental_table.period') }}</th>
+                                <th class="px-4 py-2 text-right">{{ t('customer.rental_table.rate') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-ink-100 dark:divide-ink-800">
+                            <tr
+                                v-for="rental in rentalHistory"
+                                :key="rental.id"
+                                class="cursor-pointer transition-colors hover:bg-ink-50/60 dark:hover:bg-ink-950/20"
+                                @click="router.visit(`/app/${page.props.tenant.slug}/agreements/${rental.id}`)"
+                            >
+                                <td class="px-4 py-2.5 font-medium text-ink-900 dark:text-ink-50">
+                                    {{ rental.vehicle ?? t('common.none') }}
+                                </td>
+                                <td class="px-4 py-2.5">
+                                    <StatusBadge :variant="rentalStatusVariants[rental.status] ?? 'neutral'" :label="t(`agreement.statuses.${rental.status}`)" />
+                                </td>
+                                <td class="px-4 py-2.5 text-ink-600 dark:text-ink-300">
+                                    {{ toDate(rental.start_date) }} – {{ rental.end_date ? toDate(rental.end_date) : t('agreement.open_ended') }}
+                                </td>
+                                <td class="px-4 py-2.5 text-right tabular-nums">
+                                    {{ formatAUD(rental.rate) }} / {{ t(`agreement.billing_cycles.${rental.billing_cycle}`) }}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </AppLayout>

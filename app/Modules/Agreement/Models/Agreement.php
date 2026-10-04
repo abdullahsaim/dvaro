@@ -24,18 +24,34 @@ class Agreement extends Model
 {
     use HasTenant;
 
+    /**
+     * Never serialised to the browser. signing_token is the sole credential
+     * protecting the public review-and-sign page — it must never appear in
+     * page source, even on the authenticated staff view. Pages that need the
+     * public URL get it built server-side (AgreementSigningService::publicUrl).
+     */
+    protected $hidden = ['signing_token'];
+
     public const STATUS_DRAFT = 'draft';
+
     public const STATUS_SIGNED = 'signed';
+
     public const STATUS_ACTIVE = 'active';
+
     public const STATUS_COMPLETED = 'completed';
+
     public const STATUS_CANCELLED = 'cancelled';
 
     public const TYPE_PRIVATE = 'private';
+
     public const TYPE_DELIVERY = 'delivery';
+
     public const TYPE_RIDESHARE = 'rideshare';
 
     public const BILLING_DAILY = 'daily';
+
     public const BILLING_WEEKLY = 'weekly';
+
     public const BILLING_MONTHLY = 'monthly';
 
     /**
@@ -80,6 +96,10 @@ class Agreement extends Model
         'signed_at',
         'signature_data',
         'pdf_path',
+        // signing_token / signing_sent_at are written only by
+        // AgreementSigningService — never from raw request input.
+        'signing_token',
+        'signing_sent_at',
     ];
 
     protected function casts(): array
@@ -92,6 +112,7 @@ class Agreement extends Model
             'end_date' => 'date',
             'next_billing_date' => 'date',
             'signed_at' => 'datetime',
+            'signing_sent_at' => 'datetime',
         ];
     }
 

@@ -412,7 +412,8 @@
             "suspended": "Suspended",
             "accident": "Accident",
             "reserved": "Reserved"
-        }
+        },
+        "daily_rate_help": "AUD, decimals allowed — e.g. 45.50"
     },
     "mechanic": {
         "title": "Mechanics",
@@ -458,7 +459,6 @@
         "blacklist_action": "Blacklist customer",
         "blacklisted_reason_label": "Blacklist reason",
         "rental_history": "Rental history",
-        "rental_history_placeholder": "Rental history will appear here once the rental module is built.",
         "portal_access": "Portal access",
         "invite_portal": "Invite to portal",
         "has_portal_access": "This customer has portal access.",
@@ -544,6 +544,13 @@
             "vehicle": "Vehicle",
             "signed_at": "Signed",
             "no_pdf": "PDF not available yet."
+        },
+        "rental_history_empty": "No rentals yet.",
+        "rental_table": {
+            "vehicle": "Vehicle",
+            "status": "Status",
+            "period": "Period",
+            "rate": "Rate"
         }
     },
     "crm": {
@@ -745,7 +752,41 @@
         "proration_total": "Total (unchanged)",
         "proration_note": "These two amounts sum exactly to the original invoice total. Confirm to apply the change.",
         "rebuild_pdf": "Generate it now",
-        "pdf_rebuilding": "Queued…"
+        "pdf_rebuilding": "Queued…",
+        "no_fixed_end_date": "No fixed end date — decide later",
+        "open_ended": "Open-ended",
+        "send_for_signing_heading": "Send for online signing",
+        "send_for_signing_hint": "Email or WhatsApp the customer a link to review and sign this agreement themselves — no account needed.",
+        "channel_email": "Email",
+        "channel_whatsapp": "WhatsApp",
+        "no_email_on_file": "no email on file",
+        "no_phone_on_file": "no phone on file",
+        "send_signing_link": "Send link",
+        "resend_signing_link": "Resend link",
+        "last_sent": "Last sent {when}",
+        "signing": {
+            "powered_by": "Powered by DVARO",
+            "title": "Review and sign your rental agreement",
+            "intro": "Please review the details below, then sign at the bottom to confirm.",
+            "customer": "Customer",
+            "vehicle": "Vehicle",
+            "rate": "Rate",
+            "bond": "Bond / security deposit",
+            "start_date": "Start date",
+            "end_date": "End date",
+            "open_ended": "Open-ended",
+            "terms_heading": "Terms and conditions",
+            "sign_heading": "Your signature",
+            "sign_hint": "Sign in the box below using your mouse or finger.",
+            "sign": "Sign agreement",
+            "clear": "Clear",
+            "thank_you_title": "Thank you — your agreement is signed",
+            "thank_you_body": "A copy has been emailed to you. You can also download it below.",
+            "download_pdf": "Download signed agreement (PDF)",
+            "pdf_pending": "Your copy is being generated — refresh this page shortly.",
+            "unavailable_title": "This link is no longer available",
+            "unavailable_body": "It may have expired, already been used, or the link may be incorrect. Please contact the rental company directly."
+        }
     },
     "invoice": {
         "title": "Invoices",
@@ -805,7 +846,10 @@
             "stripe": "Stripe",
             "paypal": "PayPal"
         },
-        "regenerate_pdf": "Rebuild with current template"
+        "regenerate_pdf": "Rebuild with current template",
+        "gst_included": "GST included",
+        "gst": "GST",
+        "gst_of_payment": "Includes {amount} GST"
     },
     "notifications": {
         "fleet": {

@@ -19,6 +19,8 @@ const props = defineProps({
     methods: { type: Array, default: () => [] },
     canRegeneratePdf: { type: Boolean, default: false },
     pdfReady: { type: Boolean, default: false },
+    gstRegistered: { type: Boolean, default: false },
+    gstOnTotal: { type: Number, default: null }, // cents; null when not GST-registered
 });
 
 const { t } = useI18n();
@@ -37,6 +39,13 @@ const statusVariants = {
 };
 
 const outstanding = computed(() => (Number(props.invoice.total) || 0) - (Number(props.invoice.paid_amount) || 0));
+
+// GST is 1/11 of a GST-inclusive amount — the same convention the invoice PDF
+// uses (InvoiceTemplateService::gstOf). A statement about the amount, never an
+// addition to it, and only shown when the company is GST-registered.
+function gstOf(cents) {
+    return Math.round((Number(cents) || 0) / 11);
+}
 const isPayable = computed(() => !['paid', 'cancelled'].includes(props.invoice.status));
 const hasLateFee = computed(() =>
     (props.invoice.items ?? []).some((i) => String(i.description ?? '').startsWith('Late fee')),
@@ -143,6 +152,7 @@ function regeneratePdf() {
             <dl class="space-y-1 text-sm">
                 <div class="flex justify-between"><dt class="text-ink-500">{{ t('invoice.subtotal') }}</dt><dd class="tabular-nums">{{ formatAUD(invoice.subtotal) }}</dd></div>
                 <div class="flex justify-between font-medium text-ink-900 dark:text-ink-50"><dt>{{ t('invoice.total') }}</dt><dd class="tabular-nums">{{ formatAUD(invoice.total) }}</dd></div>
+                <div v-if="gstRegistered" class="flex justify-between text-ink-500"><dt>{{ t('invoice.gst_included') }}</dt><dd class="tabular-nums">{{ formatAUD(gstOnTotal) }}</dd></div>
                 <div class="flex justify-between"><dt class="text-ink-500">{{ t('invoice.paid') }}</dt><dd class="tabular-nums">{{ formatAUD(invoice.paid_amount) }}</dd></div>
                 <div class="flex justify-between border-t border-ink-200 pt-1 text-base font-semibold text-ink-900 dark:border-ink-800 dark:text-ink-50"><dt>{{ t('invoice.balance_owing') }}</dt><dd class="tabular-nums">{{ formatAUD(outstanding) }}</dd></div>
                 <div class="flex justify-between text-ink-500"><dt>{{ t('invoice.customer_balance') }}</dt><dd class="tabular-nums">{{ formatAUD(customerBalance) }}</dd></div>
@@ -180,7 +190,15 @@ function regeneratePdf() {
                 <h2 class="text-lg font-semibold text-ink-900 dark:text-ink-50">{{ t('invoice.record_payment') }}</h2>
                 <p class="mt-1 text-sm text-ink-500">{{ t('invoice.record_payment_hint') }}</p>
                 <form class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2" @submit.prevent="recordPayment">
-                    <Input v-model="payForm.amount" type="number" step="0.01" min="0.01" :label="t('invoice.payment_amount_aud')" :error="payForm.errors.amount" />
+                    <Input
+                        v-model="payForm.amount"
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        :label="t('invoice.payment_amount_aud')"
+                        :help="gstRegistered && payForm.amount ? t('invoice.gst_of_payment', { amount: formatAUD(gstOf(toCents(payForm.amount))) }) : null"
+                        :error="payForm.errors.amount"
+                    />
                     <Select v-model="payForm.method" :label="t('invoice.payment_method')" :error="payForm.errors.method">
                         <option v-for="m in methods" :key="m" :value="m">{{ t(`invoice.methods.${m}`) }}</option>
                     </Select>
@@ -195,17 +213,19 @@ function regeneratePdf() {
             <!-- Payment history -->
             <div>
                 <h2 class="mb-3 text-lg font-semibold text-ink-900 dark:text-ink-50">{{ t('invoice.payment_history') }}</h2>
-                <DataTable :columns="4" :empty="!invoice.payments || invoice.payments.length === 0">
+                <DataTable :columns="gstRegistered ? 5 : 4" :empty="!invoice.payments || invoice.payments.length === 0">
                     <template #head>
                         <th class="px-4 py-2">{{ t('invoice.payment_date') }}</th>
                         <th class="px-4 py-2">{{ t('invoice.payment_method') }}</th>
                         <th class="px-4 py-2">{{ t('invoice.recorded_by') }}</th>
+                        <th v-if="gstRegistered" class="px-4 py-2 text-right">{{ t('invoice.gst') }}</th>
                         <th class="px-4 py-2 text-right">{{ t('invoice.fields.amount') }}</th>
                     </template>
                     <tr v-for="payment in invoice.payments" :key="payment.id" class="text-ink-700 dark:text-ink-200">
                         <td class="px-4 py-2">{{ toDate(payment.paid_at) }}</td>
                         <td class="px-4 py-2">{{ t(`invoice.methods.${payment.method}`) }}</td>
                         <td class="px-4 py-2">{{ payment.recorded_by?.name ?? t('invoice.system') }}</td>
+                        <td v-if="gstRegistered" class="px-4 py-2 text-right tabular-nums text-ink-500">{{ formatAUD(gstOf(payment.amount)) }}</td>
                         <td class="px-4 py-2 text-right tabular-nums">{{ formatAUD(payment.amount) }}</td>
                     </tr>
                     <template #empty>

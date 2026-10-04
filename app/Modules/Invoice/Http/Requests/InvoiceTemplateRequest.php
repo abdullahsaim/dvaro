@@ -3,6 +3,7 @@
 namespace App\Modules\Invoice\Http\Requests;
 
 use App\Modules\Invoice\Services\InvoiceTemplateService;
+use App\Rules\ValidLogoFile;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -33,7 +34,7 @@ class InvoiceTemplateRequest extends FormRequest
         // validated on its own terms — the template fields are not part of it.
         if ($this->is('*/settings/invoice-template/logo')) {
             return [
-                'logo' => ['required', 'file', 'mimes:png,jpg,jpeg,svg,webp', 'max:'.self::LOGO_MAX_KB],
+                'logo' => ['required', 'file', new ValidLogoFile, 'max:'.self::LOGO_MAX_KB],
             ];
         }
 

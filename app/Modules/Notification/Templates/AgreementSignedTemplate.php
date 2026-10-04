@@ -12,7 +12,15 @@ class AgreementSignedTemplate
 {
     use FormatsNotifications;
 
-    public function build(Agreement $agreement): NotificationContent
+    /**
+     * $url is the customer's own review-and-sign link — it still works after
+     * signing (AgreementSigningService never invalidates it), now showing a
+     * read-only "here's your copy" page with the PDF download once it's
+     * ready, instead of the sign form. This is what makes the download a
+     * real, working link rather than a bare instruction to "check the portal"
+     * — most customers who sign remotely were never given portal access.
+     */
+    public function build(Agreement $agreement, string $url): NotificationContent
     {
         $customerName = $agreement->customer?->name ?? 'there';
         $vehicle = $this->vehicleLabel($agreement);
@@ -24,10 +32,12 @@ class AgreementSignedTemplate
             "Hi {$customerName},",
             "Thank you — your rental agreement (version {$agreement->version}) for {$vehicle} has been signed.",
             "Rental start date: {$start}.",
-            'Your first invoice will follow shortly. You can view your agreement and invoices any time from your customer portal.',
+            'You can view and download your signed copy here:',
+            $url,
+            'Your first invoice will follow shortly.',
         ]);
 
-        $sms = "Hi {$customerName}, your rental agreement for {$vehicle} is signed (start {$start}). Your first invoice will follow shortly.";
+        $sms = "Hi {$customerName}, your rental agreement for {$vehicle} is signed (start {$start}). View it here: {$url}";
 
         return new NotificationContent($subject, $email, $sms);
     }

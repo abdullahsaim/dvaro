@@ -12,6 +12,7 @@ import Button from '@/Components/UI/Button.vue';
 import Input from '@/Components/UI/Input.vue';
 import Select from '@/Components/UI/Select.vue';
 import Textarea from '@/Components/UI/Textarea.vue';
+import { useCurrency } from '@/composables/useCurrency';
 
 const props = defineProps({
     vehicle: { type: Object, required: true },
@@ -19,6 +20,7 @@ const props = defineProps({
 });
 
 const { t } = useI18n();
+const { toCents, toDollars } = useCurrency();
 const page = usePage();
 const base = computed(() => `/app/${page.props.tenant.slug}/fleet`);
 
@@ -40,7 +42,8 @@ const form = useForm({
     make: props.vehicle.make,
     model: props.vehicle.model,
     year: props.vehicle.year,
-    daily_rate: props.vehicle.daily_rate,
+    // Stored as cents; the input works in dollars (AUD, decimals allowed).
+    daily_rate: toDollars(props.vehicle.daily_rate),
     insurance_company: props.vehicle.insurance_company ?? '',
     // Date casts serialise as ISO timestamps — <input type=date> needs YYYY-MM-DD.
     insurance_expiry: toDateInput(props.vehicle.insurance_expiry),
@@ -61,7 +64,9 @@ const statusForm = useForm({ status: props.vehicle.status });
 const autoNextDue = computed(() => !!form.service_interval_months && !!form.last_service_date);
 
 function submit() {
-    form.put(`${base.value}/${props.vehicle.id}`);
+    form
+        .transform((data) => ({ ...data, daily_rate: toCents(data.daily_rate) }))
+        .put(`${base.value}/${props.vehicle.id}`);
 }
 
 function changeStatus() {
@@ -102,7 +107,15 @@ function changeStatus() {
             <Input v-model="form.make" :label="t('fleet.fields.make')" :error="form.errors.make" />
             <Input v-model="form.model" :label="t('fleet.fields.model')" :error="form.errors.model" />
             <Input v-model="form.year" type="number" :label="t('fleet.fields.year')" :error="form.errors.year" />
-            <Input v-model="form.daily_rate" type="number" :label="t('fleet.fields.daily_rate')" :error="form.errors.daily_rate" />
+            <Input
+                v-model="form.daily_rate"
+                type="number"
+                step="0.01"
+                min="0"
+                :label="t('fleet.fields.daily_rate')"
+                :help="t('fleet.daily_rate_help')"
+                :error="form.errors.daily_rate"
+            />
             <Input v-model="form.insurance_company" :label="t('fleet.fields.insurance_company')" :error="form.errors.insurance_company" />
             <Input v-model="form.insurance_expiry" type="date" :label="t('fleet.fields.insurance_expiry')" :error="form.errors.insurance_expiry" />
             <Input v-model="form.registration_expiry" type="date" :label="t('fleet.fields.registration_expiry')" :error="form.errors.registration_expiry" />

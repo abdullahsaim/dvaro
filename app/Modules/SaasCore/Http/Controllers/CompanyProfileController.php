@@ -8,9 +8,11 @@ use App\Modules\SaasCore\Http\Requests\CompanyProfileRequest;
 use App\Modules\SaasCore\Models\AuditLog;
 use App\Modules\SaasCore\Models\TenantUser;
 use App\Modules\SaasCore\Services\TenantSettingsService;
+use App\Rules\ValidLogoFile;
 use App\Services\AuditLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -97,23 +99,40 @@ class CompanyProfileController extends Controller
         return back()->with('success', __('common.settings.company_saved'));
     }
 
-    /** Replace the logo. PUBLIC disk; the previous file is deleted. */
+    /**
+     * Replace the logo. PUBLIC disk; the previous file is deleted.
+     *
+     * The write is wrapped: if the public disk isn't writable (a permissions
+     * problem on the server, a missing directory — a deploy issue, not a user
+     * mistake), this surfaces as a normal validation error on the form rather
+     * than an uncaught exception reaching the browser as a raw 500. The
+     * underlying exception is still logged so the real cause can be found.
+     */
     public function updateLogo(Request $request): RedirectResponse
     {
         $this->authorizeAdmin();
 
         $request->validate([
-            'logo' => ['required', 'file', 'mimes:png,jpg,jpeg,svg,webp', 'max:'.self::LOGO_MAX_KB],
+            'logo' => ['required', 'file', new ValidLogoFile, 'max:'.self::LOGO_MAX_KB],
         ]);
 
         $tenant = app('current_tenant');
         $previous = $this->settings->get($tenant, 'logo_path');
 
-        $path = $request->file('logo')->storeAs(
-            "tenants/{$tenant->id}/branding",
-            'logo-'.Str::uuid().'.'.strtolower($request->file('logo')->getClientOriginalExtension()),
-            'public',
-        );
+        try {
+            $path = $request->file('logo')->storeAs(
+                "tenants/{$tenant->id}/branding",
+                'logo-'.Str::uuid().'.'.strtolower($request->file('logo')->getClientOriginalExtension()),
+                'public',
+            );
+        } catch (\Throwable $e) {
+            Log::error('CompanyProfileController::updateLogo: storing the logo failed', [
+                'tenant_id' => $tenant->id,
+                'message' => $e->getMessage(),
+            ]);
+
+            return back()->withErrors(['logo' => __('common.settings.logo_upload_failed')]);
+        }
 
         $this->settings->update($tenant, ['logo_path' => $path], 'company_profile');
 

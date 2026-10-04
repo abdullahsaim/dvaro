@@ -2,15 +2,21 @@
 
 namespace App\Providers;
 
+use App\Contracts\CaptchaVerifierInterface;
+use App\Contracts\PaymentProviderInterface;
+use App\Modules\Agreement\Models\Agreement;
+use App\Modules\Agreement\Models\AgreementTemplate;
+use App\Modules\Agreement\Policies\AgreementPolicy;
+use App\Modules\Agreement\Policies\AgreementTemplatePolicy;
 use App\Modules\AI\Models\AiConversation;
 use App\Modules\AI\Policies\AiPolicy;
-use App\Modules\Agreement\Models\Agreement;
-use App\Modules\Agreement\Policies\AgreementPolicy;
 use App\Modules\CRM\Models\Lead;
 use App\Modules\CRM\Policies\LeadPolicy;
 use App\Modules\Customer\Models\Customer;
 use App\Modules\Customer\Policies\CustomerPolicy;
 use App\Modules\Customer\Policies\CustomerPortalPolicy;
+use App\Modules\Finance\Models\Expense;
+use App\Modules\Finance\Policies\ExpensePolicy;
 use App\Modules\Fleet\Models\Vehicle;
 use App\Modules\Fleet\Policies\VehiclePolicy;
 use App\Modules\Invoice\Models\Invoice;
@@ -18,12 +24,15 @@ use App\Modules\Invoice\Policies\InvoicePolicy;
 use App\Modules\Reporting\Models\ReportExport;
 use App\Modules\Reporting\Policies\ReportingPolicy;
 use App\Modules\SaasCore\Policies\BillingPolicy;
+use App\Modules\SaasCore\Providers\StripePaymentProvider;
 use App\Modules\SuperAdmin\Policies\SuperAdminPolicy;
 use App\Modules\Workshop\Models\Mechanic;
-use App\Modules\Workshop\Policies\ManageMechanicPolicy;
 use App\Modules\Workshop\Models\ServiceLog;
+use App\Modules\Workshop\Policies\ManageMechanicPolicy;
 use App\Modules\Workshop\Policies\MechanicPolicy;
 use App\Policies\ProfilePolicy;
+use App\Services\Captcha\GoogleRecaptchaVerifier;
+use App\Services\Captcha\NullCaptchaVerifier;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
@@ -31,6 +40,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -44,18 +54,18 @@ class AppServiceProvider extends ServiceProvider
         // like NotificationProviderFactory). Everything charges through the
         // interface — never the SDK.
         $this->app->bind(
-            \App\Contracts\PaymentProviderInterface::class,
-            \App\Modules\SaasCore\Providers\StripePaymentProvider::class,
+            PaymentProviderInterface::class,
+            StripePaymentProvider::class,
         );
 
         // Captcha (public lead form) → Google reCAPTCHA v2 when keys are set,
         // otherwise a no-op verifier that accepts + flags leads "unverified".
-        $this->app->bind(\App\Contracts\CaptchaVerifierInterface::class, function () {
+        $this->app->bind(CaptchaVerifierInterface::class, function () {
             $secret = config('services.recaptcha.secret_key');
 
             return filled($secret)
-                ? new \App\Services\Captcha\GoogleRecaptchaVerifier($secret, config('services.recaptcha.site_key'))
-                : new \App\Services\Captcha\NullCaptchaVerifier();
+                ? new GoogleRecaptchaVerifier($secret, config('services.recaptcha.site_key'))
+                : new NullCaptchaVerifier;
         });
     }
 
@@ -71,8 +81,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Lead::class, LeadPolicy::class);
         Gate::policy(Agreement::class, AgreementPolicy::class);
         Gate::policy(Invoice::class, InvoicePolicy::class);
-        Gate::policy(\App\Modules\Finance\Models\Expense::class, \App\Modules\Finance\Policies\ExpensePolicy::class);
-        Gate::policy(\App\Modules\Agreement\Models\AgreementTemplate::class, \App\Modules\Agreement\Policies\AgreementTemplatePolicy::class);
+        Gate::policy(Expense::class, ExpensePolicy::class);
+        Gate::policy(AgreementTemplate::class, AgreementTemplatePolicy::class);
         // Workshop service logs are authorized against the MECHANIC guard.
         Gate::policy(ServiceLog::class, MechanicPolicy::class);
         // Mechanic ACCOUNT management is a tenant-admin-only TENANT-guard action
@@ -120,12 +130,22 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perHour(5)->by((string) $request->route('token'));
         });
 
+        // Public agreement signing link (opened from an email/WhatsApp message):
+        // keyed by the token itself, same reasoning as crm-intake — a real
+        // customer only ever submits once, generous headroom for retries after
+        // a typo'd signature or a flaky connection, while a guessed/brute-forced
+        // token still hits the ceiling fast. 48-char random tokens make brute
+        // forcing infeasible regardless; this is belt-and-suspenders.
+        RateLimiter::for('agreement-signing', function (Request $request) {
+            return Limit::perHour(20)->by((string) $request->route('token'));
+        });
+
         // Public lead form (share link / website embed): 10/hour per IP per
         // tenant form + 200/day per tenant form (caps a distributed flood).
         // Over the limit → a friendly "try again later" page, not a raw 429.
         RateLimiter::for('lead-form', function (Request $request) {
             $form = (string) $request->route('tenant_slug');
-            $tooMany = fn () => \Inertia\Inertia::render('CRM/PublicLeadFormUnavailable', [
+            $tooMany = fn () => Inertia::render('CRM/PublicLeadFormUnavailable', [
                 'embedded' => $request->boolean('embedded'),
                 'reason' => 'rate_limited',
             ])->toResponse($request)->setStatusCode(429);

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\StripeWebhookController;
+use App\Modules\Agreement\Http\Controllers\PublicAgreementSigningController;
 use App\Modules\CMS\Http\Controllers\DemoRequestController;
 use App\Modules\CMS\Http\Controllers\PublicLandingController;
 use App\Modules\CRM\Http\Controllers\IntakeFormController;
@@ -7,7 +9,6 @@ use App\Modules\CRM\Http\Controllers\PublicLeadFormController;
 use App\Modules\Customer\Http\Controllers\CustomerPortalController;
 use App\Modules\SaasCore\Http\Controllers\TenantRegistrationController;
 use App\Modules\SaasCore\Http\Controllers\WorkspaceLookupController;
-use App\Http\Controllers\StripeWebhookController;
 use App\Modules\Workshop\Http\Controllers\QrScanController;
 use Illuminate\Support\Facades\Route;
 
@@ -72,6 +73,18 @@ Route::get('lead/{tenant_slug}/{token}/embed', [PublicLeadFormController::class,
 Route::post('lead/{tenant_slug}/{token}', [PublicLeadFormController::class, 'submit'])
     ->middleware('throttle:lead-form')
     ->name('crm.lead-form.submit');
+
+// Customer's PUBLIC review-and-sign link for one agreement — emailed/WhatsApped
+// from the agreement page. No auth / tenant middleware; gated by the
+// agreement's own secret token. A normal top-level navigation (never an
+// iframe), so ordinary session + CSRF protection applies, unlike the lead form.
+Route::get('agreement-sign/{tenant_slug}/{token}', [PublicAgreementSigningController::class, 'show'])
+    ->name('agreement-signing.show');
+Route::post('agreement-sign/{tenant_slug}/{token}', [PublicAgreementSigningController::class, 'submit'])
+    ->middleware('throttle:agreement-signing')
+    ->name('agreement-signing.submit');
+Route::get('agreement-sign/{tenant_slug}/{token}/pdf', [PublicAgreementSigningController::class, 'downloadPdf'])
+    ->name('agreement-signing.pdf');
 
 /*
 |--------------------------------------------------------------------------

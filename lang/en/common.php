@@ -97,6 +97,10 @@ return [
         'version_created' => 'New agreement version created — it needs to be signed.',
         'pdf_queued' => 'Generating the PDF — refresh in a moment.',
         'pdf_already_exists' => 'This agreement already has a PDF.',
+        'not_draft' => 'Only a draft agreement can be sent for signing.',
+        'no_customer' => 'This agreement has no customer on file to send it to.',
+        'no_contact_method' => 'The customer has no email or phone number on file for the channel you chose.',
+        'signing_link_sent' => 'Sent — the customer can now review and sign online.',
     ],
 
     'invoice' => [
@@ -114,6 +118,7 @@ return [
         'company_saved' => 'Company profile saved.',
         'logo_saved' => 'Logo updated.',
         'logo_removed' => 'Logo removed.',
+        'logo_upload_failed' => 'The logo could not be saved — please try again, or contact support if this keeps happening.',
         'finance_saved' => 'Invoicing settings saved.',
         'regional_saved' => 'Regional settings saved.',
         'integrations_saved' => 'Integration settings saved.',

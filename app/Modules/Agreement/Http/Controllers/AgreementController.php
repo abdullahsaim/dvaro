@@ -5,12 +5,15 @@ namespace App\Modules\Agreement\Http\Controllers;
 use App\Http\Controllers\Concerns\PaginatesForUser;
 use App\Http\Controllers\Controller;
 use App\Jobs\GenerateAgreementPdfJob;
+use App\Jobs\SendAgreementSigningLinkJob;
 use App\Modules\Agreement\DTOs\CreateAgreementDTO;
+use App\Modules\Agreement\Http\Requests\SendForSigningRequest;
 use App\Modules\Agreement\Http\Requests\SignAgreementRequest;
 use App\Modules\Agreement\Http\Requests\StoreAgreementRequest;
 use App\Modules\Agreement\Models\Agreement;
 use App\Modules\Agreement\Models\AgreementTemplate;
 use App\Modules\Agreement\Services\AgreementService;
+use App\Modules\Agreement\Services\AgreementSigningService;
 use App\Modules\Agreement\Services\AgreementTemplateService;
 use App\Modules\Customer\Models\Customer;
 use App\Modules\Fleet\Models\Vehicle;
@@ -155,6 +158,8 @@ class AgreementController extends Controller
         return Inertia::render('Agreement/Show', [
             'agreement' => $agreement,
             'pdfReady' => $pdfReady,
+            'canSendForSigning' => Gate::forUser(auth('tenant')->user())->allows('sendForSigning', $agreement),
+            'whatsappEnabled' => (bool) (app('current_tenant')->settings['notify_whatsapp_enabled'] ?? false),
             // Offered whenever the PDF is genuinely absent — see rebuildPdf().
             'canRebuildPdf' => ! $pdfReady
                 && Gate::forUser(auth('tenant')->user())->allows('rebuildPdf', $agreement),
@@ -200,6 +205,58 @@ class AgreementController extends Controller
                 'agreement' => $agreement->id,
             ])
             ->with('success', __('common.agreement.signed'));
+    }
+
+    /**
+     * Email/WhatsApp the customer a link to review the agreement and sign it
+     * remotely — an alternative to the in-person canvas on this same page,
+     * not a replacement for it. Only meaningful for a DRAFT agreement; a
+     * signed one has nothing left to sign.
+     */
+    public function sendForSigning(
+        SendForSigningRequest $request,
+        Agreement $agreement,
+        AgreementSigningService $signing,
+    ): RedirectResponse {
+        Gate::forUser(auth('tenant')->user())->authorize('sendForSigning', $agreement);
+
+        abort_unless($agreement->status === Agreement::STATUS_DRAFT, 422, __('common.agreement.not_draft'));
+
+        $agreement->loadMissing('customer');
+        $customer = $agreement->customer;
+
+        if ($customer === null) {
+            return back()->withErrors(['channels' => __('common.agreement.no_customer')]);
+        }
+
+        $tenant = app('current_tenant');
+        $sent = false;
+
+        foreach ((array) $request->input('channels') as $channel) {
+            if ($channel === SendAgreementSigningLinkJob::CHANNEL_WHATSAPP) {
+                if (blank($customer->phone)) {
+                    continue;
+                }
+                SendAgreementSigningLinkJob::dispatch($tenant->id, $agreement->id, $channel, $customer->phone);
+                $sent = true;
+            } else {
+                if (blank($customer->email)) {
+                    continue;
+                }
+                SendAgreementSigningLinkJob::dispatch($tenant->id, $agreement->id, $channel, $customer->email);
+                $sent = true;
+            }
+        }
+
+        if (! $sent) {
+            return back()->withErrors(['channels' => __('common.agreement.no_contact_method')]);
+        }
+
+        // Issues the token on first send; a resend reuses the same link.
+        $signing->ensureToken($agreement);
+        $signing->markSent($agreement);
+
+        return back()->with('success', __('common.agreement.signing_link_sent'));
     }
 
     public function createVersion(Agreement $agreement, AgreementService $service): RedirectResponse

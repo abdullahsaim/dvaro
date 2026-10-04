@@ -9,6 +9,7 @@ import Button from '@/Components/UI/Button.vue';
 import Input from '@/Components/UI/Input.vue';
 import Select from '@/Components/UI/Select.vue';
 import Textarea from '@/Components/UI/Textarea.vue';
+import { useCurrency } from '@/composables/useCurrency';
 
 const props = defineProps({
     statuses: { type: Array, required: true },
@@ -16,6 +17,7 @@ const props = defineProps({
 
 const { t } = useI18n();
 const page = usePage();
+const { toCents } = useCurrency();
 const base = computed(() => `/app/${page.props.tenant.slug}/fleet`);
 
 const form = useForm({
@@ -24,7 +26,7 @@ const form = useForm({
     model: '',
     year: new Date().getFullYear(),
     status: 'available',
-    daily_rate: 0,
+    daily_rate: '', // AUD dollars in the input; converted to cents on submit
     insurance_company: '',
     insurance_expiry: '',
     registration_expiry: '',
@@ -42,7 +44,9 @@ const form = useForm({
 const autoNextDue = computed(() => !!form.service_interval_months && !!form.last_service_date);
 
 function submit() {
-    form.post(base.value);
+    form
+        .transform((data) => ({ ...data, daily_rate: toCents(data.daily_rate) }))
+        .post(base.value);
 }
 </script>
 
@@ -64,7 +68,15 @@ function submit() {
             <Input v-model="form.make" :label="t('fleet.fields.make')" :error="form.errors.make" />
             <Input v-model="form.model" :label="t('fleet.fields.model')" :error="form.errors.model" />
             <Input v-model="form.year" type="number" :label="t('fleet.fields.year')" :error="form.errors.year" />
-            <Input v-model="form.daily_rate" type="number" :label="t('fleet.fields.daily_rate')" :error="form.errors.daily_rate" />
+            <Input
+                v-model="form.daily_rate"
+                type="number"
+                step="0.01"
+                min="0"
+                :label="t('fleet.fields.daily_rate')"
+                :help="t('fleet.daily_rate_help')"
+                :error="form.errors.daily_rate"
+            />
             <Input v-model="form.insurance_company" :label="t('fleet.fields.insurance_company')" :error="form.errors.insurance_company" />
             <Input v-model="form.insurance_expiry" type="date" :label="t('fleet.fields.insurance_expiry')" :error="form.errors.insurance_expiry" />
             <Input v-model="form.registration_expiry" type="date" :label="t('fleet.fields.registration_expiry')" :error="form.errors.registration_expiry" />

@@ -48,6 +48,12 @@ class AgreementPolicy
         return $this->sameTenant($user, $agreement);
     }
 
+    /** Email/WhatsApp the customer a link to review and sign remotely. */
+    public function sendForSigning(TenantUser $user, Agreement $agreement): bool
+    {
+        return $this->sameTenant($user, $agreement);
+    }
+
     public function createVersion(TenantUser $user, Agreement $agreement): bool
     {
         return $this->sameTenant($user, $agreement);

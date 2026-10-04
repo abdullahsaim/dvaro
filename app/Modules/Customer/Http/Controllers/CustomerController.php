@@ -4,6 +4,7 @@ namespace App\Modules\Customer\Http\Controllers;
 
 use App\Http\Controllers\Concerns\PaginatesForUser;
 use App\Http\Controllers\Controller;
+use App\Modules\Agreement\Models\Agreement;
 use App\Modules\Customer\Actions\BlacklistCustomerAction;
 use App\Modules\Customer\Actions\CreateCustomerAction;
 use App\Modules\Customer\Actions\InviteCustomerToPortalAction;
@@ -129,8 +130,11 @@ class CustomerController extends Controller
             'documents' => $customer->documentStatus(),
             // Drives the portal button state ("Invite" vs "Already has access").
             'hasPortalAccess' => CustomerUser::where('customer_id', $customer->id)->exists(),
-            // Rentals module not built yet — placeholder rendered by the page.
-            'rentalHistory' => [],
+            // One row per rental (the LATEST version of each agreement lineage
+            // — not every version of every amendment). An agreement row that is
+            // somebody else's parent has a newer version superseding it, so
+            // excluding those ids leaves exactly one row per rental.
+            'rentalHistory' => $this->rentalHistory($customer),
         ]);
     }
 
@@ -250,5 +254,43 @@ class CustomerController extends Controller
         abort_if($path === null, 404);
 
         return redirect()->away($fileUrls->temporaryUrl($path));
+    }
+
+    /**
+     * This customer's rentals: one row per agreement LINEAGE (not per version
+     * — a vehicle change or amendment creates a new version of the same
+     * rental, and showing each would make one rental look like several).
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function rentalHistory(Customer $customer): array
+    {
+        $agreements = Agreement::query()
+            ->where('customer_id', $customer->id)
+            ->with('vehicle:id,registration_number,make,model')
+            ->get(['id', 'vehicle_id', 'parent_agreement_id', 'status', 'version',
+                'billing_cycle', 'rate', 'start_date', 'end_date']);
+
+        // Any id referenced as someone's parent has a newer version, so
+        // excluding those ids leaves exactly the latest row per lineage.
+        $supersededIds = $agreements->pluck('parent_agreement_id')->filter();
+
+        return $agreements
+            ->whereNotIn('id', $supersededIds)
+            ->sortByDesc('start_date')
+            ->values()
+            ->map(fn (Agreement $agreement) => [
+                'id' => $agreement->id,
+                'vehicle' => $agreement->vehicle
+                    ? trim("{$agreement->vehicle->make} {$agreement->vehicle->model}").' ('.$agreement->vehicle->registration_number.')'
+                    : null,
+                'status' => $agreement->status,
+                'version' => $agreement->version,
+                'billing_cycle' => $agreement->billing_cycle,
+                'rate' => (int) $agreement->rate,
+                'start_date' => $agreement->start_date,
+                'end_date' => $agreement->end_date,
+            ])
+            ->all();
     }
 }

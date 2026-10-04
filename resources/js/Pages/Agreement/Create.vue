@@ -45,6 +45,19 @@ const form = useForm({
     notes: '',
 });
 
+// Open-ended rentals are a normal case ("we don't always know the end date
+// yet") — this makes it an explicit, one-click choice instead of staff having
+// to discover that a native date input can be left blank.
+const openEnded = ref(false);
+
+function toggleOpenEnded(checked) {
+    openEnded.value = checked;
+    if (checked) {
+        form.end_date = '';
+        form.clearErrors('end_date');
+    }
+}
+
 // Client-side customer filter so the dropdown is "searchable".
 const customerFilter = ref('');
 const filteredCustomers = computed(() => {
@@ -122,7 +135,27 @@ function submit() {
             <Input v-model="form.rate" type="number" step="0.01" min="0.01" :label="t('agreement.rate_aud')" :error="form.errors.rate" />
             <Input v-model="form.bond_amount" type="number" step="0.01" min="0" :label="t('agreement.bond_aud')" :error="form.errors.bond_amount" />
             <Input v-model="form.start_date" type="date" :label="t('agreement.fields.start_date')" :error="form.errors.start_date" />
-            <Input v-model="form.end_date" type="date" :label="t('agreement.fields.end_date')" :error="form.errors.end_date" />
+            <div>
+                <Input
+                    v-model="form.end_date"
+                    type="date"
+                    :disabled="openEnded"
+                    :label="t('agreement.fields.end_date')"
+                    :error="form.errors.end_date"
+                />
+                <!-- The end date is OPTIONAL (nullable server-side) — this makes
+                     that explicit rather than relying on staff knowing to leave a
+                     native date picker blank, which some browsers make fiddly. -->
+                <label class="mt-1.5 flex items-center gap-2 text-sm text-ink-600 dark:text-ink-300">
+                    <input
+                        type="checkbox"
+                        class="h-4 w-4 rounded border-ink-300 accent-ink-900 dark:border-ink-700 dark:accent-ink-100"
+                        :checked="openEnded"
+                        @change="toggleOpenEnded($event.target.checked)"
+                    />
+                    {{ t('agreement.no_fixed_end_date') }}
+                </label>
+            </div>
 
             <div class="sm:col-span-2">
                 <Textarea v-model="form.notes" :rows="3" :label="t('agreement.fields.notes')" :error="form.errors.notes" />

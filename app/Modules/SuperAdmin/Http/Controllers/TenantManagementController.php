@@ -20,6 +20,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -274,10 +275,26 @@ class TenantManagementController extends Controller
      * place so it can never become inconsistent:
      *   1. logs out the tenant guard
      *   2. removes the impersonation marker from the session
+     *
+     * Hardened: this is a CLEANUP action a stuck admin has no other way out
+     * of, so if anything unexpected throws while logging out the tenant guard
+     * (reported once in production, not yet reproduced locally — a real
+     * stack trace will pin the exact cause), the admin still gets their
+     * session marker cleared and lands back on the dashboard instead of a raw
+     * error with no way forward. The exception is logged either way.
      */
     public function stopImpersonating(Request $request): RedirectResponse
     {
-        Auth::guard('tenant')->logout();
+        try {
+            Auth::guard('tenant')->logout();
+        } catch (\Throwable $e) {
+            Log::error('stopImpersonating: tenant guard logout threw', [
+                'exception' => get_class($e),
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+        }
+
         $request->session()->forget('impersonator_superadmin_id');
 
         return redirect()->route('superadmin.dashboard')

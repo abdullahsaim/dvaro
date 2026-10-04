@@ -12,6 +12,7 @@ import StatusBadge from '@/Components/UI/StatusBadge.vue';
 import Button from '@/Components/UI/Button.vue';
 import Input from '@/Components/UI/Input.vue';
 import Select from '@/Components/UI/Select.vue';
+import SignatureCanvas from '@/Components/Agreement/SignatureCanvas.vue';
 import { useCurrency } from '@/composables/useCurrency';
 
 const props = defineProps({
@@ -23,6 +24,8 @@ const props = defineProps({
     availableVehicles: { type: Array, default: () => [] },
     canRebuildPdf: { type: Boolean, default: false },
     pdfReady: { type: Boolean, default: false },
+    canSendForSigning: { type: Boolean, default: false },
+    whatsappEnabled: { type: Boolean, default: false },
 });
 
 const { t } = useI18n();
@@ -60,47 +63,16 @@ const rows = computed(() => [
     { label: t('agreement.fields.notes'), value: props.agreement.notes },
 ]);
 
-// ── Canvas signature pad ──────────────────────────────────────────────────
-const canvas = ref(null);
+// ── Canvas signature pad (shared component) ────────────────────────────────
+const signaturePad = ref(null);
 const hasDrawn = ref(false);
-let drawing = false;
 
-function pos(event) {
-    const rect = canvas.value.getBoundingClientRect();
-    const point = event.touches ? event.touches[0] : event;
-    return { x: point.clientX - rect.left, y: point.clientY - rect.top };
-}
-
-function start(event) {
-    event.preventDefault();
-    drawing = true;
-    const ctx = canvas.value.getContext('2d');
-    const { x, y } = pos(event);
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-}
-
-function move(event) {
-    if (!drawing) return;
-    event.preventDefault();
-    const ctx = canvas.value.getContext('2d');
-    const { x, y } = pos(event);
-    ctx.lineWidth = 2;
-    ctx.lineCap = 'round';
-    ctx.strokeStyle = '#0f172a';
-    ctx.lineTo(x, y);
-    ctx.stroke();
-    hasDrawn.value = true;
-}
-
-function stop() {
-    drawing = false;
+function onSignatureChange(drawn) {
+    hasDrawn.value = drawn;
 }
 
 function clearPad() {
-    const ctx = canvas.value.getContext('2d');
-    ctx.clearRect(0, 0, canvas.value.width, canvas.value.height);
-    hasDrawn.value = false;
+    signaturePad.value?.clearPad();
     signForm.clearErrors();
 }
 
@@ -115,9 +87,23 @@ function rebuildPdf() {
 const signForm = useForm({ signature_data: '' });
 
 function sign() {
-    if (!hasDrawn.value) return;
-    signForm.signature_data = canvas.value.toDataURL('image/png');
+    const dataUrl = signaturePad.value?.dataUrl();
+    if (!dataUrl) return;
+    signForm.signature_data = dataUrl;
     signForm.post(`${base.value}/${props.agreement.id}/sign`, { preserveScroll: true });
+}
+
+// ── Send for remote signing (email / WhatsApp) ─────────────────────────────
+// Defaults to whichever contact methods the customer actually has on file.
+const sendForm = useForm({
+    channels: [
+        ...(props.agreement.customer?.email ? ['email'] : []),
+        ...(props.whatsappEnabled && props.agreement.customer?.phone ? ['whatsapp'] : []),
+    ],
+});
+
+function sendForSigning() {
+    sendForm.post(`${base.value}/${props.agreement.id}/send-for-signing`, { preserveScroll: true });
 }
 
 // ── Create new version ────────────────────────────────────────────────────
@@ -212,23 +198,58 @@ function cancelChange() {
                 </div>
             </div>
 
+            <!-- Send for remote signing (draft only) — an alternative to the
+                 in-person canvas below, not a replacement for it. -->
+            <div v-if="isDraft && canSendForSigning" class="rounded-card border border-ink-200 bg-white p-4 shadow-subtle dark:border-ink-800 dark:bg-ink-900">
+                <h2 class="text-lg font-semibold text-ink-900 dark:text-ink-50">{{ t('agreement.send_for_signing_heading') }}</h2>
+                <p class="mt-1 text-sm text-ink-500">{{ t('agreement.send_for_signing_hint') }}</p>
+
+                <div class="mt-3 flex flex-wrap gap-4">
+                    <label class="flex items-center gap-2 text-sm text-ink-700 dark:text-ink-200">
+                        <input
+                            v-model="sendForm.channels"
+                            type="checkbox"
+                            value="email"
+                            :disabled="!agreement.customer?.email"
+                            class="h-4 w-4 rounded border-ink-300 text-ink-900 focus:ring-ink-400"
+                        />
+                        {{ t('agreement.channel_email') }}
+                        <span v-if="!agreement.customer?.email" class="text-xs text-ink-400">({{ t('agreement.no_email_on_file') }})</span>
+                    </label>
+                    <label v-if="whatsappEnabled" class="flex items-center gap-2 text-sm text-ink-700 dark:text-ink-200">
+                        <input
+                            v-model="sendForm.channels"
+                            type="checkbox"
+                            value="whatsapp"
+                            :disabled="!agreement.customer?.phone"
+                            class="h-4 w-4 rounded border-ink-300 text-ink-900 focus:ring-ink-400"
+                        />
+                        {{ t('agreement.channel_whatsapp') }}
+                        <span v-if="!agreement.customer?.phone" class="text-xs text-ink-400">({{ t('agreement.no_phone_on_file') }})</span>
+                    </label>
+                </div>
+                <span v-if="sendForm.errors.channels" class="mt-1 block text-sm text-danger-600 dark:text-danger-500">{{ sendForm.errors.channels }}</span>
+
+                <div class="mt-3 flex items-center gap-3">
+                    <Button
+                        :disabled="sendForm.channels.length === 0"
+                        :loading="sendForm.processing"
+                        variant="secondary"
+                        @click="sendForSigning"
+                    >
+                        {{ agreement.signing_sent_at ? t('agreement.resend_signing_link') : t('agreement.send_signing_link') }}
+                    </Button>
+                    <span v-if="agreement.signing_sent_at" class="text-xs text-ink-400">
+                        {{ t('agreement.last_sent', { when: toDate(agreement.signing_sent_at) }) }}
+                    </span>
+                </div>
+            </div>
+
             <!-- Sign (draft only) -->
             <div v-if="isDraft" class="rounded-card border border-ink-200 bg-white p-4 shadow-subtle dark:border-ink-800 dark:bg-ink-900">
                 <h2 class="text-lg font-semibold text-ink-900 dark:text-ink-50">{{ t('agreement.sign_heading') }}</h2>
                 <p class="mt-1 text-sm text-ink-500">{{ t('agreement.sign_hint') }}</p>
-                <canvas
-                    ref="canvas"
-                    width="480"
-                    height="180"
-                    class="mt-3 w-full max-w-[480px] touch-none rounded-control border border-ink-300 bg-white dark:border-ink-700"
-                    @mousedown="start"
-                    @mousemove="move"
-                    @mouseup="stop"
-                    @mouseleave="stop"
-                    @touchstart="start"
-                    @touchmove="move"
-                    @touchend="stop"
-                ></canvas>
+                <SignatureCanvas ref="signaturePad" class="mt-3" @change="onSignatureChange" />
                 <span v-if="signForm.errors.signature_data" class="mt-1 block text-sm text-danger-600 dark:text-danger-500">{{ signForm.errors.signature_data }}</span>
                 <div class="mt-3 flex gap-3">
                     <Button :disabled="!hasDrawn" :loading="signForm.processing" @click="sign">{{ t('agreement.sign') }}</Button>

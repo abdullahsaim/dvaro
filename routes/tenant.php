@@ -190,6 +190,10 @@ Route::middleware('auth:tenant')->group(function () {
 
     Route::post('agreements/{agreement}/sign', [AgreementController::class, 'sign'])
         ->name('agreements.sign');
+    // Email/WhatsApp the customer a remote review-and-sign link — an
+    // alternative to signing in person on this same page.
+    Route::post('agreements/{agreement}/send-for-signing', [AgreementController::class, 'sendForSigning'])
+        ->name('agreements.send-for-signing');
     Route::post('agreements/{agreement}/version', [AgreementController::class, 'createVersion'])
         ->name('agreements.version');
 

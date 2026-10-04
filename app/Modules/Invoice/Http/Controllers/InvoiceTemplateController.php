@@ -13,6 +13,7 @@ use App\Modules\SaasCore\Services\TenantSettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -108,7 +109,13 @@ class InvoiceTemplateController extends Controller
         ]);
     }
 
-    /** Replace the invoice-specific logo (falls back to the company logo). */
+    /**
+     * Replace the invoice-specific logo (falls back to the company logo).
+     *
+     * Write failures (a permissions/deploy problem, not a user mistake) are
+     * caught and logged so they surface as a normal form error rather than an
+     * uncaught exception reaching the browser as a raw 500.
+     */
     public function updateLogo(InvoiceTemplateRequest $request): RedirectResponse
     {
         abort_unless($this->canManage(), 403);
@@ -117,13 +124,22 @@ class InvoiceTemplateController extends Controller
         $template = $this->templates->forUi($tenant);
         $old = $template['logo_path'];
 
-        // PUBLIC disk: dompdf reads it off disk and the settings screen shows
-        // it — it is a logo, not a document.
-        $path = $request->file('logo')->storeAs(
-            "tenants/{$tenant->id}/branding",
-            'invoice-logo-'.Str::random(12).'.'.$request->file('logo')->extension(),
-            'public',
-        );
+        try {
+            // PUBLIC disk: dompdf reads it off disk and the settings screen
+            // shows it — it is a logo, not a document.
+            $path = $request->file('logo')->storeAs(
+                "tenants/{$tenant->id}/branding",
+                'invoice-logo-'.Str::random(12).'.'.$request->file('logo')->extension(),
+                'public',
+            );
+        } catch (\Throwable $e) {
+            Log::error('InvoiceTemplateController::updateLogo: storing the logo failed', [
+                'tenant_id' => $tenant->id,
+                'message' => $e->getMessage(),
+            ]);
+
+            return back()->withErrors(['logo' => __('common.settings.logo_upload_failed')]);
+        }
 
         $this->settings->update($tenant, [
             'invoice_template' => [...$template, 'logo_path' => $path],
