@@ -16,8 +16,9 @@
 ## Overview
 
 **DVARO** is a multi-tenant SaaS platform that runs the full operational lifecycle of a car
-rental business — fleet, customers, rental agreements, invoicing, payments, workshop maintenance,
-and notifications — with every tenant fully isolated at the database level.
+rental business — fleet, customers, rental agreements (including remote e-signing and the full
+bond collection/return/refund lifecycle), invoicing, payments, workshop maintenance, reporting, and
+notifications — with every tenant fully isolated at the database level.
 
 Built for the Australian market (AUD, Australian financial year) for **DJ Group of Companies Pty Ltd**,
 Canning Vale, Western Australia. The platform handles real money, real agreements, and real fleets,
@@ -75,29 +76,31 @@ guard and portal.
 
 ## Module status
 
-DVARO is built module-by-module. The table below reflects what is **actually implemented and
-verified** in the codebase versus what is scaffolded/planned.
+DVARO is built module-by-module, with a session-by-session build log kept in
+[`docs/MODULE_STATUS.md`](docs/MODULE_STATUS.md). The table below reflects what is **actually
+implemented and verified** in the codebase today — every module in CLAUDE.md's full scope is live
+except where noted.
 
 | Module | Status | What works today |
 |---|---|---|
-| **Multi-tenancy core** | ✅ Built | `TenantScope` global scope, `TenantMiddleware`, `HasTenant` trait, per-tenant isolation verified by tests |
-| **SaaS Core** | ✅ Built | Plans & subscriptions, tenant self-registration + onboarding (transactional), tenant auth (login/logout), tenant dashboard, hard plan-limit enforcement |
-| **Fleet Management** | ✅ Built | Vehicle CRUD, 6 statuses with a single sanctioned status-change path, soft deletes, QR code tokens, plan-enforced vehicle count |
-| **Customer Management** | ✅ Built | Customer CRUD, encrypted licence/passport fields, blacklist workflow, ledger-backed outstanding balance, soft deletes |
-| **CRM / Leads** | ✅ Built | Lead intake, signed public intake links (manually expirable), one-click lead → customer conversion |
-| **Agreement Engine** | ✅ Built | Create / canvas signature / immutable versioning, queued dompdf PDF generation to S3, vehicle-change re-versioning |
-| **Invoice & Finance** | ✅ Built | Append-only ledger, recurring invoice generation, **prorated vehicle-change splits**, late-fee automation, manual payment recording, queued invoice PDFs |
+| **Multi-tenancy core** | ✅ Built | `TenantScope` global scope, `TenantMiddleware`, `HasTenant` trait, per-tenant isolation verified by tests; 5 fully separate auth guards (tenant, mechanic, superadmin, customer, + web) |
+| **SaaS Core** | ✅ Built | Plans & subscriptions, self-registration + onboarding (transactional), Stripe Checkout billing (hosted checkout, webhook activation/cancellation), hard plan-limit enforcement. PayPal still pending |
+| **Super Admin Panel** | ✅ Built | Tenant management (suspend/activate/impersonate), plan management, subscription records, platform settings, revenue KPIs. Role-management UI and platform-wide activity logs are still manual/CLI |
+| **Fleet Management** | ✅ Built | Vehicle CRUD, 6 statuses with a single sanctioned status-change path, QR code tokens, odometer tracking, registration/insurance/service expiry reminders, plan-enforced vehicle count |
+| **Customer Management** | ✅ Built | Customer CRUD, encrypted licence/passport fields, blacklist workflow, identity document uploads (signed-URL access), ledger-backed outstanding balance, full rental history |
+| **Customer Portal** | ✅ Built | A fifth, fully isolated guard — customers log in to view invoices, agreements, and track rental status |
+| **CRM / Leads** | ✅ Built | Lead intake, public lead capture form (share link, QR, reCAPTCHA-gated), signed intake links, one-click lead → customer conversion |
+| **Agreement Engine** | ✅ Built | Create / canvas signature / immutable versioning, per-state terms templates, queued dompdf PDF generation, vehicle-change re-versioning — **plus a public, token-gated remote e-signing link** (no login) with an automatic emailed copy on signing |
+| **Rental Lifecycle (Return & Bond)** | ✅ Built | Signing collects the bond and puts the vehicle on the road; closing a rental records the vehicle's return condition, settles the bond (deduction + refund), and returns the vehicle to service — all on an append-only record |
+| **Invoice & Finance** | ✅ Built | Append-only ledger, recurring invoice generation, **prorated vehicle-change splits**, late-fee automation, 4 invoice-template layouts, GST handling, the Expenses module, bond ledger kept separate from rental balance |
 | **Workshop & Mechanic Portal** | ✅ Built | Dedicated mechanic guard (PIN **or** password), public QR vehicle scan, service logs, parts tracking, labour/total costs, admin read-only workshop view |
-| **Notification System** | ✅ Built | Email/SMS/WhatsApp provider interfaces with credential-gated Log fallback, queued listeners, 6 templates, daily expiry reminders, tenant notification settings |
-| **Super Admin Panel** | 🔜 Planned | Tenant management, billing, plan management, CMS, platform analytics |
-| **Customer Portal** | 🔜 Planned | Self-service invoices, payments, agreements, rental status (separate guard) |
-| **AI Assistant** | 🔜 Planned | System-help + business-intelligence modes, tenant-restricted, queued |
-| **Reporting & Analytics** | 🔜 Planned | Revenue, utilisation, workshop & default reports, PDF + Excel export |
-| **Landing Website + CMS** | 🔜 Planned | Public marketing site with super-admin-controlled content |
-| **Stripe / PayPal billing UI** | 🔜 Planned | Online subscription + invoice payment (manual recording works today) |
-
-> Two of the four planned auth guards (`tenant`, `mechanic`) are live; `superadmin` and `customer`
-> guards are scaffolded for upcoming sessions.
+| **Notification System** | ✅ Built | Email/SMS/WhatsApp provider interfaces (tenant-selectable), a per-trigger notification matrix, queued listeners, daily expiry-reminder digests |
+| **AI Assistant** | ✅ Built | System-help + business-intelligence modes, tenant-restricted, Groq/Qwen/DeepSeek + Log fallback |
+| **Reporting & Analytics** | ✅ Built | Revenue, fleet utilisation, overdue, workshop, customer & maintenance reports; Redis cache-aside; queued PDF + Excel export; Australian financial year |
+| **Dashboard** | ✅ Built | Needs-attention queue, fleet snapshot, the week ahead, polling refresh |
+| **Settings & Customization** | ✅ Built | Company profile, staff, finance, regional, integrations, notification matrix, personal preferences, audit trail |
+| **Landing Website + CMS** | ✅ Built | Public marketing site with super-admin-controlled content, FAQ, stat counters, demo request / lead generation |
+| **CI/CD pipeline** | 🔜 Planned | Deploys today run manually per [`CLAUDE.md`](CLAUDE.md) → *Server Deployment*; GitHub Actions automation not yet built |
 
 ---
 
@@ -109,6 +112,9 @@ These are **non-negotiable invariants** the codebase enforces:
   and query-builder layers). Reversals are compensating entries.
 - **Agreements are immutable** — a change never mutates a row; it creates a new version and triggers re-sign.
 - **Customer-after-agreement** — a customer profile is created *from* a signed agreement, never assumed before.
+- **Bond is money held in trust, not rental revenue** — bond ledger entries are excluded from the
+  customer's rental balance; a return's bond figure is snapshotted onto its own append-only record so
+  a later agreement version can never retroactively reinterpret a historical refund.
 - **Every query is tenant-scoped** — cross-tenant access returns 404; verified by feature tests.
 - **Plan limits are hard blocks** — never soft warnings.
 - **Prorated splits sum exactly** — vehicle-change invoice splits always total the original to the cent.
@@ -178,8 +184,10 @@ php artisan test                 # full suite
 php artisan test --filter=Workshop
 ```
 
-Feature tests use `DatabaseTransactions` (never `RefreshDatabase`/`migrate:fresh`). Coverage today
-includes tenant auth & isolation, tenant registration/onboarding rollback, and the workshop/mechanic flow.
+Feature tests use `DatabaseTransactions` (never `RefreshDatabase`/`migrate:fresh`). The suite spans
+every module — tenant auth & isolation, onboarding rollback, the workshop/mechanic flow, agreement
+signing (in-person and public remote e-signing), the rental return/bond-settlement lifecycle, invoicing,
+and more — currently **376 passing** (2 pre-existing, unrelated seeder-data failures tracked separately).
 
 ---
 
@@ -187,8 +195,8 @@ includes tenant auth & isolation, tenant registration/onboarding rollback, and t
 
 ```
 app/
-├── Modules/            # Domain modules (SaasCore, Fleet, Customer, CRM, Agreement,
-│   │                   #   Invoice, Finance, Workshop, Notification, …)
+├── Modules/            # Domain modules (SaasCore, SuperAdmin, Fleet, Customer, CRM, Agreement,
+│   │                   #   Rental, Invoice, Finance, Workshop, AI, Notification, Reporting, CMS, …)
 │   └── <Module>/       # Models, Services, Actions, DTOs, Events, Listeners, Controllers
 ├── Http/Middleware/    # TenantMiddleware, ResolveTenantForMechanic, guards
 └── …
@@ -200,8 +208,8 @@ routes/
 ├── web.php             # Public landing, auth, public CRM intake & QR scan
 ├── tenant.php          # Tenant-scoped app routes
 ├── mechanic.php        # Mechanic portal routes
-├── superadmin.php      # Super admin (planned)
-├── customer.php        # Customer portal (planned)
+├── superadmin.php      # Super admin panel routes
+├── customer.php        # Customer portal routes
 └── api.php             # API v1 (mobile-ready)
 ```
 
