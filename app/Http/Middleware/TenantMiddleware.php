@@ -65,6 +65,7 @@ class TenantMiddleware
                 'name' => $user->name,
                 'email' => $user->email,
                 'role' => $user->role,
+                'email_verified' => $user->email_verified_at !== null,
             ] : null,
         ]);
 

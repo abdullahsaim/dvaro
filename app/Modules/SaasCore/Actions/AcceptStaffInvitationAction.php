@@ -39,6 +39,10 @@ class AcceptStaffInvitationAction extends BaseAction
                 'password' => $password, // hashed by the model cast
                 'role' => $invitation->role,
                 'is_active' => true,
+                // Clicking a unique link sent to this exact address IS proof
+                // of ownership — the same trust basis a verification link
+                // relies on, so there is nothing left to verify separately.
+                'email_verified_at' => now(),
             ]);
 
             $invitation->forceFill(['accepted_at' => now()])->save();

@@ -192,6 +192,13 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perHour(3)->by($scope.':'.$tenantId.':'.$email);
         });
 
+        // Email verification resend: 3 per hour PER USER. Authenticated action
+        // (the user must already be signed in to ask for their own link again),
+        // so keyed by the acting tenant user's id rather than email/IP.
+        RateLimiter::for('email-verification-resend', function (Request $request) {
+            return Limit::perHour(3)->by('verify-resend:'.auth('tenant')->id());
+        });
+
         // Workspace lookup: 10 per hour PER IP. The /find-workspace form is
         // unauthenticated and reveals whether an email maps to a tenant, so it is
         // capped per IP to curb enumeration while leaving room for honest typos.

@@ -18,6 +18,7 @@ use App\Modules\Rental\Http\Controllers\ReturnInspectionController;
 use App\Modules\Reporting\Http\Controllers\ReportingController;
 use App\Modules\SaasCore\Http\Controllers\BillingController;
 use App\Modules\SaasCore\Http\Controllers\CompanyProfileController;
+use App\Modules\SaasCore\Http\Controllers\EmailVerificationController;
 use App\Modules\SaasCore\Http\Controllers\FinanceSettingsController;
 use App\Modules\SaasCore\Http\Controllers\IntegrationSettingsController;
 use App\Modules\SaasCore\Http\Controllers\RegionalSettingsController;
@@ -65,6 +66,12 @@ Route::get('reset-password/{token}', [TenantPasswordResetController::class, 'sho
 Route::post('reset-password', [TenantPasswordResetController::class, 'reset'])
     ->name('password.update');
 
+// Email verification — PUBLIC (opened cold from an inbox, possibly on another
+// device/session). The 'signed' middleware is the only gate: no stored token,
+// the HMAC signature in the URL is the credential (TenantEmailVerificationNotifier).
+Route::get('email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+    ->middleware('signed')->name('verification.verify');
+
 // Staff invitation acceptance (PUBLIC — the invitee has no account yet; the
 // unguessable token is the only credential). Tenant is bound by TenantMiddleware.
 Route::get('invitation/{token}', [StaffInvitationController::class, 'show'])
@@ -92,6 +99,9 @@ Route::middleware('auth:tenant')->group(function () {
     Route::get('dashboard', [TenantDashboardController::class, 'index'])->name('dashboard');
     Route::post('dashboard/onboarding/dismiss', [TenantDashboardController::class, 'dismissOnboarding'])
         ->name('dashboard.onboarding.dismiss');
+
+    Route::post('email/resend', [EmailVerificationController::class, 'resend'])
+        ->middleware('throttle:email-verification-resend')->name('verification.resend');
 
     // Fleet — resource binds {vehicle} (instead of the default {fleet}) so model
     // binding resolves a Vehicle through TenantScope (cross-tenant id => 404).

@@ -24,6 +24,7 @@ import {
 import Sidebar from '@/Components/UI/Sidebar.vue';
 import TopBar from '@/Components/UI/TopBar.vue';
 import Toast from '@/Components/UI/Toast.vue';
+import EmailVerificationBanner from '@/Components/Tenant/EmailVerificationBanner.vue';
 import { useColorMode } from '@/composables/useColorMode';
 
 const { t } = useI18n();
@@ -95,6 +96,9 @@ onMounted(syncFromServer);
                 {{ t('superadmin.impersonation.stop') }}
             </button>
         </div>
+
+        <!-- Email verification nudge (soft — never blocks, just reminds) -->
+        <EmailVerificationBanner v-if="user && !user.email_verified" :base="`/app/${slug}`" />
 
         <div class="flex min-h-0 flex-1">
             <Sidebar :items="navItems" title="DVARO" :context-label="tenantName" />

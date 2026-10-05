@@ -164,6 +164,12 @@
             "creating_account": "Creating your account…"
         }
     },
+    "verification": {
+        "banner_text": "Please verify your email address.",
+        "resend": "Resend verification email",
+        "sending": "Sending…",
+        "dismiss": "Dismiss for now"
+    },
     "dashboard": {
         "welcome": "Welcome, {name}",
         "getting_started": {

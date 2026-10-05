@@ -56,6 +56,7 @@ class TenantUser extends Authenticatable
         'is_active',
         'last_login_at',
         'preferences',
+        'email_verified_at',
     ];
 
     protected $hidden = [

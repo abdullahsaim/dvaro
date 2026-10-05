@@ -25,6 +25,13 @@ return [
         'throttle' => 'Too many registration attempts. Please try again in :minutes minutes.',
     ],
 
+    'verification' => [
+        'verified' => 'Email verified — thanks!',
+        'already_verified' => 'Your email is already verified.',
+        'resent' => 'Verification email sent — check your inbox.',
+        'invalid_link' => 'This verification link is invalid or has expired. Request a new one from your dashboard.',
+    ],
+
     'fleet' => [
         'created' => 'Vehicle added to your fleet.',
         'updated' => 'Vehicle updated.',

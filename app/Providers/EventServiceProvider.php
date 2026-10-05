@@ -20,10 +20,12 @@ use App\Modules\Notification\Listeners\SendLeadSubmittedNotification;
 use App\Modules\Notification\Listeners\SendPaymentReceivedNotification;
 use App\Modules\Notification\Listeners\SendSubscriptionCancelledNotification;
 use App\Modules\Notification\Listeners\SendSubscriptionPaymentFailedNotification;
+use App\Modules\Notification\Listeners\SendTenantEmailVerification;
 use App\Modules\Rental\Events\BondRefunded;
 use App\Modules\Reporting\Listeners\ReportCacheInvalidationListener;
 use App\Modules\SaasCore\Events\SubscriptionCancelled;
 use App\Modules\SaasCore\Events\SubscriptionPaymentFailed;
+use App\Modules\SaasCore\Events\TenantRegistered;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
 /**
@@ -61,6 +63,9 @@ class EventServiceProvider extends ServiceProvider
         ],
         BondRefunded::class => [
             SendBondRefundedNotification::class,
+        ],
+        TenantRegistered::class => [
+            SendTenantEmailVerification::class,
         ],
         // Stripe webhook outcomes — tenant-admin ops notices (queued, email-only).
         SubscriptionPaymentFailed::class => [
