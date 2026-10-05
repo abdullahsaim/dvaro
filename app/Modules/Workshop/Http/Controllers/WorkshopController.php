@@ -5,20 +5,31 @@ namespace App\Modules\Workshop\Http\Controllers;
 use App\Http\Controllers\Concerns\PaginatesForUser;
 use App\Http\Controllers\Controller;
 use App\Modules\Fleet\Models\Vehicle;
+use App\Modules\Workshop\Actions\ScheduleServiceAction;
+use App\Modules\Workshop\Actions\UploadServiceLogDocumentAction;
+use App\Modules\Workshop\DTOs\ScheduleServiceDTO;
+use App\Modules\Workshop\Http\Requests\ScheduleServiceRequest;
+use App\Modules\Workshop\Http\Requests\UploadServiceLogDocumentRequest;
+use App\Modules\Workshop\Models\Mechanic;
 use App\Modules\Workshop\Models\ServiceLog;
+use App\Modules\Workshop\Models\ServiceLogDocument;
+use App\Services\FileUrlService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Tenant-admin workshop view (read-only). Thin controller: authorize → query →
- * render. Service logs are CREATED and MUTATED only from the mechanic portal;
- * here the tenant simply oversees them.
+ * Tenant-admin workshop view. Mostly read-only — service logs are CREATED and
+ * MUTATED from the mechanic portal — with two admin-initiated exceptions:
+ * booking a future appointment (schedule/storeSchedule) and attaching a
+ * document from the desktop (uploadDocument). Thin controller: authorize →
+ * query/delegate → render.
  *
  * AUTHORIZATION: authorize against the TENANT guard —
  *   Gate::forUser(auth('tenant')->user())->authorize(...)
- * (MechanicPolicy's read abilities accept any Authenticatable.) Never
+ * (MechanicPolicy's read/schedule abilities accept any Authenticatable.) Never
  * $this->authorize() (empty web guard). Tenant is bound by TenantMiddleware;
  * {log}/{vehicle} bind through TenantScope (cross-tenant id => 404).
  */
@@ -37,12 +48,91 @@ class WorkshopController extends Controller
     {
         Gate::forUser(auth('tenant')->user())->authorize('view', $log);
 
-        $log->load(['vehicle', 'mechanic:id,name,email', 'parts']);
+        $log->load(['vehicle', 'mechanic:id,name,email', 'parts', 'documents']);
 
         return Inertia::render('Workshop/Show', [
             'log' => $log,
             'statuses' => ServiceLog::STATUSES,
         ]);
+    }
+
+    /**
+     * Document download — same signed-URL pattern as every other sensitive
+     * file in the app (customer documents, expense receipts). {log}/{document}
+     * both bind through TenantScope, so a cross-tenant pairing 404s before
+     * this runs; the explicit service_log_id check below also rejects a
+     * document that belongs to a DIFFERENT log within the same tenant.
+     */
+    public function downloadDocument(ServiceLog $log, ServiceLogDocument $document, FileUrlService $fileUrls): RedirectResponse
+    {
+        Gate::forUser(auth('tenant')->user())->authorize('view', $log);
+
+        abort_unless((int) $document->service_log_id === (int) $log->id, 404);
+
+        return redirect()->away($fileUrls->temporaryUrl($document->path));
+    }
+
+    public function uploadDocument(
+        UploadServiceLogDocumentRequest $request,
+        ServiceLog $log,
+        UploadServiceLogDocumentAction $action,
+    ): RedirectResponse {
+        Gate::forUser(auth('tenant')->user())->authorize('view', $log);
+
+        $action->execute(
+            $log,
+            $request->file('file'),
+            ServiceLogDocument::UPLOADED_BY_TENANT_USER,
+            (int) auth('tenant')->id(),
+        );
+
+        return back()->with('success', __('common.workshop.document_added'));
+    }
+
+    public function deleteDocument(ServiceLog $log, ServiceLogDocument $document, UploadServiceLogDocumentAction $action): RedirectResponse
+    {
+        Gate::forUser(auth('tenant')->user())->authorize('view', $log);
+
+        abort_unless((int) $document->service_log_id === (int) $log->id, 404);
+
+        $action->delete($document);
+
+        return back()->with('success', __('common.workshop.document_removed'));
+    }
+
+    /**
+     * Book a future appointment — the form.
+     */
+    public function scheduleForm(): Response
+    {
+        Gate::forUser(auth('tenant')->user())->authorize('schedule', ServiceLog::class);
+
+        return Inertia::render('Workshop/Schedule', [
+            'vehicles' => Vehicle::query()
+                ->orderBy('make')->orderBy('model')
+                ->get(['id', 'make', 'model', 'registration_number']),
+            'mechanics' => Mechanic::query()
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get(['id', 'name']),
+        ]);
+    }
+
+    public function storeSchedule(ScheduleServiceRequest $request, ScheduleServiceAction $action): RedirectResponse
+    {
+        Gate::forUser(auth('tenant')->user())->authorize('schedule', ServiceLog::class);
+
+        // Captured BEFORE the action runs — defensive: ServiceScheduled has no
+        // listener today, but if one is ever added, a queued listener's
+        // forgetTenant() would otherwise clear this binding first. Same
+        // footgun documented on PublicAgreementSigningController::submit().
+        $tenantSlug = app('current_tenant')->slug;
+
+        $log = $action->execute(ScheduleServiceDTO::fromRequest($request));
+
+        return redirect()
+            ->route('tenant.workshop.show', ['tenant_slug' => $tenantSlug, 'log' => $log->id])
+            ->with('success', __('common.workshop.service_scheduled'));
     }
 
     /**

@@ -48,6 +48,14 @@ return [
             'label' => 'New lead',
             'description' => 'Sent to your team when someone submits the lead form.',
         ],
+        'workshop_maintenance_started' => [
+            'label' => 'Workshop job opened',
+            'description' => 'Sent to your team when a vehicle enters the workshop.',
+        ],
+        'workshop_maintenance_completed' => [
+            'label' => 'Workshop job completed',
+            'description' => 'Sent to your team when a workshop job finishes and the vehicle is back in service.',
+        ],
         'subscription_payment_failed' => [
             'label' => 'Subscription payment failed',
             'description' => 'Billing alert for your own DVARO subscription.',

@@ -80,6 +80,14 @@ class NotificationMatrix extends BaseService
             'audience' => self::AUDIENCE_STAFF,
             'channels' => [self::EMAIL => true],
         ],
+        'workshop.maintenance_started' => [
+            'audience' => self::AUDIENCE_STAFF,
+            'channels' => [self::EMAIL => true],
+        ],
+        'workshop.maintenance_completed' => [
+            'audience' => self::AUDIENCE_STAFF,
+            'channels' => [self::EMAIL => true],
+        ],
         'subscription.payment_failed' => [
             'audience' => self::AUDIENCE_STAFF,
             'channels' => [self::EMAIL => true],

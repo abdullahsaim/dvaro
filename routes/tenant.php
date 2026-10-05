@@ -319,12 +319,23 @@ Route::middleware('auth:tenant')->group(function () {
     Route::resource('mechanics', MechanicController::class)
         ->except(['show']);
 
-    // Workshop (admin oversight, read-only). Service logs are created/mutated only
-    // from the mechanic portal. {log}/{vehicle} bind through TenantScope (404).
+    // Workshop (admin oversight, mostly read-only). Service logs are
+    // created/mutated from the mechanic portal, EXCEPT booking a future
+    // appointment and attaching a document — both admin-initiated. Fixed
+    // segments (schedule/vehicle) registered BEFORE the {log} catch-all.
+    // {log}/{vehicle}/{document} bind through TenantScope (404).
     Route::get('workshop', [WorkshopController::class, 'index'])->name('workshop.index');
+    Route::get('workshop/schedule', [WorkshopController::class, 'scheduleForm'])->name('workshop.schedule');
+    Route::post('workshop/schedule', [WorkshopController::class, 'storeSchedule'])->name('workshop.schedule.store');
     Route::get('workshop/vehicle/{vehicle}', [WorkshopController::class, 'vehicleHistory'])
         ->name('workshop.vehicle');
     Route::get('workshop/{log}', [WorkshopController::class, 'show'])->name('workshop.show');
+    Route::post('workshop/{log}/documents', [WorkshopController::class, 'uploadDocument'])
+        ->name('workshop.documents.store');
+    Route::get('workshop/{log}/documents/{document}', [WorkshopController::class, 'downloadDocument'])
+        ->name('workshop.documents.download');
+    Route::delete('workshop/{log}/documents/{document}', [WorkshopController::class, 'deleteDocument'])
+        ->name('workshop.documents.destroy');
 
     // AI Assistant — tenant-restricted; HARD-GATED on the 'ai' plan module
     // (tenant.module:ai → 403 if the plan excludes it). Conversations are scoped

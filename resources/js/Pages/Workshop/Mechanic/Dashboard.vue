@@ -2,20 +2,30 @@
 // Mechanic dashboard — this mechanic's open jobs + recently completed.
 // Design-system pass; mobile-first job list.
 import { computed } from 'vue';
-import { Head, Link, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import MechanicLayout from '@/Layouts/MechanicLayout.vue';
 import StatusBadge from '@/Components/UI/StatusBadge.vue';
+import Button from '@/Components/UI/Button.vue';
 import PlateSearch from '@/Components/Workshop/PlateSearch.vue';
 
 const props = defineProps({
     activeJobs: { type: Array, required: true },
+    upcoming: { type: Array, default: () => [] },
     recentCompleted: { type: Array, required: true },
 });
 
 const { t } = useI18n();
 const page = usePage();
 const base = computed(() => `/mechanic/${page.props.tenant.slug}`);
+
+function startJob(job) {
+    router.put(`${base.value}/logs/${job.id}/status`, { status: 'in_progress' }, { preserveScroll: true });
+}
+
+function formatDateTime(value) {
+    return value ? new Date(value).toLocaleString('en-AU', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
+}
 
 const statusVariants = {
     pending: 'neutral',
@@ -75,6 +85,27 @@ function vehicleLabel(job) {
                                 {{ t('workshop.open_qr') }}
                             </Link>
                         </div>
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <!-- Upcoming (booked ahead, not yet started) -->
+        <section v-if="upcoming.length" class="mt-6">
+            <h2 class="text-xs font-medium uppercase tracking-wide text-ink-500">{{ t('workshop.upcoming') }}</h2>
+            <ul class="mt-3 space-y-2">
+                <li
+                    v-for="job in upcoming"
+                    :key="job.id"
+                    class="rounded-card border border-ink-200 bg-white p-4 shadow-subtle dark:border-ink-800 dark:bg-ink-900"
+                >
+                    <div class="flex items-center justify-between gap-3">
+                        <div>
+                            <p class="font-medium text-ink-900 dark:text-ink-50">{{ job.title }}</p>
+                            <p class="text-sm text-ink-500">{{ vehicleLabel(job) }}</p>
+                            <p class="text-xs text-ink-400">{{ formatDateTime(job.scheduled_for) }}</p>
+                        </div>
+                        <Button size="sm" @click="startJob(job)">{{ t('workshop.start_job') }}</Button>
                     </div>
                 </li>
             </ul>

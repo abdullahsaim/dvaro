@@ -28,6 +28,20 @@ const { formatAUD } = useCurrency();
         <ReportNav active="workshop" />
         <ReportToolbar report-type="workshop" :filters="filters" :exports="exports" />
 
+        <!-- Live snapshot — NOT windowed by the date filter above: what's open
+             and what's booked ahead, right now. -->
+        <h2 class="mb-3 text-lg font-medium text-ink-900 dark:text-ink-50">{{ t('reporting.workshop.right_now') }}</h2>
+        <dl class="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-5">
+            <StatCard
+                v-for="status in Object.keys(report.open_by_status)"
+                :key="status"
+                :label="t(`workshop.statuses.${status}`, status)"
+                :value="report.open_by_status[status]"
+            />
+            <StatCard :label="t('reporting.workshop.upcoming')" :value="report.upcoming_count" />
+        </dl>
+
+        <h2 class="mb-3 text-lg font-medium text-ink-900 dark:text-ink-50">{{ t('reporting.workshop.this_period') }}</h2>
         <dl class="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
             <StatCard :label="t('reporting.workshop.total_jobs')" :value="report.total_jobs" />
             <StatCard :label="t('reporting.workshop.total_labour')" :value="formatAUD(report.total_labour_cost)" />

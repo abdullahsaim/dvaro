@@ -58,6 +58,22 @@ class MechanicPolicy
         return $this->update($mechanic, $log);
     }
 
+    /** A mechanic may attach a photo/document to their own job (or any, if senior). */
+    public function addDocument(Mechanic $mechanic, ServiceLog $log): bool
+    {
+        return $this->update($mechanic, $log);
+    }
+
+    /**
+     * Booking a future appointment is a tenant-admin action (same permissive
+     * gate as viewAny — any tenant user may schedule, mirroring the admin
+     * workshop view's existing openness).
+     */
+    public function schedule(Authenticatable $user): bool
+    {
+        return true;
+    }
+
     private function sameTenant(Mechanic $mechanic, ServiceLog $log): bool
     {
         return (int) $mechanic->tenant_id === (int) $log->tenant_id;

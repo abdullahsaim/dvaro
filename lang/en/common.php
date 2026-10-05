@@ -54,6 +54,9 @@ return [
         'log_created' => 'Service log created. The vehicle is now in maintenance.',
         'status_changed' => 'Service log status updated.',
         'part_added' => 'Part added to the service log.',
+        'document_added' => 'Document attached.',
+        'document_removed' => 'Document removed.',
+        'service_scheduled' => 'Service appointment booked.',
     ],
 
     'mechanic' => [

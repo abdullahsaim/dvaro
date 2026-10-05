@@ -39,7 +39,7 @@ class ReportingService extends BaseService
      * the invoice was issued — so this sums Payment.amount, grouped by the month
      * of paid_at. Tenant-scoped via Payment's HasTenant.
      *
-     * @return list<array{month: string, revenue: int}>  revenue in cents
+     * @return list<array{month: string, revenue: int}> revenue in cents
      */
     public function revenueByPeriod(Carbon $from, Carbon $to): array
     {
@@ -239,12 +239,33 @@ class ReportingService extends BaseService
             ->values()
             ->all();
 
+        // Current snapshot, NOT windowed by $from/$to: "what's open right now"
+        // and "what's booked ahead" are point-in-time facts, not a period total.
+        $openStatuses = array_diff(ServiceLog::STATUSES, [ServiceLog::STATUS_COMPLETED]);
+        $openCounts = ServiceLog::query()
+            ->whereIn('status', $openStatuses)
+            ->selectRaw('status, COUNT(*) as aggregate')
+            ->groupBy('status')
+            ->pluck('aggregate', 'status');
+
+        $openByStatus = [];
+        foreach ($openStatuses as $status) {
+            $openByStatus[$status] = (int) ($openCounts[$status] ?? 0);
+        }
+
+        $upcomingCount = ServiceLog::query()
+            ->whereNull('started_at')
+            ->whereNotNull('scheduled_for')
+            ->count();
+
         return [
             'total_jobs' => $logs->count(),
             'total_labour_cost' => $totalLabour,
             'total_parts_cost' => $totalParts,
             'average_duration_hours' => $avgHours,
             'by_mechanic' => $byMechanic,
+            'open_by_status' => $openByStatus,
+            'upcoming_count' => $upcomingCount,
         ];
     }
 

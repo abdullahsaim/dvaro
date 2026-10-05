@@ -22,9 +22,13 @@ class ServiceLog extends Model
     use SoftDeletes;
 
     public const STATUS_PENDING = 'pending';
+
     public const STATUS_IN_PROGRESS = 'in_progress';
+
     public const STATUS_COMPLETED = 'completed';
+
     public const STATUS_WAITING_FOR_PARTS = 'waiting_for_parts';
+
     public const STATUS_RE_INSPECTION_REQUIRED = 're_inspection_required';
 
     /** The complete set of valid statuses (CLAUDE.md — 5 maintenance statuses). */
@@ -50,6 +54,7 @@ class ServiceLog extends Model
         'completed_at',
         'is_scheduled_service',
         'odometer_ignored',
+        'scheduled_for',
     ];
 
     protected function casts(): array
@@ -62,6 +67,7 @@ class ServiceLog extends Model
             'completed_at' => 'datetime',
             'is_scheduled_service' => 'boolean',
             'odometer_ignored' => 'boolean',
+            'scheduled_for' => 'datetime',
         ];
     }
 
@@ -80,9 +86,20 @@ class ServiceLog extends Model
         return $this->hasMany(PartUsed::class);
     }
 
+    public function documents(): HasMany
+    {
+        return $this->hasMany(ServiceLogDocument::class);
+    }
+
     public function isComplete(): bool
     {
         return $this->status === self::STATUS_COMPLETED;
+    }
+
+    /** Booked ahead and not yet started — the vehicle is still in service. */
+    public function isUpcoming(): bool
+    {
+        return $this->scheduled_for !== null && $this->started_at === null;
     }
 
     /**

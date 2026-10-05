@@ -1291,6 +1291,26 @@
         "change_status": "Change status",
         "started_at": "Started",
         "completed_at": "Completed",
+        "scheduled_for": "Scheduled for",
+        "upcoming": "Upcoming",
+        "start_job": "Start",
+        "documents": {
+            "title": "Documents",
+            "add": "Add document",
+            "empty": "No documents attached.",
+            "confirm_remove": "Remove this document?"
+        },
+        "schedule": {
+            "title": "Schedule service",
+            "subtitle": "Book a future workshop appointment. The vehicle stays in service until work actually starts.",
+            "vehicle": "Vehicle",
+            "mechanic": "Assign to",
+            "select_vehicle": "Select a vehicle",
+            "select_mechanic": "Select a mechanic",
+            "scheduled_for": "Date and time",
+            "submit": "Book appointment"
+        },
+        "schedule_service": "Schedule service",
         "open_qr": "Open vehicle",
         "scheduled_service_hint": "Completing this job resets the vehicle's service schedule (date and km).",
         "scheduled_badge": "Scheduled service",
@@ -1764,6 +1784,9 @@
             "empty": "No overdue payments."
         },
         "workshop": {
+            "right_now": "Right now",
+            "this_period": "This period",
+            "upcoming": "Booked ahead",
             "total_jobs": "Jobs completed",
             "total_labour": "Total labour",
             "total_parts": "Total parts",

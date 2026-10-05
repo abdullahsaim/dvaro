@@ -7,11 +7,14 @@ use App\Modules\Fleet\Models\Vehicle;
 use App\Modules\Workshop\Actions\AddPartAction;
 use App\Modules\Workshop\Actions\ChangeServiceLogStatusAction;
 use App\Modules\Workshop\Actions\CreateServiceLogAction;
+use App\Modules\Workshop\Actions\UploadServiceLogDocumentAction;
 use App\Modules\Workshop\DTOs\CreateServiceLogDTO;
 use App\Modules\Workshop\Http\Requests\AddPartRequest;
 use App\Modules\Workshop\Http\Requests\CreateServiceLogRequest;
 use App\Modules\Workshop\Http\Requests\UpdateStatusRequest;
+use App\Modules\Workshop\Http\Requests\UploadServiceLogDocumentRequest;
 use App\Modules\Workshop\Models\ServiceLog;
+use App\Modules\Workshop\Models\ServiceLogDocument;
 use App\Modules\Workshop\Services\VehicleLookupService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -40,12 +43,24 @@ class MechanicPortalController extends Controller
     {
         $mechanic = auth('mechanic')->user();
 
-        // This mechanic's open jobs (anything not yet completed), newest first.
+        // This mechanic's open jobs (anything not yet completed, already
+        // under way — i.e. not a future booking), newest first.
         $activeJobs = ServiceLog::query()
             ->where('mechanic_id', $mechanic->id)
             ->where('status', '!=', ServiceLog::STATUS_COMPLETED)
+            ->whereNotNull('started_at')
             ->with('vehicle:id,make,model,registration_number,status,qr_code_token')
             ->latest()
+            ->get();
+
+        // Booked ahead, not yet started — distinct from an active job so the
+        // mechanic sees what's coming without mistaking it for work in hand.
+        $upcoming = ServiceLog::query()
+            ->where('mechanic_id', $mechanic->id)
+            ->whereNull('started_at')
+            ->whereNotNull('scheduled_for')
+            ->with('vehicle:id,make,model,registration_number')
+            ->orderBy('scheduled_for')
             ->get();
 
         $recentCompleted = ServiceLog::query()
@@ -58,6 +73,7 @@ class MechanicPortalController extends Controller
 
         return Inertia::render('Workshop/Mechanic/Dashboard', [
             'activeJobs' => $activeJobs,
+            'upcoming' => $upcoming,
             'recentCompleted' => $recentCompleted,
         ]);
     }
@@ -135,6 +151,12 @@ class MechanicPortalController extends Controller
             $request->filled('token') ? $request->string('token')->toString() : null,
         );
 
+        // Captured BEFORE the action runs: it fires MaintenanceStarted, whose
+        // queued listener's forgetTenant() (QueuedNotificationListener) clears
+        // the current_tenant binding under a sync queue connection — same
+        // footgun documented on PublicAgreementSigningController::submit().
+        $tenantSlug = app('current_tenant')->slug;
+
         $action->execute(
             CreateServiceLogDTO::fromRequest($request, $vehicle->id),
             auth('mechanic')->user(),
@@ -142,7 +164,7 @@ class MechanicPortalController extends Controller
 
         return redirect()
             ->route('mechanic.vehicles.show', [
-                'tenant_slug' => app('current_tenant')->slug,
+                'tenant_slug' => $tenantSlug,
                 'vehicle' => $vehicle->id,
             ])
             ->with('success', __('common.workshop.log_created'));
@@ -172,5 +194,22 @@ class MechanicPortalController extends Controller
         );
 
         return back()->with('success', __('common.workshop.part_added'));
+    }
+
+    public function uploadDocument(
+        UploadServiceLogDocumentRequest $request,
+        ServiceLog $log,
+        UploadServiceLogDocumentAction $action,
+    ): RedirectResponse {
+        Gate::forUser(auth('mechanic')->user())->authorize('addDocument', $log);
+
+        $action->execute(
+            $log,
+            $request->file('file'),
+            ServiceLogDocument::UPLOADED_BY_MECHANIC,
+            (int) auth('mechanic')->id(),
+        );
+
+        return back()->with('success', __('common.workshop.document_added'));
     }
 }

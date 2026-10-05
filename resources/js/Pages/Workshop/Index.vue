@@ -10,6 +10,7 @@ import DataTable from '@/Components/UI/DataTable.vue';
 import StatusBadge from '@/Components/UI/StatusBadge.vue';
 import EmptyState from '@/Components/UI/EmptyState.vue';
 import Select from '@/Components/UI/Select.vue';
+import Button from '@/Components/UI/Button.vue';
 import { WrenchScrewdriverIcon } from '@heroicons/vue/24/outline';
 import { useCurrency } from '@/composables/useCurrency';
 
@@ -58,7 +59,11 @@ function vehicleLabel(log) {
     <AppLayout>
         <Head :title="t('workshop.title')" />
 
-        <PageHeader :title="t('workshop.title')" />
+        <PageHeader :title="t('workshop.title')">
+            <template #actions>
+                <Button @click="router.visit(`${base}/schedule`)">{{ t('workshop.schedule_service') }}</Button>
+            </template>
+        </PageHeader>
 
         <!-- Filters -->
         <div class="mb-4 flex flex-wrap items-center gap-4">

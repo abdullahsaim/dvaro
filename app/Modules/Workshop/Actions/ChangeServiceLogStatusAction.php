@@ -40,6 +40,7 @@ class ChangeServiceLogStatusAction extends BaseAction
 
         return DB::transaction(function () use ($log, $newStatus) {
             $wasComplete = $log->isComplete();
+            $wasUpcoming = $log->isUpcoming();
 
             $log->status = $newStatus;
 
@@ -50,7 +51,21 @@ class ChangeServiceLogStatusAction extends BaseAction
                 $log->completed_at = now();
             }
 
+            // A SCHEDULED job (booked ahead, vehicle still in service) only
+            // actually takes the vehicle off the road once work starts — the
+            // first transition out of "upcoming". Ad-hoc jobs never hit this:
+            // CreateServiceLogAction already stamps started_at and flips the
+            // vehicle to maintenance at creation, so isUpcoming() is already
+            // false by the time any status change reaches here.
+            if ($wasUpcoming && $newStatus !== ServiceLog::STATUS_PENDING) {
+                $log->started_at = now();
+            }
+
             $log->save();
+
+            if ($wasUpcoming && $newStatus !== ServiceLog::STATUS_PENDING) {
+                $this->changeVehicleStatus->execute(Vehicle::findOrFail($log->vehicle_id), Vehicle::STATUS_MAINTENANCE);
+            }
 
             // Return the vehicle to service only on the transition INTO completed
             // (not on a re-save of an already-complete log).

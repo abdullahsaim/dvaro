@@ -1,7 +1,7 @@
 <script setup>
 // Tenant-admin service log detail (read-only) — design-system pass.
-import { computed } from 'vue';
-import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import PageHeader from '@/Components/UI/PageHeader.vue';
@@ -32,6 +32,32 @@ const vehicle = computed(() => props.log.vehicle);
 const partsTotal = computed(() =>
     (props.log.parts ?? []).reduce((sum, p) => sum + (p.total_cost || 0), 0),
 );
+
+// ── Documents ────────────────────────────────────────────────────────────
+const documentForm = useForm({ file: null });
+const fileInput = ref(null);
+
+function pickDocument() {
+    fileInput.value?.click();
+}
+
+function uploadDocument(event) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    documentForm.file = file;
+    documentForm.post(`${base.value}/${props.log.id}/documents`, {
+        forceFormData: true,
+        preserveScroll: true,
+        onSuccess: () => documentForm.reset('file'),
+    });
+}
+
+function deleteDocument(document) {
+    if (!confirm(t('workshop.documents.confirm_remove'))) return;
+    router.delete(`${base.value}/${props.log.id}/documents/${document.id}`, { preserveScroll: true });
+}
 </script>
 
 <template>
@@ -72,6 +98,10 @@ const partsTotal = computed(() =>
                 <div class="bg-white p-4 dark:bg-ink-900">
                     <dt class="text-sm text-ink-500">{{ t('workshop.odometer') }}</dt>
                     <dd class="mt-1 font-medium text-ink-900 dark:text-ink-50">{{ log.odometer_reading ?? '—' }}</dd>
+                </div>
+                <div v-if="log.scheduled_for && !log.started_at" class="bg-white p-4 dark:bg-ink-900">
+                    <dt class="text-sm text-ink-500">{{ t('workshop.scheduled_for') }}</dt>
+                    <dd class="mt-1 font-medium text-ink-900 dark:text-ink-50">{{ log.scheduled_for }}</dd>
                 </div>
                 <div class="bg-white p-4 dark:bg-ink-900">
                     <dt class="text-sm text-ink-500">{{ t('workshop.started_at') }}</dt>
@@ -118,6 +148,27 @@ const partsTotal = computed(() =>
                     <dd class="font-semibold tabular-nums text-ink-900 dark:text-ink-50">{{ formatAUD(log.total_cost) }}</dd>
                 </div>
             </dl>
+
+            <!-- Documents -->
+            <div class="mt-8 flex items-center justify-between">
+                <h2 class="text-xs font-medium uppercase tracking-wide text-ink-500">{{ t('workshop.documents.title') }}</h2>
+                <Button size="sm" variant="secondary" :loading="documentForm.processing" @click="pickDocument">
+                    {{ t('workshop.documents.add') }}
+                </Button>
+                <input ref="fileInput" type="file" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" class="hidden" @change="uploadDocument" />
+            </div>
+            <p v-if="documentForm.errors.file" class="mt-2 text-sm text-danger-600 dark:text-danger-500">{{ documentForm.errors.file }}</p>
+            <p v-if="!log.documents?.length" class="mt-2 text-sm text-ink-500">{{ t('workshop.documents.empty') }}</p>
+            <ul v-else class="mt-2 divide-y divide-ink-100 overflow-hidden rounded-card border border-ink-200 dark:divide-ink-800 dark:border-ink-800">
+                <li v-for="doc in log.documents" :key="doc.id" class="flex items-center justify-between gap-3 bg-white px-4 py-2.5 text-sm dark:bg-ink-900">
+                    <a :href="`${base}/${log.id}/documents/${doc.id}`" target="_blank" rel="noopener" class="truncate text-ink-900 hover:underline dark:text-ink-100">
+                        {{ doc.original_name }}
+                    </a>
+                    <button type="button" class="shrink-0 text-xs text-danger-600 hover:underline dark:text-danger-500" @click="deleteDocument(doc)">
+                        {{ t('common.delete') }}
+                    </button>
+                </li>
+            </ul>
         </div>
     </AppLayout>
 </template>

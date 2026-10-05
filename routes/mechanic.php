@@ -80,4 +80,6 @@ Route::middleware('auth:mechanic')->group(function () {
         ->name('logs.status');
     Route::post('logs/{log}/parts', [MechanicPortalController::class, 'addPart'])
         ->name('logs.parts');
+    Route::post('logs/{log}/documents', [MechanicPortalController::class, 'uploadDocument'])
+        ->name('logs.documents');
 });
