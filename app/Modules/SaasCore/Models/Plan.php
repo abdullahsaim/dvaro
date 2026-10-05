@@ -65,6 +65,9 @@ class Plan extends Model
         'stripe_product_id',
         'stripe_monthly_price_id',
         'stripe_annual_price_id',
+        'paypal_product_id',
+        'paypal_monthly_plan_id',
+        'paypal_annual_plan_id',
     ];
 
     protected function casts(): array
@@ -102,6 +105,17 @@ class Plan extends Model
         return $billingCycle === Subscription::BILLING_ANNUAL
             ? $this->stripe_annual_price_id
             : $this->stripe_monthly_price_id;
+    }
+
+    /**
+     * The PayPal billing Plan id for a billing cycle, or null when the plan
+     * has not been synced (paypal:sync-plans) for that cycle.
+     */
+    public function paypalPlanIdFor(string $billingCycle): ?string
+    {
+        return $billingCycle === Subscription::BILLING_ANNUAL
+            ? $this->paypal_annual_plan_id
+            : $this->paypal_monthly_plan_id;
     }
 
     /**

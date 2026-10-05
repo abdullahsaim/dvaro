@@ -35,9 +35,18 @@ interface PaymentProviderInterface
     /**
      * Verify a webhook payload against its signature and return the decoded
      * event object. MUST throw when the signature is invalid — callers abort
-     * 400 on any throw. (Stripe returns \Stripe\Event.)
+     * 400 on any throw.
+     *
+     * Stripe verifies against a single HMAC signature string (the
+     * Stripe-Signature header) and returns \Stripe\Event. PayPal has no single
+     * signature value — it verifies a payload against a bundle of headers
+     * (transmission id/time, cert url, auth algo, the actual signature) via
+     * its own verify-webhook-signature API, so $signature accepts that bundle
+     * as an array for PaypalPaymentProvider and returns a plain decoded event.
+     *
+     * @param  array<string, string>|string  $signature
      */
-    public function constructWebhookEvent(string $payload, string $signature): object;
+    public function constructWebhookEvent(string $payload, array|string $signature): object;
 
     /**
      * Cancel a gateway subscription (at period end — the customer keeps access

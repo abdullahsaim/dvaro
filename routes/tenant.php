@@ -21,6 +21,7 @@ use App\Modules\SaasCore\Http\Controllers\CompanyProfileController;
 use App\Modules\SaasCore\Http\Controllers\EmailVerificationController;
 use App\Modules\SaasCore\Http\Controllers\FinanceSettingsController;
 use App\Modules\SaasCore\Http\Controllers\IntegrationSettingsController;
+use App\Modules\SaasCore\Http\Controllers\PaypalCheckoutController;
 use App\Modules\SaasCore\Http\Controllers\RegionalSettingsController;
 use App\Modules\SaasCore\Http\Controllers\SettingsController;
 use App\Modules\SaasCore\Http\Controllers\StaffController;
@@ -260,7 +261,17 @@ Route::middleware('auth:tenant')->group(function () {
     Route::get('billing/checkout/cancel', [StripeCheckoutController::class, 'cancel'])
         ->name('billing.checkout.cancel');
 
-    // Cancel the Stripe subscription (at period end — webhook finalises).
+    // PayPal subscription (hosted approval page). Mirrors the Stripe routes
+    // above exactly — activation ONLY happens via webhook.
+    Route::post('billing/paypal/checkout/{plan}', [PaypalCheckoutController::class, 'checkout'])
+        ->name('billing.paypal.checkout');
+    Route::get('billing/paypal/success', [PaypalCheckoutController::class, 'success'])
+        ->name('billing.paypal.success');
+    Route::get('billing/paypal/cancel', [PaypalCheckoutController::class, 'cancel'])
+        ->name('billing.paypal.cancel');
+
+    // Cancel the active gateway subscription (Stripe: at period end; PayPal:
+    // immediate on PayPal's side — either way the cancellation webhook finalises).
     Route::post('billing/cancel', [BillingController::class, 'cancelSubscription'])
         ->name('billing.cancel');
 

@@ -72,6 +72,17 @@ return [
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
     ],
 
+    // PayPal — platform subscription billing, alongside Stripe. Credentials
+    // are used server-side only via PaypalPaymentProvider; webhook_id verifies
+    // the signature on POST /paypal/webhook. mode switches the API host
+    // between PayPal's sandbox and live environments.
+    'paypal' => [
+        'mode' => env('PAYPAL_MODE', 'sandbox'),
+        'client_id' => env('PAYPAL_CLIENT_ID'),
+        'client_secret' => env('PAYPAL_CLIENT_SECRET'),
+        'webhook_id' => env('PAYPAL_WEBHOOK_ID'),
+    ],
+
     // Google reCAPTCHA v2 (checkbox) — platform-wide keys for the tenants'
     // public lead forms. Unset → leads accepted but flagged "unverified".
     'recaptcha' => [

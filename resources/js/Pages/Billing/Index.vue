@@ -95,14 +95,18 @@ function submitUpgrade() {
     });
 }
 
-// Stripe checkout. The server replies with an external-location redirect to
-// Stripe's hosted page, so the "loading" state lives until the browser leaves.
-const checkingOut = ref(null); // `${planId}:${cycle}` while redirecting
+// Checkout (Stripe or PayPal). The server replies with an external-location
+// redirect to the gateway's hosted page, so the "loading" state lives until
+// the browser leaves.
+const checkingOut = ref(null); // `${gateway}:${planId}:${cycle}` while redirecting
 
-function subscribe(plan, cycle) {
-    checkingOut.value = `${plan.id}:${cycle}`;
+function subscribe(plan, cycle, gateway = 'stripe') {
+    checkingOut.value = `${gateway}:${plan.id}:${cycle}`;
+    const path = gateway === 'paypal'
+        ? `/app/${slug.value}/billing/paypal/checkout/${plan.id}`
+        : `/app/${slug.value}/billing/checkout/${plan.id}`;
     router.post(
-        `/app/${slug.value}/billing/checkout/${plan.id}`,
+        path,
         { billing_cycle: cycle },
         {
             preserveScroll: true,
@@ -128,10 +132,11 @@ function upgradeInPlace(plan) {
 }
 
 // A subscribe button is pointless for the exact plan+cycle already billing
-// through Stripe (unless it is winding down) — the server guards this too.
-function alreadyOnStripe(plan, cycle) {
+// through this same gateway (unless it is winding down) — the server guards
+// this too.
+function alreadySubscribed(plan, cycle, gateway) {
     return plan.is_current
-        && props.subscription?.gateway === 'stripe'
+        && props.subscription?.gateway === gateway
         && props.subscription?.billing_cycle === cycle
         && props.subscription?.stripe_status !== 'canceling';
 }
@@ -207,6 +212,9 @@ function submitCancel() {
                     </div>
                     <p v-if="subscription && subscription.gateway === 'stripe'" class="text-xs text-ink-400">
                         {{ t('billing.paid_via_stripe') }}
+                    </p>
+                    <p v-else-if="subscription && subscription.gateway === 'paypal'" class="text-xs text-ink-400">
+                        {{ t('billing.paid_via_paypal') }}
                     </p>
                     <p v-if="trialDaysRemaining !== null" class="text-sm font-medium text-info-600 dark:text-info-500">
                         {{ t('billing.trial_days_remaining', { days: trialDaysRemaining }) }}
@@ -317,21 +325,48 @@ function submitCancel() {
                         v-if="plan.can_checkout_monthly"
                         variant="primary"
                         size="sm"
-                        :disabled="alreadyOnStripe(plan, 'monthly') || checkingOut !== null"
-                        :loading="checkingOut === `${plan.id}:monthly`"
-                        @click="subscribe(plan, 'monthly')"
+                        :disabled="alreadySubscribed(plan, 'monthly', 'stripe') || checkingOut !== null"
+                        :loading="checkingOut === `stripe:${plan.id}:monthly`"
+                        @click="subscribe(plan, 'monthly', 'stripe')"
                     >
-                        {{ checkingOut === `${plan.id}:monthly` ? t('billing.redirecting') : t('billing.subscribe_monthly') }}
+                        {{ checkingOut === `stripe:${plan.id}:monthly` ? t('billing.redirecting') : t('billing.subscribe_monthly') }}
                     </Button>
                     <Button
                         v-if="plan.can_checkout_annual"
                         variant="secondary"
                         size="sm"
-                        :disabled="alreadyOnStripe(plan, 'annual') || checkingOut !== null"
-                        :loading="checkingOut === `${plan.id}:annual`"
-                        @click="subscribe(plan, 'annual')"
+                        :disabled="alreadySubscribed(plan, 'annual', 'stripe') || checkingOut !== null"
+                        :loading="checkingOut === `stripe:${plan.id}:annual`"
+                        @click="subscribe(plan, 'annual', 'stripe')"
                     >
-                        {{ checkingOut === `${plan.id}:annual` ? t('billing.redirecting') : t('billing.subscribe_annual') }}
+                        {{ checkingOut === `stripe:${plan.id}:annual` ? t('billing.redirecting') : t('billing.subscribe_annual') }}
+                    </Button>
+                </div>
+
+                <!-- PayPal checkout — only for paid plans synced to PayPal. -->
+                <div
+                    v-if="plan.can_checkout_paypal_monthly || plan.can_checkout_paypal_annual"
+                    class="mt-2 flex flex-wrap gap-2"
+                >
+                    <Button
+                        v-if="plan.can_checkout_paypal_monthly"
+                        variant="secondary"
+                        size="sm"
+                        :disabled="alreadySubscribed(plan, 'monthly', 'paypal') || checkingOut !== null"
+                        :loading="checkingOut === `paypal:${plan.id}:monthly`"
+                        @click="subscribe(plan, 'monthly', 'paypal')"
+                    >
+                        {{ checkingOut === `paypal:${plan.id}:monthly` ? t('billing.redirecting') : t('billing.subscribe_monthly_paypal') }}
+                    </Button>
+                    <Button
+                        v-if="plan.can_checkout_paypal_annual"
+                        variant="secondary"
+                        size="sm"
+                        :disabled="alreadySubscribed(plan, 'annual', 'paypal') || checkingOut !== null"
+                        :loading="checkingOut === `paypal:${plan.id}:annual`"
+                        @click="subscribe(plan, 'annual', 'paypal')"
+                    >
+                        {{ checkingOut === `paypal:${plan.id}:annual` ? t('billing.redirecting') : t('billing.subscribe_annual_paypal') }}
                     </Button>
                 </div>
 

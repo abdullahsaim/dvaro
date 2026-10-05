@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\PaypalWebhookController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Modules\Agreement\Http\Controllers\PublicAgreementSigningController;
 use App\Modules\CMS\Http\Controllers\DemoRequestController;
@@ -152,3 +153,6 @@ Route::post('portal/{tenant_slug}/invite/{token}', [CustomerPortalController::cl
 */
 Route::post('stripe/webhook', [StripeWebhookController::class, 'handle'])
     ->name('stripe.webhook');
+
+Route::post('paypal/webhook', [PaypalWebhookController::class, 'handle'])
+    ->name('paypal.webhook');

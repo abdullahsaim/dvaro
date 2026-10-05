@@ -19,17 +19,27 @@ class Subscription extends Model
     use HasTenant;
 
     public const STATUS_ACTIVE = 'active';
+
     public const STATUS_TRIALING = 'trialing';
+
     public const STATUS_CANCELLED = 'cancelled';
+
     public const STATUS_PAST_DUE = 'past_due';
+
     public const STATUS_PAUSED = 'paused';
 
     public const BILLING_MONTHLY = 'monthly';
+
     public const BILLING_ANNUAL = 'annual';
 
     public const GATEWAY_STRIPE = 'stripe';
 
-    /** Stripe's own status once the tenant asked to cancel at period end. */
+    public const GATEWAY_PAYPAL = 'paypal';
+
+    /**
+     * The gateway's own status once the tenant asked to cancel at period end.
+     * Shared by both gateways despite the Stripe-specific column name.
+     */
     public const STRIPE_STATUS_CANCELING = 'canceling';
 
     protected $fillable = [

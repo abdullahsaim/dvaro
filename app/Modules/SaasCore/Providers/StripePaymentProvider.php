@@ -108,11 +108,11 @@ class StripePaymentProvider implements PaymentProviderInterface
      * \Stripe\Exception\SignatureVerificationException (or UnexpectedValueException
      * on a malformed payload) — callers turn any throw into a 400.
      */
-    public function constructWebhookEvent(string $payload, string $signature): object
+    public function constructWebhookEvent(string $payload, array|string $signature): object
     {
         return Webhook::constructEvent(
             $payload,
-            $signature,
+            (string) $signature,
             (string) config('services.stripe.webhook_secret'),
         );
     }

@@ -2,11 +2,14 @@
 
 use App\Http\Middleware\CheckImpersonation;
 use App\Http\Middleware\EnsureTenantHasModule;
+use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\RedirectIfTenantAuthenticated;
 use App\Http\Middleware\ResolveTenantForCustomer;
 use App\Http\Middleware\ResolveTenantForMechanic;
+use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SuperAdminMiddleware;
 use App\Http\Middleware\TenantMiddleware;
+use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -80,10 +83,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // Register Inertia's server-side middleware on the web group. Required so
         // session-flashed validation errors are shared into Inertia page props.
         $middleware->web(append: [
-            \App\Http\Middleware\HandleInertiaRequests::class,
+            HandleInertiaRequests::class,
             // Anti-clickjacking (frame-ancestors 'self') on every web page; the
             // lead-form embed sets its own policy. See the class.
-            \App\Http\Middleware\SecurityHeaders::class,
+            SecurityHeaders::class,
         ]);
 
         // Stripe posts webhooks server-to-server — it cannot carry a CSRF token.
@@ -95,6 +98,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // token + throttle:lead-form (PublicLeadFormController).
         $middleware->validateCsrfTokens(except: [
             'stripe/webhook',
+            'paypal/webhook',
             'lead/*',
         ]);
 
@@ -108,21 +112,21 @@ return Application::configure(basePath: dirname(__DIR__))
         // CONTRACT (the router matches Authenticate to it via instanceof), so we
         // anchor to the interface, not the concrete Authenticate class.
         $middleware->prependToPriorityList(
-            before: \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
+            before: AuthenticatesRequests::class,
             prepend: TenantMiddleware::class,
         );
 
         // Same pin for the mechanic portal: ResolveTenantForMechanic must bind
         // the tenant before 'auth:mechanic' loads the (tenant-scoped) Mechanic.
         $middleware->prependToPriorityList(
-            before: \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
+            before: AuthenticatesRequests::class,
             prepend: ResolveTenantForMechanic::class,
         );
 
         // Same pin for the customer portal: ResolveTenantForCustomer must bind
         // the tenant before 'auth:customer' loads the (tenant-scoped) CustomerUser.
         $middleware->prependToPriorityList(
-            before: \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
+            before: AuthenticatesRequests::class,
             prepend: ResolveTenantForCustomer::class,
         );
 

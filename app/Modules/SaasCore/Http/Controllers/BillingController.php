@@ -4,6 +4,7 @@ namespace App\Modules\SaasCore\Http\Controllers;
 
 use App\Exceptions\CheckoutNotAllowedException;
 use App\Http\Controllers\Controller;
+use App\Modules\SaasCore\Actions\CancelPaypalSubscriptionAction;
 use App\Modules\SaasCore\Actions\CancelStripeSubscriptionAction;
 use App\Modules\SaasCore\Models\Plan;
 use App\Modules\SaasCore\Models\Subscription;
@@ -85,12 +86,16 @@ class BillingController extends Controller
                     'modules' => $p->modules ?? [],
                     'limits' => $p->limits ?? [],
                     'is_current' => $isCurrent,
-                    // Self-service Stripe checkout per cycle (first-time
-                    // subscribe) — only when the plan is paid AND synced.
+                    // Self-service checkout per cycle (first-time subscribe) —
+                    // only when the plan is paid AND synced with that gateway.
                     'can_checkout_monthly' => ! $p->is_free && $p->stripe_monthly_price_id !== null,
                     'can_checkout_annual' => ! $p->is_free && $p->stripe_annual_price_id !== null,
+                    'can_checkout_paypal_monthly' => ! $p->is_free && $p->paypal_monthly_plan_id !== null,
+                    'can_checkout_paypal_annual' => ! $p->is_free && $p->paypal_annual_plan_id !== null,
                     // In-place upgrade/downgrade on the EXISTING subscription,
-                    // same billing cycle, immediate + prorated.
+                    // same billing cycle, immediate + prorated — Stripe only
+                    // (PaypalPaymentProvider::changeSubscriptionPlan has no
+                    // immediate-proration equivalent; see its docblock).
                     'can_upgrade_in_place' => $canUpgradeInPlace && ! $isCurrent && ! $p->is_free && $priceForCurrentCycle !== null,
                 ];
             });
@@ -136,16 +141,23 @@ class BillingController extends Controller
     }
 
     /**
-     * Ask Stripe to cancel at period end (CancelStripeSubscriptionAction sets
-     * stripe_status='canceling'; access continues until the period lapses and
-     * the customer.subscription.deleted webhook cancels locally).
+     * Ask the subscription's own gateway to cancel (CancelStripeSubscriptionAction
+     * sets stripe_status='canceling'; access continues until the period lapses
+     * — Stripe at the current period's end, PayPal immediately on its side —
+     * and the gateway's own cancellation webhook finalises locally).
      */
-    public function cancelSubscription(CancelStripeSubscriptionAction $action): RedirectResponse
-    {
+    public function cancelSubscription(
+        CancelStripeSubscriptionAction $cancelStripe,
+        CancelPaypalSubscriptionAction $cancelPaypal,
+    ): RedirectResponse {
         Gate::forUser(auth('tenant')->user())->authorize('manageSubscription');
 
         /** @var Tenant $tenant */
         $tenant = app('current_tenant');
+
+        $action = $tenant->activeSubscription?->gateway === Subscription::GATEWAY_PAYPAL
+            ? $cancelPaypal
+            : $cancelStripe;
 
         try {
             $action->execute($tenant);
