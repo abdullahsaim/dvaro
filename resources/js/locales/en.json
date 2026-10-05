@@ -996,7 +996,8 @@
             "agreement_templates": "Agreement terms",
             "cms": "Landing content",
             "demo_requests": "Demo requests",
-            "upgrade_requests": "Upgrade requests"
+            "upgrade_requests": "Upgrade requests",
+            "activity": "Activity log"
         },
         "dashboard": {
             "title": "Platform overview",
@@ -1070,6 +1071,34 @@
             "mark_contacted": "Mark contacted",
             "complete": "Complete",
             "confirm_complete": "Assign the requested plan to this tenant now?"
+        },
+        "activity": {
+            "title": "Activity log",
+            "subtitle": "Every important action across the platform — tenant lifecycle, plan changes, impersonation, settings.",
+            "empty": "No activity recorded yet.",
+            "search_placeholder": "Search by subject or actor",
+            "all_actions": "All actions",
+            "action": "Action",
+            "tenant": "Tenant",
+            "actor": "By",
+            "when": "When",
+            "details": "Details",
+            "no_tenant": "Platform-wide",
+            "system": "System",
+            "actions": {
+                "tenant.suspended": "Tenant suspended",
+                "tenant.activated": "Tenant activated",
+                "tenant.plan_assigned": "Plan assigned",
+                "tenant.offline_payment_recorded": "Offline payment recorded",
+                "tenant.impersonation_started": "Impersonation started",
+                "tenant.impersonation_stopped": "Impersonation stopped",
+                "superadmin.login": "Super admin signed in",
+                "superadmin.logout": "Super admin signed out",
+                "plan.created": "Plan created",
+                "plan.updated": "Plan updated",
+                "plan.toggled": "Plan active state toggled",
+                "platform_settings.updated": "Platform settings updated"
+            }
         },
         "plans": {
             "title": "Plans",

@@ -5,7 +5,9 @@ namespace App\Modules\SaasCore\Services;
 use App\Modules\SaasCore\Events\SubscriptionUpgraded;
 use App\Modules\SaasCore\Models\Subscription;
 use App\Modules\SaasCore\Models\Tenant;
+use App\Modules\SuperAdmin\Models\PlatformActivityLog;
 use App\Services\BaseService;
+use App\Services\PlatformActivityLogger;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -27,15 +29,21 @@ use Illuminate\Support\Facades\DB;
  */
 class AssignPlanService extends BaseService
 {
+    public function __construct(
+        private readonly PlatformActivityLogger $activity,
+    ) {}
+
     /**
      * @param  string  $billingCycle  Subscription::BILLING_MONTHLY|BILLING_ANNUAL
      * @param  array<string, mixed>  $gatewayAttributes  Extra columns for the new
-     *         subscription row (gateway / gateway_subscription_id /
-     *         stripe_price_id / stripe_status). Empty for manual assignment.
+     *                                                   subscription row (gateway / gateway_subscription_id /
+     *                                                   stripe_price_id / stripe_status). Empty for manual assignment.
      */
     public function execute(Tenant $tenant, int $planId, string $billingCycle, array $gatewayAttributes = []): Subscription
     {
-        return DB::transaction(function () use ($tenant, $planId, $billingCycle, $gatewayAttributes) {
+        $previousPlanId = $tenant->plan_id;
+
+        $subscription = DB::transaction(function () use ($tenant, $planId, $billingCycle, $gatewayAttributes) {
             $now = now();
 
             // Cancel every currently-granting subscription (active OR trialing).
@@ -77,5 +85,20 @@ class AssignPlanService extends BaseService
 
             return $subscription;
         });
+
+        // Logged OUTSIDE the transaction (the platform log is its own append-
+        // only record, not something a plan-assignment rollback should also
+        // unwind) but still synchronously, before the caller's redirect.
+        $this->activity->log(
+            'tenant.plan_assigned',
+            PlatformActivityLog::SUBJECT_SUBSCRIPTION,
+            $subscription->id,
+            $tenant->name,
+            old: ['plan_id' => $previousPlanId],
+            new: ['plan_id' => $planId, 'billing_cycle' => $billingCycle],
+            tenant: $tenant,
+        );
+
+        return $subscription;
     }
 }

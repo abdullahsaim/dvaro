@@ -6,6 +6,7 @@ use App\Modules\SaasCore\Models\Tenant;
 use App\Modules\SaasCore\Models\TenantUser;
 use App\Modules\SuperAdmin\Events\TenantActivated;
 use App\Modules\SuperAdmin\Events\TenantSuspended;
+use App\Modules\SuperAdmin\Models\PlatformActivityLog;
 use App\Modules\SuperAdmin\Models\SuperAdmin;
 use App\Modules\SuperAdmin\Services\PlatformSettingsService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -138,6 +139,16 @@ class SuperAdminTest extends TestCase
 
         $this->assertSame(Tenant::STATUS_ACTIVE, $tenant->fresh()->status);
         Event::assertDispatched(TenantActivated::class);
+
+        // Both lifecycle transitions land on the platform-wide activity log,
+        // attributed to the acting super admin.
+        $this->assertSame(
+            ['tenant.suspended', 'tenant.activated'],
+            PlatformActivityLog::where('tenant_id', $tenant->id)->orderBy('id')->pluck('action')->all(),
+        );
+        $log = PlatformActivityLog::where('tenant_id', $tenant->id)->where('action', 'tenant.suspended')->firstOrFail();
+        $this->assertSame(PlatformActivityLog::ACTOR_SUPER_ADMIN, $log->actor_type);
+        $this->assertSame($admin->id, $log->actor_id);
     }
 
     public function test_impersonation_logs_into_tenant_guard_and_stops_cleanly(): void
@@ -162,6 +173,11 @@ class SuperAdminTest extends TestCase
         $stop->assertRedirect(route('superadmin.dashboard'));
         $stop->assertSessionMissing('impersonator_superadmin_id');
         $this->assertNull(Auth::guard('tenant')->id());
+
+        $this->assertSame(
+            ['tenant.impersonation_started', 'tenant.impersonation_stopped'],
+            PlatformActivityLog::where('tenant_id', $tenant->id)->orderBy('id')->pluck('action')->all(),
+        );
     }
 
     public function test_platform_settings_update_persists_and_recaches(): void
@@ -182,5 +198,33 @@ class SuperAdminTest extends TestCase
         $this->assertSame('Fleetora', $svc->get('platform_name'));
         $this->assertSame(21, $svc->get('free_trial_days'));
         $this->assertTrue($svc->get('manual_tenant_approval'));
+
+        $log = PlatformActivityLog::where('action', 'platform_settings.updated')->latest('id')->firstOrFail();
+        $this->assertSame('Fleetora', $log->new_values['platform_name']);
+        $this->assertNull($log->tenant_id, 'a platform settings change has no single tenant');
+    }
+
+    public function test_super_admin_login_and_logout_are_logged(): void
+    {
+        $admin = $this->makeSuperAdmin();
+
+        $this->post(route('superadmin.login.store'), [
+            'email' => $admin->email,
+            'password' => 'secret1234',
+        ])->assertRedirect();
+
+        $this->assertSame(
+            PlatformActivityLog::ACTOR_SUPER_ADMIN,
+            PlatformActivityLog::where('action', 'superadmin.login')->latest('id')->firstOrFail()->actor_type,
+        );
+
+        $this->actingAs($admin, 'superadmin')
+            ->post(route('superadmin.logout'))
+            ->assertRedirect();
+
+        $this->assertSame(
+            $admin->id,
+            PlatformActivityLog::where('action', 'superadmin.logout')->latest('id')->firstOrFail()->actor_id,
+        );
     }
 }

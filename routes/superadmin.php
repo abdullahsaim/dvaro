@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\UserPreferenceController;
+use App\Modules\SuperAdmin\Http\Controllers\ActivityLogController;
 use App\Modules\SuperAdmin\Http\Controllers\AgreementTemplateController as SuperAdminAgreementTemplateController;
 use App\Modules\SuperAdmin\Http\Controllers\CmsContentController;
 use App\Modules\SuperAdmin\Http\Controllers\DemoRequestController;
@@ -50,6 +51,9 @@ Route::middleware('superadmin.auth')->group(function () {
         ->name('profile.preferences');
 
     Route::get('dashboard', [SuperAdminDashboardController::class, 'index'])->name('dashboard');
+
+    // Platform-wide activity log — read-only, owner-level only.
+    Route::get('activity', [ActivityLogController::class, 'index'])->name('activity.index');
 
     // Tenants — {tenant} binds by slug (Tenant::getRouteKeyName). Tenant is NOT
     // tenant-scoped, so implicit binding is safe here.

@@ -4,6 +4,7 @@ namespace App\Modules\SuperAdmin\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\SuperAdmin\Http\Requests\SuperAdminLoginRequest;
+use App\Services\PlatformActivityLogger;
 use App\Services\UserPreferences;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -27,6 +28,10 @@ class SuperAdminAuthController extends Controller
      * enough that human-paced attempts accumulate toward the 5-attempt limit.
      */
     private const LOCKOUT_SECONDS = 900; // 15 minutes
+
+    public function __construct(
+        private readonly PlatformActivityLogger $activity,
+    ) {}
 
     public function showLogin(): Response
     {
@@ -59,11 +64,21 @@ class SuperAdminAuthController extends Controller
         $admin = Auth::guard('superadmin')->user();
         $admin->forceFill(['last_login_at' => now()])->save();
 
+        $this->activity->log('superadmin.login', subjectLabel: $admin->email);
+
         return redirect()->route(app(UserPreferences::class)->landingRoute($admin, 'superadmin'));
     }
 
     public function logout(Request $request): RedirectResponse
     {
+        // Logged BEFORE the guard clears — PlatformActivityLogger's actor()
+        // resolution reads auth('superadmin')->user(), which logout() below
+        // would otherwise have already wiped.
+        $admin = Auth::guard('superadmin')->user();
+        if ($admin !== null) {
+            $this->activity->log('superadmin.logout', subjectLabel: $admin->email);
+        }
+
         Auth::guard('superadmin')->logout();
 
         $request->session()->invalidate();

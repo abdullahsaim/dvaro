@@ -16,6 +16,7 @@ import {
     InboxArrowDownIcon,
     ArrowUpCircleIcon,
     Cog6ToothIcon,
+    ClipboardDocumentListIcon,
 } from '@heroicons/vue/24/outline';
 import Sidebar from '@/Components/UI/Sidebar.vue';
 import TopBar from '@/Components/UI/TopBar.vue';
@@ -43,6 +44,7 @@ const navItems = computed(() =>
         { key: 'cms', label: t('superadmin.nav.cms'), href: '/superadmin/cms', icon: GlobeAltIcon },
         { key: 'demo_requests', label: t('superadmin.nav.demo_requests'), href: '/superadmin/demo-requests', icon: InboxArrowDownIcon },
         { key: 'upgrade_requests', label: t('superadmin.nav.upgrade_requests'), href: '/superadmin/upgrade-requests', icon: ArrowUpCircleIcon },
+        { key: 'activity', label: t('superadmin.nav.activity'), href: '/superadmin/activity', icon: ClipboardDocumentListIcon },
         { key: 'settings', label: t('superadmin.nav.settings'), href: '/superadmin/settings', icon: Cog6ToothIcon },
     ].map((item) => ({ ...item, active: isActive(item.href, item.exact) })),
 );

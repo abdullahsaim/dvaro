@@ -15,7 +15,9 @@ use App\Modules\SuperAdmin\Events\TenantActivated;
 use App\Modules\SuperAdmin\Events\TenantSuspended;
 use App\Modules\SuperAdmin\Http\Requests\AssignPlanRequest;
 use App\Modules\SuperAdmin\Http\Requests\OfflinePaymentRequest;
+use App\Modules\SuperAdmin\Models\PlatformActivityLog;
 use App\Scopes\TenantScope;
+use App\Services\PlatformActivityLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -47,6 +49,10 @@ use Inertia\Response;
 class TenantManagementController extends Controller
 {
     use PaginatesForUser;
+
+    public function __construct(
+        private readonly PlatformActivityLogger $activity,
+    ) {}
 
     public function index(Request $request): Response
     {
@@ -174,8 +180,18 @@ class TenantManagementController extends Controller
         Gate::forUser(auth('superadmin')->user())->authorize('supportAccess');
 
         if ($tenant->status !== Tenant::STATUS_SUSPENDED) {
+            $before = $tenant->status;
             $tenant->update(['status' => Tenant::STATUS_SUSPENDED]);
             TenantSuspended::dispatch($tenant);
+            $this->activity->log(
+                'tenant.suspended',
+                PlatformActivityLog::SUBJECT_TENANT,
+                $tenant->id,
+                $tenant->name,
+                old: ['status' => $before],
+                new: ['status' => Tenant::STATUS_SUSPENDED],
+                tenant: $tenant,
+            );
         }
 
         return back()->with('success', __('common.superadmin.tenant_suspended'));
@@ -186,8 +202,18 @@ class TenantManagementController extends Controller
         Gate::forUser(auth('superadmin')->user())->authorize('supportAccess');
 
         if ($tenant->status !== Tenant::STATUS_ACTIVE) {
+            $before = $tenant->status;
             $tenant->update(['status' => Tenant::STATUS_ACTIVE]);
             TenantActivated::dispatch($tenant);
+            $this->activity->log(
+                'tenant.activated',
+                PlatformActivityLog::SUBJECT_TENANT,
+                $tenant->id,
+                $tenant->name,
+                old: ['status' => $before],
+                new: ['status' => Tenant::STATUS_ACTIVE],
+                tenant: $tenant,
+            );
         }
 
         return back()->with('success', __('common.superadmin.tenant_activated'));
@@ -226,7 +252,7 @@ class TenantManagementController extends Controller
             return back()->with('error', __('common.superadmin.no_active_subscription'));
         }
 
-        SubscriptionPayment::create([
+        $payment = SubscriptionPayment::create([
             'tenant_id' => $tenant->id,
             'subscription_id' => $subscription->id,
             'amount' => $request->integer('amount'),
@@ -237,6 +263,15 @@ class TenantManagementController extends Controller
             'paid_at' => $request->date('paid_at'),
             'recorded_by' => auth('superadmin')->id(),
         ]);
+
+        $this->activity->log(
+            'tenant.offline_payment_recorded',
+            PlatformActivityLog::SUBJECT_SUBSCRIPTION,
+            $subscription->id,
+            $tenant->name,
+            new: ['amount' => $payment->amount, 'method' => $payment->method],
+            tenant: $tenant,
+        );
 
         return back()->with('success', __('common.superadmin.payment_recorded'));
     }
@@ -267,6 +302,15 @@ class TenantManagementController extends Controller
         Auth::guard('tenant')->login($tenantAdmin);
         $request->session()->put('impersonator_superadmin_id', $admin->id);
 
+        $this->activity->log(
+            'tenant.impersonation_started',
+            PlatformActivityLog::SUBJECT_TENANT,
+            $tenant->id,
+            $tenant->name,
+            new: ['as' => $tenantAdmin->email],
+            tenant: $tenant,
+        );
+
         return redirect()->route('tenant.dashboard', ['tenant_slug' => $tenant->slug]);
     }
 
@@ -285,6 +329,10 @@ class TenantManagementController extends Controller
      */
     public function stopImpersonating(Request $request): RedirectResponse
     {
+        // Captured BEFORE logout — nothing identifying the impersonated tenant
+        // is available once the tenant guard is cleared.
+        $impersonatedTenant = Auth::guard('tenant')->user()?->tenant;
+
         try {
             Auth::guard('tenant')->logout();
         } catch (\Throwable $e) {
@@ -296,6 +344,16 @@ class TenantManagementController extends Controller
         }
 
         $request->session()->forget('impersonator_superadmin_id');
+
+        if ($impersonatedTenant !== null) {
+            $this->activity->log(
+                'tenant.impersonation_stopped',
+                PlatformActivityLog::SUBJECT_TENANT,
+                $impersonatedTenant->id,
+                $impersonatedTenant->name,
+                tenant: $impersonatedTenant,
+            );
+        }
 
         return redirect()->route('superadmin.dashboard')
             ->with('success', __('common.superadmin.impersonation_stopped'));

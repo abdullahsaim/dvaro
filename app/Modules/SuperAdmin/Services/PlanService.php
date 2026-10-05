@@ -3,6 +3,8 @@
 namespace App\Modules\SuperAdmin\Services;
 
 use App\Modules\SaasCore\Models\Plan;
+use App\Modules\SuperAdmin\Models\PlatformActivityLog;
+use App\Services\PlatformActivityLogger;
 use Illuminate\Support\Str;
 use RuntimeException;
 
@@ -16,6 +18,10 @@ use RuntimeException;
  */
 class PlanService
 {
+    public function __construct(
+        private readonly PlatformActivityLogger $activity,
+    ) {}
+
     /**
      * @param  array<string, mixed>  $data  validated plan attributes
      */
@@ -25,7 +31,17 @@ class PlanService
         $data['modules'] = array_values($data['modules'] ?? []);
         $data['limits'] = $data['limits'] ?? [];
 
-        return Plan::create($data);
+        $plan = Plan::create($data);
+
+        $this->activity->log(
+            'plan.created',
+            PlatformActivityLog::SUBJECT_PLAN,
+            $plan->id,
+            $plan->name,
+            new: ['price_monthly' => $plan->price_monthly, 'is_active' => $plan->is_active],
+        );
+
+        return $plan;
     }
 
     /**
@@ -42,7 +58,17 @@ class PlanService
         $data['modules'] = array_values($data['modules'] ?? []);
         $data['limits'] = $data['limits'] ?? [];
 
+        $before = $plan->only(['name', 'price_monthly', 'price_annual', 'is_active']);
         $plan->update($data);
+
+        $this->activity->log(
+            'plan.updated',
+            PlatformActivityLog::SUBJECT_PLAN,
+            $plan->id,
+            $plan->name,
+            old: $before,
+            new: $plan->only(['name', 'price_monthly', 'price_annual', 'is_active']),
+        );
 
         return $plan;
     }
@@ -52,7 +78,17 @@ class PlanService
      */
     public function toggle(Plan $plan): Plan
     {
+        $before = $plan->is_active;
         $plan->update(['is_active' => ! $plan->is_active]);
+
+        $this->activity->log(
+            'plan.toggled',
+            PlatformActivityLog::SUBJECT_PLAN,
+            $plan->id,
+            $plan->name,
+            old: ['is_active' => $before],
+            new: ['is_active' => $plan->is_active],
+        );
 
         return $plan;
     }
