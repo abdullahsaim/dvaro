@@ -88,6 +88,7 @@ return [
         'deleted' => 'Lead removed.',
         'converted' => 'Lead converted to a customer.',
         'expired' => 'Intake link expired.',
+        'rejected' => 'Lead rejected.',
         // Public lead form (share link / embed).
         'lead_form_iframe_title' => ':company rental enquiry form',
         'lead_form_start_date_attribute' => 'preferred start date',
@@ -198,6 +199,8 @@ return [
     'superadmin' => [
         'tenant_suspended' => 'Tenant suspended.',
         'tenant_activated' => 'Tenant activated.',
+        'tenant_approved' => 'Tenant approved — they can now sign in.',
+        'tenant_rejected' => 'Tenant registration rejected.',
         'no_admin_to_impersonate' => 'This tenant has no admin user to impersonate.',
         'impersonation_stopped' => 'Stopped impersonating.',
         'plan_created' => 'Plan created.',

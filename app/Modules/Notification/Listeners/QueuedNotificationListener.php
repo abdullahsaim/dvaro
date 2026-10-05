@@ -80,12 +80,15 @@ abstract class QueuedNotificationListener implements ShouldQueue
 
     /**
      * Send a customer-facing notification across every enabled channel.
+     *
+     * @param  array<int, array{filename: string, content: string, mime: string}>|null  $emailAttachments  Email-only — SMS/WhatsApp carry no files.
      */
     protected function notifyCustomer(
         Tenant $tenant,
         Customer $customer,
         NotificationContent $content,
         string $eventType,
+        ?array $emailAttachments = null,
     ): void {
         $id = (int) $customer->id;
         $type = NotificationLog::TYPE_CUSTOMER;
@@ -93,6 +96,7 @@ abstract class QueuedNotificationListener implements ShouldQueue
         if ($this->allows($tenant, $eventType, NotificationLog::CHANNEL_EMAIL) && filled($customer->email)) {
             $this->notifications->sendEmail(
                 $tenant, $customer->email, $content->subject, $content->emailBody, $eventType, $id, $type,
+                replyTo: null, attachments: $emailAttachments,
             );
         }
 

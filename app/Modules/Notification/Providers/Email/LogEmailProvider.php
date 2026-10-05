@@ -19,6 +19,7 @@ class LogEmailProvider implements EmailProviderInterface
         string $body,
         int $tenantId,
         ?string $replyTo = null,
+        ?array $attachments = null,
     ): bool {
         Log::info('[LogEmailProvider] Email (not really sent)', [
             'tenant_id' => $tenantId,
@@ -26,6 +27,8 @@ class LogEmailProvider implements EmailProviderInterface
             'subject' => $subject,
             'reply_to' => $replyTo,
             'body' => $body,
+            // Filenames only — never the raw bytes, to keep the log readable.
+            'attachments' => array_map(fn (array $a) => $a['filename'], $attachments ?? []),
         ]);
 
         return true;

@@ -64,6 +64,10 @@ Route::middleware('superadmin.auth')->group(function () {
         ->name('tenants.suspend');
     Route::post('tenants/{tenant}/activate', [TenantManagementController::class, 'activate'])
         ->name('tenants.activate');
+    Route::post('tenants/{tenant}/approve', [TenantManagementController::class, 'approve'])
+        ->name('tenants.approve');
+    Route::post('tenants/{tenant}/reject', [TenantManagementController::class, 'reject'])
+        ->name('tenants.reject');
     Route::post('tenants/{tenant}/impersonate', [TenantManagementController::class, 'impersonate'])
         ->name('tenants.impersonate');
 

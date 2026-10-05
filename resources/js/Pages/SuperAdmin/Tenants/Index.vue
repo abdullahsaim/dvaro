@@ -24,6 +24,7 @@ const statusVariants = {
     active: 'success',
     trialing: 'info',
     trial: 'info',
+    pending: 'warning',
     suspended: 'danger',
     cancelled: 'neutral',
     past_due: 'warning',
@@ -44,6 +45,16 @@ function suspend(tenant) {
 
 function activate(tenant) {
     router.post(`/superadmin/tenants/${tenant.slug}/activate`, {}, { preserveScroll: true });
+}
+
+function approve(tenant) {
+    router.post(`/superadmin/tenants/${tenant.slug}/approve`, {}, { preserveScroll: true });
+}
+
+function reject(tenant) {
+    if (confirm(t('superadmin.tenants.confirm_reject'))) {
+        router.post(`/superadmin/tenants/${tenant.slug}/reject`, {}, { preserveScroll: true });
+    }
 }
 
 function impersonate(tenant) {
@@ -118,15 +129,25 @@ function formatDate(value) {
                         <Link :href="`/superadmin/tenants/${tenant.slug}`" class="text-sm font-medium text-ink-900 hover:underline dark:text-ink-100">
                             {{ t('superadmin.tenants.view') }}
                         </Link>
-                        <button v-if="tenant.status !== 'suspended'" type="button" class="text-sm text-danger-600 hover:underline dark:text-danger-500" @click="suspend(tenant)">
-                            {{ t('superadmin.tenants.suspend') }}
-                        </button>
-                        <button v-else type="button" class="text-sm text-success-600 hover:underline dark:text-success-500" @click="activate(tenant)">
-                            {{ t('superadmin.tenants.activate') }}
-                        </button>
-                        <button type="button" class="text-sm text-ink-500 hover:underline" @click="impersonate(tenant)">
-                            {{ t('superadmin.tenants.impersonate') }}
-                        </button>
+                        <template v-if="tenant.status === 'pending'">
+                            <button type="button" class="text-sm text-success-600 hover:underline dark:text-success-500" @click="approve(tenant)">
+                                {{ t('superadmin.tenants.approve') }}
+                            </button>
+                            <button type="button" class="text-sm text-danger-600 hover:underline dark:text-danger-500" @click="reject(tenant)">
+                                {{ t('superadmin.tenants.reject') }}
+                            </button>
+                        </template>
+                        <template v-else>
+                            <button v-if="tenant.status !== 'suspended'" type="button" class="text-sm text-danger-600 hover:underline dark:text-danger-500" @click="suspend(tenant)">
+                                {{ t('superadmin.tenants.suspend') }}
+                            </button>
+                            <button v-else type="button" class="text-sm text-success-600 hover:underline dark:text-success-500" @click="activate(tenant)">
+                                {{ t('superadmin.tenants.activate') }}
+                            </button>
+                            <button type="button" class="text-sm text-ink-500 hover:underline" @click="impersonate(tenant)">
+                                {{ t('superadmin.tenants.impersonate') }}
+                            </button>
+                        </template>
                     </div>
                 </td>
             </tr>

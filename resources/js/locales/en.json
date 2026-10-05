@@ -167,6 +167,12 @@
             "plan_selected": "Selected",
             "select_plan": "Select",
             "creating_account": "Creating your account…"
+        },
+        "pending": {
+            "title": "Your account is awaiting approval",
+            "body": "Thanks for registering — this platform reviews every new company before it goes live. We'll be in touch shortly.",
+            "email_hint": "You'll get an email as soon as your account is approved and ready to sign in.",
+            "back_home": "Back to homepage"
         }
     },
     "verification": {
@@ -700,12 +706,14 @@
         "empty": "No leads yet.",
         "confirm_delete": "Remove this lead?",
         "confirm_expire": "Expire this intake link? It can't be undone.",
+        "confirm_reject": "Reject this lead? It will be marked not a fit and can no longer be converted.",
         "search_placeholder": "Search by name or phone",
         "submitted": "Submitted",
         "not_submitted": "Awaiting submission",
         "converted": "Converted",
         "convert": "Convert to customer",
         "expire": "Expire link",
+        "reject": "Reject lead",
         "expired_badge": "Expired",
         "not_convertible_hint": "This lead can be converted once it has been submitted and is not expired or already converted.",
         "intake_link": "Intake link",
@@ -1037,8 +1045,11 @@
             "view": "View",
             "suspend": "Suspend",
             "activate": "Activate",
+            "approve": "Approve",
+            "reject": "Reject",
             "impersonate": "Impersonate",
             "confirm_suspend": "Suspend this tenant? Their users will be blocked until reactivated.",
+            "confirm_reject": "Reject this registration? The admin will be notified and cannot sign in.",
             "confirm_impersonate": "Open this tenant's dashboard as their admin?",
             "detail_title": "Tenant detail",
             "counts": {
@@ -1257,6 +1268,7 @@
             "active": "Active",
             "trial": "Trial",
             "trialing": "Trialing",
+            "pending": "Pending approval",
             "suspended": "Suspended",
             "cancelled": "Cancelled",
             "past_due": "Past due",

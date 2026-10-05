@@ -8,11 +8,13 @@ use App\Modules\Agreement\Services\AgreementSigningService;
 use App\Modules\Customer\Models\Customer;
 use App\Modules\Fleet\Models\Vehicle;
 use App\Modules\Notification\Models\NotificationLog;
+use App\Modules\Notification\Services\NotificationService;
 use App\Modules\SaasCore\Models\Tenant;
 use App\Modules\SaasCore\Models\TenantUser;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use Mockery;
 use Tests\TestCase;
 
 /**
@@ -316,6 +318,72 @@ class AgreementSigningTest extends TestCase
 
         app()->instance('current_tenant', $t);
         $this->assertSame(1, NotificationLog::where('event_type', 'agreement.signed')->count());
+    }
+
+    public function test_the_signed_email_attaches_the_pdf_when_it_is_already_available(): void
+    {
+        Storage::fake('local');
+        $t = $this->makeTenant('sign-pdf-ready');
+        $agreement = $this->makeDraftAgreement($t);
+        $token = app(AgreementSigningService::class)->ensureToken($agreement);
+
+        // Simulate the PDF having already landed (e.g. GenerateAgreementPdfJob
+        // happened to run first) — the race the listener's docblock describes,
+        // from the side where the notification wins instead of the PDF.
+        $path = "tenants/{$t->id}/agreements/{$agreement->id}/pdfs/agreement.pdf";
+        Storage::disk('local')->put($path, '%PDF-1.4 fake pdf bytes');
+        $agreement->update(['pdf_path' => $path]);
+
+        // BondCollected (this agreement has a bond) fires its own email too —
+        // filter the mock to just the agreement.signed call by eventType.
+        $captured = null;
+        $mock = Mockery::mock(NotificationService::class);
+        $mock->shouldReceive('sendEmail')->zeroOrMoreTimes()->withArgs(function (...$args) use (&$captured) {
+            // positional: tenant,to,subject,body,eventType,id,type,replyTo,attachments
+            if (($args[4] ?? null) === 'agreement.signed') {
+                $captured = $args[8] ?? null;
+            }
+
+            return true;
+        })->andReturn(true);
+        $mock->shouldReceive('sendSms')->zeroOrMoreTimes()->andReturn(true);
+        $mock->shouldReceive('sendWhatsApp')->zeroOrMoreTimes()->andReturn(true);
+        $this->app->instance(NotificationService::class, $mock);
+
+        $this->post("/agreement-sign/{$t->slug}/{$token}", ['signature_data' => $this->fakeSignature()]);
+
+        $this->assertIsArray($captured, 'the signed-email attachment array was never passed to sendEmail()');
+        $this->assertCount(1, $captured);
+        $this->assertSame('agreement-'.$agreement->id.'.pdf', $captured[0]['filename']);
+        $this->assertSame('application/pdf', $captured[0]['mime']);
+        $this->assertSame('%PDF-1.4 fake pdf bytes', $captured[0]['content']);
+    }
+
+    public function test_the_signed_email_has_no_attachment_when_the_pdf_is_not_ready_yet(): void
+    {
+        Storage::fake('local');
+        $t = $this->makeTenant('sign-pdf-not-ready');
+        $agreement = $this->makeDraftAgreement($t);
+        $token = app(AgreementSigningService::class)->ensureToken($agreement);
+
+        $captured = 'not-called';
+        $mock = Mockery::mock(NotificationService::class);
+        $mock->shouldReceive('sendEmail')->zeroOrMoreTimes()->withArgs(function (...$args) use (&$captured) {
+            if (($args[4] ?? null) === 'agreement.signed') {
+                $captured = $args[8] ?? null;
+            }
+
+            return true;
+        })->andReturn(true);
+        $mock->shouldReceive('sendSms')->zeroOrMoreTimes()->andReturn(true);
+        $mock->shouldReceive('sendWhatsApp')->zeroOrMoreTimes()->andReturn(true);
+        $this->app->instance(NotificationService::class, $mock);
+
+        // No pdf_path set — this IS the normal case: GenerateAgreementPdfJob is
+        // dispatched only after AgreementSigned, so it is never ready in time.
+        $this->post("/agreement-sign/{$t->slug}/{$token}", ['signature_data' => $this->fakeSignature()]);
+
+        $this->assertNull($captured, 'no attachment should be sent when the PDF does not exist yet');
     }
 
     // ── Downloading the signed copy (public, token-gated) ───────────────────

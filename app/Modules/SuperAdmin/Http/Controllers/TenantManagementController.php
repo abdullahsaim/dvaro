@@ -12,6 +12,8 @@ use App\Modules\SaasCore\Models\Tenant;
 use App\Modules\SaasCore\Models\TenantUser;
 use App\Modules\SaasCore\Services\AssignPlanService;
 use App\Modules\SuperAdmin\Events\TenantActivated;
+use App\Modules\SuperAdmin\Events\TenantApproved;
+use App\Modules\SuperAdmin\Events\TenantRejected;
 use App\Modules\SuperAdmin\Events\TenantSuspended;
 use App\Modules\SuperAdmin\Http\Requests\AssignPlanRequest;
 use App\Modules\SuperAdmin\Http\Requests\OfflinePaymentRequest;
@@ -59,7 +61,7 @@ class TenantManagementController extends Controller
         Gate::forUser(auth('superadmin')->user())->authorize('supportAccess');
 
         $status = $request->query('status');
-        $statuses = [Tenant::STATUS_ACTIVE, Tenant::STATUS_TRIAL, Tenant::STATUS_SUSPENDED, Tenant::STATUS_CANCELLED];
+        $statuses = [Tenant::STATUS_PENDING, Tenant::STATUS_ACTIVE, Tenant::STATUS_TRIAL, Tenant::STATUS_SUSPENDED, Tenant::STATUS_CANCELLED];
         if (! in_array($status, $statuses, true)) {
             $status = null;
         }
@@ -217,6 +219,58 @@ class TenantManagementController extends Controller
         }
 
         return back()->with('success', __('common.superadmin.tenant_activated'));
+    }
+
+    /**
+     * Approve a tenant that registered while manual_tenant_approval was on.
+     * Promotes PENDING → TRIAL (the trial clock already started at
+     * registration — see TenantOnboardingService) so the admin can now log in.
+     */
+    public function approve(Tenant $tenant): RedirectResponse
+    {
+        Gate::forUser(auth('superadmin')->user())->authorize('supportAccess');
+
+        if ($tenant->status === Tenant::STATUS_PENDING) {
+            $tenant->update(['status' => Tenant::STATUS_TRIAL]);
+            TenantApproved::dispatch($tenant);
+            $this->activity->log(
+                'tenant.approved',
+                PlatformActivityLog::SUBJECT_TENANT,
+                $tenant->id,
+                $tenant->name,
+                old: ['status' => Tenant::STATUS_PENDING],
+                new: ['status' => Tenant::STATUS_TRIAL],
+                tenant: $tenant,
+            );
+        }
+
+        return back()->with('success', __('common.superadmin.tenant_approved'));
+    }
+
+    /**
+     * Reject a tenant's registration that was awaiting manual approval.
+     * Cancelled rather than deleted — the signup attempt and its data stay
+     * auditable, same as any other cancelled tenant.
+     */
+    public function reject(Tenant $tenant): RedirectResponse
+    {
+        Gate::forUser(auth('superadmin')->user())->authorize('supportAccess');
+
+        if ($tenant->status === Tenant::STATUS_PENDING) {
+            $tenant->update(['status' => Tenant::STATUS_CANCELLED]);
+            TenantRejected::dispatch($tenant);
+            $this->activity->log(
+                'tenant.rejected',
+                PlatformActivityLog::SUBJECT_TENANT,
+                $tenant->id,
+                $tenant->name,
+                old: ['status' => Tenant::STATUS_PENDING],
+                new: ['status' => Tenant::STATUS_CANCELLED],
+                tenant: $tenant,
+            );
+        }
+
+        return back()->with('success', __('common.superadmin.tenant_rejected'));
     }
 
     /**

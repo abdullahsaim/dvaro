@@ -26,13 +26,20 @@ class SmtpEmailProvider implements EmailProviderInterface
         string $body,
         int $tenantId,
         ?string $replyTo = null,
+        ?array $attachments = null,
     ): bool {
         try {
-            Mail::mailer('smtp')->html($body, function ($message) use ($to, $subject, $replyTo): void {
+            Mail::mailer('smtp')->html($body, function ($message) use ($to, $subject, $replyTo, $attachments): void {
                 $message->to($to)->subject($subject);
 
                 if ($replyTo !== null) {
                     $message->replyTo($replyTo);
+                }
+
+                foreach ($attachments ?? [] as $attachment) {
+                    $message->attachData($attachment['content'], $attachment['filename'], [
+                        'mime' => $attachment['mime'],
+                    ]);
                 }
             });
 

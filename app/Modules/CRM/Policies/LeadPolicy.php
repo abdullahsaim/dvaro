@@ -53,6 +53,11 @@ class LeadPolicy
         return $this->sameTenant($user, $lead);
     }
 
+    public function reject(TenantUser $user, Lead $lead): bool
+    {
+        return $this->sameTenant($user, $lead);
+    }
+
     private function sameTenant(TenantUser $user, Lead $lead): bool
     {
         return (int) $user->tenant_id === (int) $lead->tenant_id;

@@ -180,6 +180,8 @@ Route::middleware('auth:tenant')->group(function () {
         ->name('leads.convert');
     Route::post('leads/{lead}/expire', [LeadController::class, 'expire'])
         ->name('leads.expire');
+    Route::post('leads/{lead}/reject', [LeadController::class, 'reject'])
+        ->name('leads.reject');
 
     // Agreement terms templates. Registered BEFORE the agreements resource so
     // "templates" is never bound as an {agreement} id. Templates are read by

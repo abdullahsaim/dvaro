@@ -26,6 +26,7 @@ class ResendEmailProvider implements EmailProviderInterface
         string $body,
         int $tenantId,
         ?string $replyTo = null,
+        ?array $attachments = null,
     ): bool {
         try {
             $apiKey = (string) config('services.resend.key');
@@ -40,6 +41,13 @@ class ResendEmailProvider implements EmailProviderInterface
 
             if ($replyTo !== null) {
                 $payload['reply_to'] = $replyTo;
+            }
+
+            if ($attachments !== null && $attachments !== []) {
+                $payload['attachments'] = array_map(fn (array $a) => [
+                    'filename' => $a['filename'],
+                    'content' => base64_encode($a['content']),
+                ], $attachments);
             }
 
             $response = Http::withToken($apiKey)

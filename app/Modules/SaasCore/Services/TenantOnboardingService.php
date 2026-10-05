@@ -9,6 +9,7 @@ use App\Modules\SaasCore\Models\Plan;
 use App\Modules\SaasCore\Models\Subscription;
 use App\Modules\SaasCore\Models\Tenant;
 use App\Modules\SaasCore\Models\TenantUser;
+use App\Modules\SuperAdmin\Services\PlatformSettingsService;
 use App\Services\BaseService;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -24,6 +25,10 @@ use RuntimeException;
  */
 class TenantOnboardingService extends BaseService
 {
+    public function __construct(
+        private readonly PlatformSettingsService $settings,
+    ) {}
+
     public function execute(TenantOnboardingDTO $dto): Tenant
     {
         return DB::transaction(function () use ($dto): Tenant {
@@ -32,9 +37,17 @@ class TenantOnboardingService extends BaseService
             $now = now();
             $trialEndsAt = $now->copy()->addDays($plan->trial_days);
 
+            // A tenant awaiting manual approval is created exactly as normal
+            // (plan, trialing subscription, admin user all set up) but starts
+            // PENDING instead of TRIAL — TenantMiddleware blocks all access
+            // until a super admin approves it. The trial clock still starts
+            // now rather than at approval time, keeping this the only branch
+            // in an otherwise single onboarding path.
+            $requiresApproval = (bool) $this->settings->get('manual_tenant_approval', false);
+
             $tenant = Tenant::create([
                 'name' => $dto->name,
-                'status' => Tenant::STATUS_TRIAL,
+                'status' => $requiresApproval ? Tenant::STATUS_PENDING : Tenant::STATUS_TRIAL,
                 'plan_id' => $plan->id,
                 'trial_ends_at' => $trialEndsAt,
                 // Notification defaults: 'log' providers + email-only channel.

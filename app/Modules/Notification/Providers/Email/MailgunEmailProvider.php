@@ -24,6 +24,7 @@ class MailgunEmailProvider implements EmailProviderInterface
         string $body,
         int $tenantId,
         ?string $replyTo = null,
+        ?array $attachments = null,
     ): bool {
         try {
             $domain = (string) config('services.mailgun.domain');
@@ -42,9 +43,19 @@ class MailgunEmailProvider implements EmailProviderInterface
                 $payload['h:Reply-To'] = $replyTo;
             }
 
-            $response = Http::withBasicAuth('api', $secret)
-                ->asForm()
-                ->post("https://{$host}/v3/{$domain}/messages", $payload);
+            $request = Http::withBasicAuth('api', $secret);
+
+            // An attachment forces multipart (Mailgun has no attach-via-form
+            // field) — asForm() is only used when there is nothing to attach.
+            if ($attachments !== null && $attachments !== []) {
+                foreach ($attachments as $attachment) {
+                    $request = $request->attach('attachment', $attachment['content'], $attachment['filename']);
+                }
+            } else {
+                $request = $request->asForm();
+            }
+
+            $response = $request->post("https://{$host}/v3/{$domain}/messages", $payload);
 
             if (! $response->successful()) {
                 Log::warning('MailgunEmailProvider: non-success response', [

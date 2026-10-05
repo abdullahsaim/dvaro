@@ -75,6 +75,11 @@ function expire(lead) {
     router.post(`${base.value}/${lead.id}/expire`, {}, { preserveScroll: true });
 }
 
+function reject(lead) {
+    if (!window.confirm(t('crm.confirm_reject'))) return;
+    router.post(`${base.value}/${lead.id}/reject`, {}, { preserveScroll: true });
+}
+
 function destroy(lead) {
     if (!window.confirm(t('crm.confirm_delete'))) return;
     router.delete(`${base.value}/${lead.id}`, { preserveScroll: true });
@@ -174,6 +179,9 @@ function isConvertible(lead) {
                         </button>
                         <button v-if="!lead.expires_manually && lead.status !== 'converted'" type="button" class="text-sm text-warning-600 hover:underline dark:text-warning-500" @click="expire(lead)">
                             {{ t('crm.expire') }}
+                        </button>
+                        <button v-if="['new', 'contacted'].includes(lead.status)" type="button" class="text-sm text-danger-600 hover:underline dark:text-danger-500" @click="reject(lead)">
+                            {{ t('crm.reject') }}
                         </button>
                         <button type="button" class="text-sm text-danger-600 hover:underline dark:text-danger-500" @click="destroy(lead)">
                             {{ t('common.delete') }}

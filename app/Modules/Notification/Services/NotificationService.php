@@ -51,6 +51,9 @@ class NotificationService extends BaseService
         );
     }
 
+    /**
+     * @param  array<int, array{filename: string, content: string, mime: string}>|null  $attachments
+     */
     public function sendEmail(
         Tenant $tenant,
         string $to,
@@ -60,6 +63,7 @@ class NotificationService extends BaseService
         ?int $notifiableId = null,
         ?string $notifiableType = null,
         ?string $replyTo = null,
+        ?array $attachments = null,
     ): bool {
         $provider = $this->factory->email($tenant);
 
@@ -73,7 +77,7 @@ class NotificationService extends BaseService
             body: $body,
             notifiableId: $notifiableId,
             notifiableType: $notifiableType,
-            send: fn (): bool => $provider->send($to, $subject, $body, $tenant->id, $replyTo),
+            send: fn (): bool => $provider->send($to, $subject, $body, $tenant->id, $replyTo, $attachments),
         );
     }
 

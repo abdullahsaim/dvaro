@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Modules\SaasCore\Models\Tenant;
 use App\Modules\SaasCore\Models\TenantUser;
 use App\Modules\SuperAdmin\Events\TenantActivated;
+use App\Modules\SuperAdmin\Events\TenantApproved;
+use App\Modules\SuperAdmin\Events\TenantRejected;
 use App\Modules\SuperAdmin\Events\TenantSuspended;
 use App\Modules\SuperAdmin\Models\PlatformActivityLog;
 use App\Modules\SuperAdmin\Models\SuperAdmin;
@@ -149,6 +151,68 @@ class SuperAdminTest extends TestCase
         $log = PlatformActivityLog::where('tenant_id', $tenant->id)->where('action', 'tenant.suspended')->firstOrFail();
         $this->assertSame(PlatformActivityLog::ACTOR_SUPER_ADMIN, $log->actor_type);
         $this->assertSame($admin->id, $log->actor_id);
+    }
+
+    public function test_super_admin_can_approve_a_pending_tenant(): void
+    {
+        Event::fake([TenantApproved::class]);
+
+        $tenant = $this->makeTenant('pending-approve');
+        $tenant->update(['status' => Tenant::STATUS_PENDING]);
+        $admin = $this->makeSuperAdmin();
+
+        $this->actingAs($admin, 'superadmin')
+            ->post(route('superadmin.tenants.approve', $tenant))
+            ->assertRedirect();
+
+        $this->assertSame(Tenant::STATUS_TRIAL, $tenant->fresh()->status);
+        Event::assertDispatched(TenantApproved::class);
+
+        $log = PlatformActivityLog::where('tenant_id', $tenant->id)->where('action', 'tenant.approved')->firstOrFail();
+        $this->assertSame(PlatformActivityLog::ACTOR_SUPER_ADMIN, $log->actor_type);
+    }
+
+    public function test_super_admin_can_reject_a_pending_tenant(): void
+    {
+        Event::fake([TenantRejected::class]);
+
+        $tenant = $this->makeTenant('pending-reject');
+        $tenant->update(['status' => Tenant::STATUS_PENDING]);
+        $admin = $this->makeSuperAdmin();
+
+        $this->actingAs($admin, 'superadmin')
+            ->post(route('superadmin.tenants.reject', $tenant))
+            ->assertRedirect();
+
+        $this->assertSame(Tenant::STATUS_CANCELLED, $tenant->fresh()->status);
+        Event::assertDispatched(TenantRejected::class);
+
+        // A rejected (now cancelled) tenant's app is hard-blocked, same as any
+        // other cancelled tenant.
+        $this->get("/app/{$tenant->slug}/login")->assertStatus(403);
+    }
+
+    public function test_approve_and_reject_are_no_ops_outside_pending_status(): void
+    {
+        Event::fake([TenantApproved::class, TenantRejected::class]);
+
+        $tenant = $this->makeTenant('already-active'); // STATUS_ACTIVE by default
+        $admin = $this->makeSuperAdmin();
+
+        $this->actingAs($admin, 'superadmin')->post(route('superadmin.tenants.approve', $tenant))->assertRedirect();
+        $this->actingAs($admin, 'superadmin')->post(route('superadmin.tenants.reject', $tenant))->assertRedirect();
+
+        $this->assertSame(Tenant::STATUS_ACTIVE, $tenant->fresh()->status);
+        Event::assertNotDispatched(TenantApproved::class);
+        Event::assertNotDispatched(TenantRejected::class);
+    }
+
+    public function test_a_pending_tenant_is_blocked_from_login(): void
+    {
+        $tenant = $this->makeTenant('still-pending');
+        $tenant->update(['status' => Tenant::STATUS_PENDING]);
+
+        $this->get("/app/{$tenant->slug}/login")->assertStatus(403);
     }
 
     public function test_impersonation_logs_into_tenant_guard_and_stops_cleanly(): void

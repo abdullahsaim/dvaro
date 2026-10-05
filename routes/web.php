@@ -106,6 +106,8 @@ Route::middleware('guest.tenant')->group(function () {
         ->name('register');
     Route::post('register', [TenantRegistrationController::class, 'register'])
         ->name('register.store');
+    Route::get('register/pending', [TenantRegistrationController::class, 'pending'])
+        ->name('register.pending');
 });
 
 /*

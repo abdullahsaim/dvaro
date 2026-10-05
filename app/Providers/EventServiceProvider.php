@@ -22,12 +22,16 @@ use App\Modules\Notification\Listeners\SendMaintenanceStartedNotification;
 use App\Modules\Notification\Listeners\SendPaymentReceivedNotification;
 use App\Modules\Notification\Listeners\SendSubscriptionCancelledNotification;
 use App\Modules\Notification\Listeners\SendSubscriptionPaymentFailedNotification;
+use App\Modules\Notification\Listeners\SendTenantApprovedNotification;
 use App\Modules\Notification\Listeners\SendTenantEmailVerification;
+use App\Modules\Notification\Listeners\SendTenantRejectedNotification;
 use App\Modules\Rental\Events\BondRefunded;
 use App\Modules\Reporting\Listeners\ReportCacheInvalidationListener;
 use App\Modules\SaasCore\Events\SubscriptionCancelled;
 use App\Modules\SaasCore\Events\SubscriptionPaymentFailed;
 use App\Modules\SaasCore\Events\TenantRegistered;
+use App\Modules\SuperAdmin\Events\TenantApproved;
+use App\Modules\SuperAdmin\Events\TenantRejected;
 use App\Modules\Workshop\Events\MaintenanceCompleted;
 use App\Modules\Workshop\Events\MaintenanceStarted;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
@@ -70,6 +74,12 @@ class EventServiceProvider extends ServiceProvider
         ],
         TenantRegistered::class => [
             SendTenantEmailVerification::class,
+        ],
+        TenantApproved::class => [
+            SendTenantApprovedNotification::class,
+        ],
+        TenantRejected::class => [
+            SendTenantRejectedNotification::class,
         ],
         MaintenanceStarted::class => [
             SendMaintenanceStartedNotification::class,

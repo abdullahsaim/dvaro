@@ -8,6 +8,7 @@ use App\Modules\CRM\Actions\ConvertLeadAction;
 use App\Modules\CRM\Actions\CreateLeadAction;
 use App\Modules\CRM\Actions\ExpireLeadAction;
 use App\Modules\CRM\Actions\GenerateLeadLinkAction;
+use App\Modules\CRM\Actions\RejectLeadAction;
 use App\Modules\CRM\DTOs\CreateLeadDTO;
 use App\Modules\CRM\Http\Requests\StoreLeadRequest;
 use App\Modules\CRM\Models\Lead;
@@ -154,5 +155,14 @@ class LeadController extends Controller
         $action->execute($lead);
 
         return back()->with('success', __('common.crm.expired'));
+    }
+
+    public function reject(Lead $lead, RejectLeadAction $action): RedirectResponse
+    {
+        Gate::forUser(auth('tenant')->user())->authorize('reject', $lead);
+
+        $action->execute($lead);
+
+        return back()->with('success', __('common.crm.rejected'));
     }
 }

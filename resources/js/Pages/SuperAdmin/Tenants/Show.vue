@@ -31,6 +31,7 @@ const statusVariants = {
     active: 'success',
     trialing: 'info',
     trial: 'info',
+    pending: 'warning',
     suspended: 'danger',
     cancelled: 'neutral',
     past_due: 'warning',
@@ -91,6 +92,16 @@ function activate() {
     router.post(`/superadmin/tenants/${props.tenant.slug}/activate`, {}, { preserveScroll: true });
 }
 
+function approve() {
+    router.post(`/superadmin/tenants/${props.tenant.slug}/approve`, {}, { preserveScroll: true });
+}
+
+function reject() {
+    if (confirm(t('superadmin.tenants.confirm_reject'))) {
+        router.post(`/superadmin/tenants/${props.tenant.slug}/reject`, {}, { preserveScroll: true });
+    }
+}
+
 function impersonate() {
     if (confirm(t('superadmin.tenants.confirm_impersonate'))) {
         router.post(`/superadmin/tenants/${props.tenant.slug}/impersonate`);
@@ -126,11 +137,17 @@ const allPayments = computed(() =>
             </template>
             <template #description>{{ tenant.slug }}</template>
             <template #actions>
-                <Button variant="primary" @click="openAssign">{{ t('superadmin.tenants.assign_plan') }}</Button>
-                <Button variant="secondary" @click="openPayment">{{ t('superadmin.tenants.record_payment') }}</Button>
-                <Button v-if="tenant.status !== 'suspended'" variant="danger" @click="suspend">{{ t('superadmin.tenants.suspend') }}</Button>
-                <Button v-else variant="primary" @click="activate">{{ t('superadmin.tenants.activate') }}</Button>
-                <Button variant="secondary" @click="impersonate">{{ t('superadmin.tenants.impersonate') }}</Button>
+                <template v-if="tenant.status === 'pending'">
+                    <Button variant="primary" @click="approve">{{ t('superadmin.tenants.approve') }}</Button>
+                    <Button variant="danger" @click="reject">{{ t('superadmin.tenants.reject') }}</Button>
+                </template>
+                <template v-else>
+                    <Button variant="primary" @click="openAssign">{{ t('superadmin.tenants.assign_plan') }}</Button>
+                    <Button variant="secondary" @click="openPayment">{{ t('superadmin.tenants.record_payment') }}</Button>
+                    <Button v-if="tenant.status !== 'suspended'" variant="danger" @click="suspend">{{ t('superadmin.tenants.suspend') }}</Button>
+                    <Button v-else variant="primary" @click="activate">{{ t('superadmin.tenants.activate') }}</Button>
+                    <Button variant="secondary" @click="impersonate">{{ t('superadmin.tenants.impersonate') }}</Button>
+                </template>
             </template>
         </PageHeader>
 

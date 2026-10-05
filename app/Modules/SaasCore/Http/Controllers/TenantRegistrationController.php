@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Modules\SaasCore\DTOs\TenantOnboardingDTO;
 use App\Modules\SaasCore\Http\Requests\TenantRegistrationRequest;
 use App\Modules\SaasCore\Models\Plan;
+use App\Modules\SaasCore\Models\Tenant;
 use App\Modules\SaasCore\Models\TenantUser;
 use App\Modules\SaasCore\Services\TenantOnboardingService;
 use Illuminate\Http\RedirectResponse;
@@ -59,8 +60,15 @@ class TenantRegistrationController extends Controller
 
         try {
             // 1. Onboard the tenant (Tenant + Subscription + admin TenantUser),
-            //    all in one transaction inside the service.
+            //    all in one transaction inside the service. Status is PENDING
+            //    instead of TRIAL when the platform requires manual approval.
             $tenant = $service->execute(TenantOnboardingDTO::fromRequest($request));
+
+            if ($tenant->status === Tenant::STATUS_PENDING) {
+                // Awaiting a super admin's approval — nothing to log into yet.
+                // No tenant bind needed: this page carries no tenant-scoped data.
+                return redirect()->route('register.pending');
+            }
 
             // 2. Bind the new tenant FIRST. TenantUser uses HasTenant, so every
             //    SELECT runs through TenantScope, which THROWS when no tenant is
@@ -88,5 +96,15 @@ class TenantRegistrationController extends Controller
         $request->session()->regenerate();
 
         return redirect()->route('tenant.dashboard', ['tenant_slug' => $tenant->slug]);
+    }
+
+    /**
+     * Static landing page shown after registering onto a platform that
+     * requires manual tenant approval. Carries no tenant-specific data — the
+     * admin cannot log in yet, so there is nothing scoped to show them.
+     */
+    public function pending(): Response
+    {
+        return Inertia::render('Tenant/RegistrationPending');
     }
 }

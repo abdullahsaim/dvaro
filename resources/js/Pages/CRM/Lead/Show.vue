@@ -53,6 +53,11 @@ function expire() {
     router.post(`${base.value}/${props.lead.id}/expire`, {}, { preserveScroll: true });
 }
 
+function reject() {
+    if (!window.confirm(t('crm.confirm_reject'))) return;
+    router.post(`${base.value}/${props.lead.id}/reject`, {}, { preserveScroll: true });
+}
+
 const copied = ref(false);
 async function copyLink() {
     try {
@@ -136,6 +141,14 @@ async function copyLink() {
                     @click="expire"
                 >
                     {{ t('crm.expire') }}
+                </Button>
+
+                <Button
+                    v-if="['new', 'contacted'].includes(lead.status)"
+                    variant="danger"
+                    @click="reject"
+                >
+                    {{ t('crm.reject') }}
                 </Button>
             </div>
         </div>

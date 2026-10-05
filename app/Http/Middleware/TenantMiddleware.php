@@ -29,6 +29,10 @@ class TenantMiddleware
         }
 
         // Hard block inactive tenants. Active + trial may proceed.
+        if ($tenant->status === Tenant::STATUS_PENDING) {
+            abort(403, 'This tenant account is awaiting approval.');
+        }
+
         if (in_array($tenant->status, [Tenant::STATUS_SUSPENDED, Tenant::STATUS_CANCELLED], true)) {
             abort(403, 'This tenant account is not active.');
         }

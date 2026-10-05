@@ -6,6 +6,7 @@ use App\Modules\SaasCore\Models\Plan;
 use App\Modules\SaasCore\Models\Subscription;
 use App\Modules\SaasCore\Models\Tenant;
 use App\Modules\SaasCore\Models\TenantUser;
+use App\Modules\SuperAdmin\Services\PlatformSettingsService;
 use Database\Seeders\TenantRolesSeeder;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Str;
@@ -196,5 +197,51 @@ class TenantRegistrationTest extends TestCase
         $secondTenant = Tenant::where('slug', Str::slug($company).'-2')->firstOrFail();
         $this->assertNotSame($firstTenant->id, $secondTenant->id);
         $this->assertSame($company, $secondTenant->name, 'the NAME stays identical — only the slug disambiguates');
+    }
+
+    public function test_registration_is_pending_and_not_logged_in_when_manual_approval_is_on(): void
+    {
+        $this->makePlan();
+        app(PlatformSettingsService::class)->set('manual_tenant_approval', true);
+
+        $company = $this->uniqueCompany();
+        $slug = Str::slug($company);
+
+        $this->post('/register', [
+            'admin_name' => 'Jordan Blake',
+            'company_name' => $company,
+            'email' => 'owner@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ])->assertRedirect('/register/pending');
+
+        $tenant = Tenant::where('slug', $slug)->firstOrFail();
+        $this->assertSame(Tenant::STATUS_PENDING, $tenant->status);
+
+        // Not logged in — approval hasn't happened yet.
+        $this->assertGuest('tenant');
+
+        // The account exists but the whole tenant app is blocked.
+        $this->get("/app/{$slug}/login")->assertStatus(403);
+    }
+
+    public function test_registration_logs_in_immediately_when_manual_approval_is_off(): void
+    {
+        $this->makePlan();
+        app(PlatformSettingsService::class)->set('manual_tenant_approval', false);
+
+        $company = $this->uniqueCompany();
+        $slug = Str::slug($company);
+
+        $this->post('/register', [
+            'admin_name' => 'Jordan Blake',
+            'company_name' => $company,
+            'email' => 'owner@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ])->assertRedirect("/app/{$slug}/dashboard");
+
+        $this->assertSame(Tenant::STATUS_TRIAL, Tenant::where('slug', $slug)->firstOrFail()->status);
+        $this->assertAuthenticated('tenant');
     }
 }

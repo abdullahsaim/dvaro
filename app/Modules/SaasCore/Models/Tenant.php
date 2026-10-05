@@ -24,6 +24,9 @@ class Tenant extends Model
 
     public const STATUS_CANCELLED = 'cancelled';
 
+    /** Registered but awaiting a super admin's approval (manual_tenant_approval setting). Blocked from login — see TenantMiddleware. */
+    public const STATUS_PENDING = 'pending';
+
     protected $fillable = [
         'name',
         'slug',
