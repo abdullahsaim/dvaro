@@ -5,6 +5,7 @@ use App\Modules\SuperAdmin\Http\Controllers\ActivityLogController;
 use App\Modules\SuperAdmin\Http\Controllers\AgreementTemplateController as SuperAdminAgreementTemplateController;
 use App\Modules\SuperAdmin\Http\Controllers\CmsContentController;
 use App\Modules\SuperAdmin\Http\Controllers\DemoRequestController;
+use App\Modules\SuperAdmin\Http\Controllers\IntegrationCredentialsController;
 use App\Modules\SuperAdmin\Http\Controllers\PlanManagementController;
 use App\Modules\SuperAdmin\Http\Controllers\SubscriptionManagementController;
 use App\Modules\SuperAdmin\Http\Controllers\SuperAdminAuthController;
@@ -102,6 +103,13 @@ Route::middleware('superadmin.auth')->group(function () {
     // Platform settings.
     Route::get('settings', [SystemSettingsController::class, 'show'])->name('settings');
     Route::put('settings', [SystemSettingsController::class, 'update'])->name('settings.update');
+
+    // Platform credentials (Stripe/PayPal/email/AI/SMS secrets) — previously
+    // .env-only. platformOwner gate enforced in the controller.
+    Route::get('settings/credentials', [IntegrationCredentialsController::class, 'show'])
+        ->name('settings.credentials');
+    Route::put('settings/credentials', [IntegrationCredentialsController::class, 'update'])
+        ->name('settings.credentials.update');
 
     // Landing-page CMS. {key} is the content block's unique string key (validated
     // in the request). All actions are content-access gated.

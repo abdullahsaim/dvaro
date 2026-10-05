@@ -1005,6 +1005,7 @@
             "plans": "Plans",
             "subscriptions": "Subscriptions",
             "settings": "Settings",
+            "credentials": "Credentials",
             "agreement_templates": "Agreement terms",
             "cms": "Landing content",
             "demo_requests": "Demo requests",
@@ -1192,6 +1193,15 @@
             "limits": "Limits & maintenance",
             "max_tenants": "Max tenants (blank = unlimited)",
             "maintenance_mode": "Platform maintenance mode"
+        },
+        "credentials": {
+            "title": "Credentials",
+            "subtitle": "Platform-wide API keys and secrets for payments, email, AI and messaging. A value you set here overrides .env immediately — leave a field blank to keep it unchanged, or Remove to clear it back to .env.",
+            "configured": "Configured",
+            "not_configured": "Not configured",
+            "remove": "Remove",
+            "will_remove": "Will remove",
+            "leave_unchanged": "Leave unchanged"
         },
         "cms": {
             "title": "Landing page content",

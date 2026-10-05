@@ -1,6 +1,11 @@
 <?php
 
+use App\Providers\AppServiceProvider;
+use App\Providers\EventServiceProvider;
+use App\Providers\PlatformCredentialOverrideServiceProvider;
+
 return [
-    App\Providers\AppServiceProvider::class,
-    App\Providers\EventServiceProvider::class,
+    AppServiceProvider::class,
+    PlatformCredentialOverrideServiceProvider::class,
+    EventServiceProvider::class,
 ];
