@@ -32,8 +32,8 @@ class CmsContentController extends Controller
      * pages (unknown/new sections fall to the end alphabetically).
      */
     private const SECTION_ORDER = [
-        'branding', 'hero', 'stats', 'features', 'how_it_works', 'about',
-        'values', 'testimonials', 'faq', 'cta', 'contact',
+        'branding', 'hero', 'stats', 'features', 'how_it_works', 'pricing', 'about',
+        'values', 'testimonials', 'faq', 'cta', 'demo', 'contact',
     ];
 
     /**

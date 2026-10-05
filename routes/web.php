@@ -27,6 +27,7 @@ use Illuminate\Support\Facades\Route;
 */
 Route::get('/', [PublicLandingController::class, 'index'])->name('landing');
 Route::get('pricing', [PublicLandingController::class, 'pricing'])->name('pricing');
+Route::get('sitemap.xml', [PublicLandingController::class, 'sitemap'])->name('sitemap');
 
 // Global workspace lookup — resolves a tenant by email then forwards to its
 // path-based login. PUBLIC, pre-tenant; the POST is throttled per IP (10/hour)
@@ -38,6 +39,8 @@ Route::post('find-workspace', [WorkspaceLookupController::class, 'find'])
 
 Route::get('about', [PublicLandingController::class, 'about'])->name('about');
 Route::get('contact', [PublicLandingController::class, 'contact'])->name('contact');
+Route::get('privacy', [PublicLandingController::class, 'privacy'])->name('privacy');
+Route::get('terms', [PublicLandingController::class, 'terms'])->name('terms');
 
 Route::post('contact', [PublicLandingController::class, 'submitContact'])
     ->middleware('throttle:public-forms')

@@ -20,8 +20,8 @@ const { t } = useI18n();
 const page = usePage();
 
 const seo = useSeo({
-    title: t('public.contact.title'),
-    description: t('public.contact.subtitle'),
+    title: props.contact.contact_title || t('public.contact.title'),
+    description: props.contact.contact_subtitle || t('public.contact.subtitle'),
 });
 
 const success = computed(() => page.props.flash?.success ?? null);
@@ -73,6 +73,7 @@ const infoCards = computed(() =>
 <template>
     <PublicLayout>
         <Head :title="seo.title">
+            <link rel="canonical" head-key="canonical" :href="seo.canonical" />
             <meta v-for="m in seo.meta" :key="m.key" :head-key="m.key" :name="m.name" :property="m.property" :content="m.content" />
         </Head>
 
@@ -82,9 +83,9 @@ const infoCards = computed(() =>
 
             <div class="relative mx-auto w-full max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
                 <div v-reveal class="mx-auto max-w-2xl text-center">
-                    <p class="text-xs font-semibold uppercase tracking-widest text-ink-400">{{ t('public.contact.kicker') }}</p>
-                    <h1 class="mt-3 text-4xl font-bold tracking-tight text-ink-900 dark:text-ink-50 sm:text-5xl">{{ t('public.contact.title') }}</h1>
-                    <p class="mt-4 text-lg text-ink-600 dark:text-ink-300">{{ t('public.contact.subtitle') }}</p>
+                    <p class="text-xs font-semibold uppercase tracking-widest text-ink-400">{{ contact.contact_kicker || t('public.contact.kicker') }}</p>
+                    <h1 class="mt-3 text-4xl font-bold tracking-tight text-ink-900 dark:text-ink-50 sm:text-5xl">{{ contact.contact_title || t('public.contact.title') }}</h1>
+                    <p class="mt-4 text-lg text-ink-600 dark:text-ink-300">{{ contact.contact_subtitle || t('public.contact.subtitle') }}</p>
                 </div>
 
                 <div class="mt-14 grid gap-10 lg:grid-cols-5">

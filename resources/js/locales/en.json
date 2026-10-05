@@ -5,6 +5,7 @@
     },
     "public": {
         "nav": {
+            "features": "Features",
             "pricing": "Pricing",
             "about": "About",
             "contact": "Contact",
@@ -16,6 +17,10 @@
             "tagline": "The all-in-one platform for car rental operators.",
             "product": "Product",
             "company": "Company",
+            "legal": "Legal",
+            "faq": "FAQ",
+            "privacy": "Privacy policy",
+            "terms": "Terms of service",
             "rights": "All rights reserved."
         },
         "find_workspace": {
@@ -1225,7 +1230,8 @@
                 "contact": "Contact",
                 "testimonials": "Testimonials",
                 "faq": "FAQ",
-                "cta": "Call to action"
+                "cta": "Call to action",
+                "demo": "Demo request band"
             }
         },
         "demo_requests": {

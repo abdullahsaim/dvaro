@@ -23,7 +23,9 @@ const props = defineProps({
     testimonials: { type: Object, default: () => ({}) },
     faq: { type: Object, default: () => ({}) },
     cta: { type: Object, default: () => ({}) },
+    demo: { type: Object, default: () => ({}) },
     contact: { type: Object, default: () => ({}) },
+    pricing: { type: Object, default: () => ({}) },
     plans: { type: Array, default: () => [] },
 });
 
@@ -94,12 +96,43 @@ const faqItems = computed(() =>
 );
 
 const previewPlans = computed(() => props.plans.slice(0, 3));
+
+// Organization + SoftwareApplication JSON-LD — helps search engines show a
+// knowledge-panel-style result and understand DVARO is a SaaS product, not
+// just a generic page. Kept minimal/truthful: only facts stated elsewhere on
+// this page (name, description, URL) rather than invented review/rating data.
+const structuredData = computed(() => JSON.stringify({
+    '@context': 'https://schema.org',
+    '@graph': [
+        {
+            '@type': 'Organization',
+            name: 'DVARO',
+            url: seo.canonical,
+            logo: heroImage.value || undefined,
+        },
+        {
+            '@type': 'SoftwareApplication',
+            name: 'DVARO',
+            applicationCategory: 'BusinessApplication',
+            operatingSystem: 'Web',
+            description: props.hero.hero_subheading,
+            offers: previewPlans.value.map((plan) => ({
+                '@type': 'Offer',
+                name: plan.name,
+                price: plan.is_free ? '0' : (plan.price_monthly / 100).toFixed(2),
+                priceCurrency: 'AUD',
+            })),
+        },
+    ],
+}));
 </script>
 
 <template>
     <PublicLayout>
         <Head :title="seo.title">
+            <link rel="canonical" head-key="canonical" :href="seo.canonical" />
             <meta v-for="m in seo.meta" :key="m.key" :head-key="m.key" :name="m.name" :property="m.property" :content="m.content" />
+            <component :is="'script'" type="application/ld+json" head-key="structured-data">{{ structuredData }}</component>
         </Head>
 
         <!-- Hero -->
@@ -170,12 +203,12 @@ const previewPlans = computed(() => props.plans.slice(0, 3));
         </section>
 
         <!-- Features -->
-        <section class="border-t border-ink-200 bg-ink-50 dark:border-ink-800 dark:bg-ink-900/40">
+        <section id="features" class="border-t border-ink-200 bg-ink-50 dark:border-ink-800 dark:bg-ink-900/40">
             <div class="mx-auto w-full max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
                 <div v-reveal class="mx-auto max-w-2xl text-center">
-                    <p class="text-xs font-semibold uppercase tracking-widest text-ink-400">{{ t('public.features.kicker') }}</p>
-                    <h2 class="mt-3 text-3xl font-bold tracking-tight text-ink-900 dark:text-ink-50">{{ t('public.features.title') }}</h2>
-                    <p class="mt-3 text-ink-600 dark:text-ink-300">{{ t('public.features.subtitle') }}</p>
+                    <p class="text-xs font-semibold uppercase tracking-widest text-ink-400">{{ features.features_kicker || t('public.features.kicker') }}</p>
+                    <h2 class="mt-3 text-3xl font-bold tracking-tight text-ink-900 dark:text-ink-50">{{ features.features_title || t('public.features.title') }}</h2>
+                    <p class="mt-3 text-ink-600 dark:text-ink-300">{{ features.features_subtitle || t('public.features.subtitle') }}</p>
                 </div>
                 <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     <div
@@ -198,9 +231,9 @@ const previewPlans = computed(() => props.plans.slice(0, 3));
         <section v-if="steps.length" class="border-t border-ink-200 dark:border-ink-800">
             <div class="mx-auto w-full max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
                 <div v-reveal class="mx-auto max-w-2xl text-center">
-                    <p class="text-xs font-semibold uppercase tracking-widest text-ink-400">{{ t('public.how.kicker') }}</p>
-                    <h2 class="mt-3 text-3xl font-bold tracking-tight text-ink-900 dark:text-ink-50">{{ t('public.how.title') }}</h2>
-                    <p class="mt-3 text-ink-600 dark:text-ink-300">{{ t('public.how.subtitle') }}</p>
+                    <p class="text-xs font-semibold uppercase tracking-widest text-ink-400">{{ howItWorks.how_kicker || t('public.how.kicker') }}</p>
+                    <h2 class="mt-3 text-3xl font-bold tracking-tight text-ink-900 dark:text-ink-50">{{ howItWorks.how_title || t('public.how.title') }}</h2>
+                    <p class="mt-3 text-ink-600 dark:text-ink-300">{{ howItWorks.how_subtitle || t('public.how.subtitle') }}</p>
                 </div>
                 <ol class="relative mt-14 grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
                     <!-- Connector line (desktop) -->
@@ -237,7 +270,7 @@ const previewPlans = computed(() => props.plans.slice(0, 3));
         <!-- Testimonials -->
         <section v-if="testimonialCards.length" class="border-t border-ink-200 dark:border-ink-800">
             <div class="mx-auto w-full max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-                <h2 v-reveal class="text-center text-3xl font-bold tracking-tight text-ink-900 dark:text-ink-50">{{ t('public.testimonials.title') }}</h2>
+                <h2 v-reveal class="text-center text-3xl font-bold tracking-tight text-ink-900 dark:text-ink-50">{{ testimonials.testimonials_title || t('public.testimonials.title') }}</h2>
                 <div class="mt-12 grid gap-6 md:grid-cols-3">
                     <figure
                         v-for="(tm, i) in testimonialCards"
@@ -259,8 +292,8 @@ const previewPlans = computed(() => props.plans.slice(0, 3));
         <section v-if="previewPlans.length" class="border-t border-ink-200 bg-ink-50 dark:border-ink-800 dark:bg-ink-900/40">
             <div class="mx-auto w-full max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
                 <div v-reveal class="mx-auto max-w-2xl text-center">
-                    <h2 class="text-3xl font-bold tracking-tight text-ink-900 dark:text-ink-50">{{ t('public.pricing.title') }}</h2>
-                    <p class="mt-3 text-ink-600 dark:text-ink-300">{{ t('public.pricing.subtitle') }}</p>
+                    <h2 class="text-3xl font-bold tracking-tight text-ink-900 dark:text-ink-50">{{ pricing.pricing_title || t('public.pricing.title') }}</h2>
+                    <p class="mt-3 text-ink-600 dark:text-ink-300">{{ pricing.pricing_subtitle || t('public.pricing.subtitle') }}</p>
                 </div>
                 <div class="mt-12 grid gap-6 md:grid-cols-3">
                     <div v-for="(plan, i) in previewPlans" :key="plan.id" v-reveal="i * 100">
@@ -276,11 +309,11 @@ const previewPlans = computed(() => props.plans.slice(0, 3));
         </section>
 
         <!-- FAQ -->
-        <section v-if="faqItems.length" class="border-t border-ink-200 dark:border-ink-800">
+        <section v-if="faqItems.length" id="faq" class="border-t border-ink-200 dark:border-ink-800">
             <div class="mx-auto w-full max-w-3xl px-4 py-20 sm:px-6 lg:px-8">
                 <div v-reveal class="text-center">
-                    <h2 class="text-3xl font-bold tracking-tight text-ink-900 dark:text-ink-50">{{ t('public.faq.title') }}</h2>
-                    <p class="mt-3 text-ink-600 dark:text-ink-300">{{ t('public.faq.subtitle') }}</p>
+                    <h2 class="text-3xl font-bold tracking-tight text-ink-900 dark:text-ink-50">{{ faq.faq_title || t('public.faq.title') }}</h2>
+                    <p class="mt-3 text-ink-600 dark:text-ink-300">{{ faq.faq_subtitle || t('public.faq.subtitle') }}</p>
                 </div>
                 <div v-reveal="120" class="mt-10">
                     <FaqAccordion :items="faqItems" />
@@ -309,8 +342,8 @@ const previewPlans = computed(() => props.plans.slice(0, 3));
         <section class="border-t border-ink-200 dark:border-ink-800">
             <div class="mx-auto grid w-full max-w-7xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:px-8">
                 <div v-reveal>
-                    <h2 class="text-3xl font-bold tracking-tight text-ink-900 dark:text-ink-50">{{ t('public.demo.title') }}</h2>
-                    <p class="mt-3 text-ink-600 dark:text-ink-300">{{ t('public.demo.subtitle') }}</p>
+                    <h2 class="text-3xl font-bold tracking-tight text-ink-900 dark:text-ink-50">{{ demo.demo_title || t('public.demo.title') }}</h2>
+                    <p class="mt-3 text-ink-600 dark:text-ink-300">{{ demo.demo_subtitle || t('public.demo.subtitle') }}</p>
                 </div>
                 <div v-reveal="120" class="rounded-card border border-ink-200 bg-white p-6 shadow-subtle dark:border-ink-800 dark:bg-ink-900">
                     <DemoRequestForm />

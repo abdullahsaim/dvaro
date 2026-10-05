@@ -12,6 +12,7 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as AssertInertia;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
@@ -52,7 +53,7 @@ class CmsLandingTest extends TestCase
     {
         return Plan::create([
             'name' => $name,
-            'slug' => \Illuminate\Support\Str::slug($name).'-'.uniqid(),
+            'slug' => Str::slug($name).'-'.uniqid(),
             'description' => 'Plan '.$name,
             'price_monthly' => 9900,
             'price_annual' => 99000,
@@ -200,5 +201,72 @@ class CmsLandingTest extends TestCase
         // content_manager is allowed.
         $content = $this->makeSuperAdmin(SuperAdmin::ROLE_CONTENT_MANAGER);
         $this->actingAs($content, 'superadmin')->get('/superadmin/cms')->assertOk();
+    }
+
+    // ------------------------------------------------------------------
+    // Session 48 — CMS-editable section headers, SEO, legal pages
+    // ------------------------------------------------------------------
+
+    public function test_landing_page_exposes_the_new_pricing_and_demo_sections(): void
+    {
+        $this->seed(CmsContentSeeder::class);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertInertia(fn (AssertInertia $page) => $page
+                ->component('Public/Landing')
+                ->where('features.features_title', 'Everything you need to run a rental business')
+                ->where('howItWorks.how_title', 'Up and running in an afternoon')
+                ->where('pricing.pricing_title', 'Simple, transparent pricing')
+                ->where('demo.demo_title', 'See DVARO in action')
+                ->where('faq.faq_title', 'Frequently asked questions'));
+    }
+
+    public function test_pricing_page_exposes_its_own_section_header(): void
+    {
+        $this->seed(CmsContentSeeder::class);
+
+        $this->get('/pricing')
+            ->assertOk()
+            ->assertInertia(fn (AssertInertia $page) => $page
+                ->component('Public/Pricing')
+                ->where('pricing.pricing_kicker', 'Pricing')
+                ->where('pricing.pricing_custom_title', 'Need a bigger fleet or a custom plan?'));
+    }
+
+    public function test_editing_a_new_section_header_block_updates_immediately(): void
+    {
+        $this->seed(CmsContentSeeder::class);
+        $admin = $this->makeSuperAdmin(SuperAdmin::ROLE_CONTENT_MANAGER);
+        $cms = app(CmsContentService::class);
+
+        $this->actingAs($admin, 'superadmin')
+            ->put('/superadmin/cms/pricing_title', ['content' => 'Custom pricing headline'])
+            ->assertRedirect();
+
+        $this->assertSame('Custom pricing headline', $cms->get('pricing_title'));
+
+        $this->get('/pricing')
+            ->assertInertia(fn (AssertInertia $page) => $page
+                ->where('pricing.pricing_title', 'Custom pricing headline'));
+    }
+
+    public function test_sitemap_lists_every_public_page(): void
+    {
+        $response = $this->get('/sitemap.xml');
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'application/xml');
+
+        $body = $response->getContent();
+        foreach (['/', '/pricing', '/about', '/contact', '/privacy', '/terms'] as $path) {
+            $this->assertStringContainsString('<loc>'.url($path).'</loc>', $body);
+        }
+    }
+
+    public function test_privacy_and_terms_pages_render(): void
+    {
+        $this->get('/privacy')->assertOk()->assertInertia(fn (AssertInertia $page) => $page->component('Public/Privacy'));
+        $this->get('/terms')->assertOk()->assertInertia(fn (AssertInertia $page) => $page->component('Public/Terms'));
     }
 }

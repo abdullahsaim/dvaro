@@ -34,7 +34,12 @@ const logoDark = computed(
 
 const mobileOpen = ref(false);
 
+// Ordered the way a first-time visitor actually decides: what it does, what
+// it costs, who's behind it, how to reach them. "Features" is an anchor on
+// the homepage (no dedicated page exists), so it always routes through "/"
+// first when visited from elsewhere.
 const navLinks = [
+    { href: '/#features', label: 'public.nav.features' },
     { href: '/pricing', label: 'public.nav.pricing' },
     { href: '/about', label: 'public.nav.about' },
     { href: '/contact', label: 'public.nav.contact' },
@@ -144,8 +149,8 @@ const iconBtn =
 
         <!-- Footer -->
         <footer class="border-t border-ink-200 bg-ink-50 dark:border-ink-800 dark:bg-ink-900/50">
-            <div class="mx-auto grid w-full max-w-7xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-3 lg:px-8">
-                <div>
+            <div class="mx-auto grid w-full max-w-7xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-4 lg:px-8">
+                <div class="md:col-span-1">
                     <div class="flex items-center">
                         <template v-if="logoLight || logoDark">
                             <img :src="logoLight" :alt="t('app.name')" class="h-7 w-auto max-w-40 object-contain object-left dark:hidden" />
@@ -162,8 +167,9 @@ const iconBtn =
                 <div>
                     <p class="text-sm font-semibold text-ink-900 dark:text-ink-100">{{ t('public.footer.product') }}</p>
                     <ul class="mt-3 space-y-2 text-sm text-ink-500">
+                        <li><Link href="/#features" class="hover:text-ink-900 dark:hover:text-white">{{ t('public.nav.features') }}</Link></li>
                         <li><Link href="/pricing" class="hover:text-ink-900 dark:hover:text-white">{{ t('public.nav.pricing') }}</Link></li>
-                        <li><Link href="/" class="hover:text-ink-900 dark:hover:text-white">{{ t('public.features.title') }}</Link></li>
+                        <li><Link href="/#faq" class="hover:text-ink-900 dark:hover:text-white">{{ t('public.footer.faq') }}</Link></li>
                     </ul>
                 </div>
 
@@ -172,6 +178,14 @@ const iconBtn =
                     <ul class="mt-3 space-y-2 text-sm text-ink-500">
                         <li><Link href="/about" class="hover:text-ink-900 dark:hover:text-white">{{ t('public.nav.about') }}</Link></li>
                         <li><Link href="/contact" class="hover:text-ink-900 dark:hover:text-white">{{ t('public.nav.contact') }}</Link></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <p class="text-sm font-semibold text-ink-900 dark:text-ink-100">{{ t('public.footer.legal') }}</p>
+                    <ul class="mt-3 space-y-2 text-sm text-ink-500">
+                        <li><Link href="/privacy" class="hover:text-ink-900 dark:hover:text-white">{{ t('public.footer.privacy') }}</Link></li>
+                        <li><Link href="/terms" class="hover:text-ink-900 dark:hover:text-white">{{ t('public.footer.terms') }}</Link></li>
                     </ul>
                 </div>
             </div>

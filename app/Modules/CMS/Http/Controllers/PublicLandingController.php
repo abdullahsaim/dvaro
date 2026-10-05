@@ -9,6 +9,7 @@ use App\Modules\CMS\Models\DemoRequest;
 use App\Modules\CMS\Services\CmsContentService;
 use App\Modules\SaasCore\Models\Plan;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -42,7 +43,9 @@ class PublicLandingController extends Controller
             'testimonials' => $this->section('testimonials'),
             'faq' => $this->section('faq'),
             'cta' => $this->section('cta'),
+            'demo' => $this->section('demo'),
             'contact' => $this->section('contact'),
+            'pricing' => $this->section('pricing'),
             'plans' => $this->activePlans(),
         ]);
     }
@@ -55,6 +58,7 @@ class PublicLandingController extends Controller
     {
         return Inertia::render('Public/Pricing', [
             'plans' => $this->activePlans(),
+            'pricing' => $this->section('pricing'),
             'faq' => $this->section('faq'),
             'cta' => $this->section('cta'),
         ]);
@@ -75,6 +79,46 @@ class PublicLandingController extends Controller
         return Inertia::render('Public/Contact', [
             'contact' => $this->section('contact'),
         ]);
+    }
+
+    /**
+     * Static legal pages — not CMS-driven (unlike the rest of this
+     * controller): the wording needs a lawyer's review before it changes,
+     * not a content manager's. Draft content, not yet lawyer-reviewed — same
+     * caveat as the seeded agreement-terms templates (Session 33).
+     */
+    public function privacy(): Response
+    {
+        return Inertia::render('Public/Privacy');
+    }
+
+    public function terms(): Response
+    {
+        return Inertia::render('Public/Terms');
+    }
+
+    /**
+     * sitemap.xml — every public, crawlable URL. Tenant/portal/mechanic pages
+     * require auth or a signed token and are deliberately excluded; only the
+     * marketing site is meant to be indexed.
+     */
+    public function sitemap(): HttpResponse
+    {
+        $urls = ['/', '/pricing', '/about', '/contact', '/privacy', '/terms'];
+
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>'."\n";
+        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'."\n";
+
+        foreach ($urls as $path) {
+            $xml .= '  <url>'."\n";
+            $xml .= '    <loc>'.e(url($path)).'</loc>'."\n";
+            $xml .= '    <changefreq>weekly</changefreq>'."\n";
+            $xml .= '  </url>'."\n";
+        }
+
+        $xml .= '</urlset>';
+
+        return response($xml, 200)->header('Content-Type', 'application/xml');
     }
 
     /**

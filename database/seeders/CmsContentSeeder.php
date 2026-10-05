@@ -120,6 +120,14 @@ class CmsContentSeeder extends Seeder
                 'content' => 'Revenue, utilisation and overdue analytics with PDF/Excel exports, plus an AI assistant on your data.'],
             ['key' => 'feature_6_image', 'type' => $image, 'section' => 'features', 'sort_order' => 18],
 
+            // ---- Features section header (kicker/title/subtitle above the 6 cards) ----
+            ['key' => 'features_kicker', 'type' => $text, 'section' => 'features', 'sort_order' => 19,
+                'content' => 'The platform'],
+            ['key' => 'features_title', 'type' => $text, 'section' => 'features', 'sort_order' => 20,
+                'content' => 'Everything you need to run a rental business'],
+            ['key' => 'features_subtitle', 'type' => $text, 'section' => 'features', 'sort_order' => 21,
+                'content' => 'One platform, from the first lead to the final invoice.'],
+
             // ---- How it works (4 numbered steps on the homepage) ----
             ['key' => 'how_1_title', 'type' => $text, 'section' => 'how_it_works', 'sort_order' => 1,
                 'content' => 'Register your company'],
@@ -138,6 +146,26 @@ class CmsContentSeeder extends Seeder
             ['key' => 'how_4_description', 'type' => $text, 'section' => 'how_it_works', 'sort_order' => 8,
                 'content' => 'Recurring invoices, online payments and automated late fees keep cash flowing.'],
 
+            // ---- How it works section header ----
+            ['key' => 'how_kicker', 'type' => $text, 'section' => 'how_it_works', 'sort_order' => 9,
+                'content' => 'How it works'],
+            ['key' => 'how_title', 'type' => $text, 'section' => 'how_it_works', 'sort_order' => 10,
+                'content' => 'Up and running in an afternoon'],
+            ['key' => 'how_subtitle', 'type' => $text, 'section' => 'how_it_works', 'sort_order' => 11,
+                'content' => 'From signup to your first signed agreement in four steps.'],
+
+            // ---- Pricing section header (home preview + dedicated page) ----
+            ['key' => 'pricing_kicker', 'type' => $text, 'section' => 'pricing', 'sort_order' => 1,
+                'content' => 'Pricing'],
+            ['key' => 'pricing_title', 'type' => $text, 'section' => 'pricing', 'sort_order' => 2,
+                'content' => 'Simple, transparent pricing'],
+            ['key' => 'pricing_subtitle', 'type' => $text, 'section' => 'pricing', 'sort_order' => 3,
+                'content' => 'Choose the plan that fits your fleet. Upgrade anytime.'],
+            ['key' => 'pricing_custom_title', 'type' => $text, 'section' => 'pricing', 'sort_order' => 4,
+                'content' => 'Need a bigger fleet or a custom plan?'],
+            ['key' => 'pricing_custom_subtitle', 'type' => $text, 'section' => 'pricing', 'sort_order' => 5,
+                'content' => 'Tell us about your operation and we\'ll put together a plan that fits.'],
+
             // ---- About ----
             ['key' => 'about_heading', 'type' => $text, 'section' => 'about', 'sort_order' => 1,
                 'content' => 'Built for rental operators, by people who know the work.'],
@@ -146,6 +174,16 @@ class CmsContentSeeder extends Seeder
             ['key' => 'about_image', 'type' => $image, 'section' => 'about', 'sort_order' => 3],
             ['key' => 'about_mission', 'type' => $rich, 'section' => 'about', 'sort_order' => 4,
                 'content' => '<p>Our mission is simple: give rental operators the same calibre of software the big fleets have, at a price an independent business can justify — accurate to the cent, secure by default, and pleasant to use every single day.</p>'],
+            ['key' => 'about_kicker', 'type' => $text, 'section' => 'about', 'sort_order' => 5,
+                'content' => 'About us'],
+            ['key' => 'about_story_title', 'type' => $text, 'section' => 'about', 'sort_order' => 6,
+                'content' => 'One accurate system, end to end'],
+            ['key' => 'about_mission_title', 'type' => $text, 'section' => 'about', 'sort_order' => 7,
+                'content' => 'Our mission'],
+            ['key' => 'about_values_title', 'type' => $text, 'section' => 'about', 'sort_order' => 8,
+                'content' => 'What we stand for'],
+            ['key' => 'about_values_subtitle', 'type' => $text, 'section' => 'about', 'sort_order' => 9,
+                'content' => 'The principles behind every feature we ship.'],
 
             // ---- Values (about page — 4 title/description pairs) ----
             ['key' => 'value_1_title', 'type' => $text, 'section' => 'values', 'sort_order' => 1,
@@ -176,8 +214,16 @@ class CmsContentSeeder extends Seeder
                 'content' => 'Mon–Fri, 9:00am–5:00pm AWST'],
             ['key' => 'contact_response_time', 'type' => $text, 'section' => 'contact', 'sort_order' => 5,
                 'content' => 'We usually respond within one business day.'],
+            ['key' => 'contact_kicker', 'type' => $text, 'section' => 'contact', 'sort_order' => 6,
+                'content' => 'Contact'],
+            ['key' => 'contact_title', 'type' => $text, 'section' => 'contact', 'sort_order' => 7,
+                'content' => 'Get in touch'],
+            ['key' => 'contact_subtitle', 'type' => $text, 'section' => 'contact', 'sort_order' => 8,
+                'content' => 'Have a question? Send us a message.'],
 
             // ---- Testimonials (optional — seeded with two examples) ----
+            ['key' => 'testimonials_title', 'type' => $text, 'section' => 'testimonials', 'sort_order' => 0,
+                'content' => 'Loved by rental operators'],
             ['key' => 'testimonial_1_quote', 'type' => $text, 'section' => 'testimonials', 'sort_order' => 1,
                 'content' => 'DVARO replaced three different tools and a wall of spreadsheets. Our invoicing is finally accurate.'],
             ['key' => 'testimonial_1_author', 'type' => $text, 'section' => 'testimonials', 'sort_order' => 2,
@@ -194,6 +240,10 @@ class CmsContentSeeder extends Seeder
                 'content' => 'Fleet Manager, Canning Vale'],
 
             // ---- FAQ (6 question/answer pairs — home + pricing) ----
+            ['key' => 'faq_title', 'type' => $text, 'section' => 'faq', 'sort_order' => 0,
+                'content' => 'Frequently asked questions'],
+            ['key' => 'faq_subtitle', 'type' => $text, 'section' => 'faq', 'sort_order' => 0,
+                'content' => 'Everything you need to know before getting started.'],
             ['key' => 'faq_1_question', 'type' => $text, 'section' => 'faq', 'sort_order' => 1,
                 'content' => 'Do I need a credit card to start the free trial?'],
             ['key' => 'faq_1_answer', 'type' => $text, 'section' => 'faq', 'sort_order' => 2,
@@ -226,6 +276,12 @@ class CmsContentSeeder extends Seeder
                 'content' => 'Join rental operators across Australia who replaced spreadsheets with DVARO.'],
             ['key' => 'cta_button_text', 'type' => $text, 'section' => 'cta', 'sort_order' => 3,
                 'content' => 'Start your free trial'],
+
+            // ---- Demo request band (homepage, bottom) ----
+            ['key' => 'demo_title', 'type' => $text, 'section' => 'demo', 'sort_order' => 1,
+                'content' => 'See DVARO in action'],
+            ['key' => 'demo_subtitle', 'type' => $text, 'section' => 'demo', 'sort_order' => 2,
+                'content' => 'Request a demo and we\'ll show you around.'],
         ];
     }
 }

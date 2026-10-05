@@ -13,6 +13,7 @@ import { useSeo } from '@/composables/useSeo.js';
 
 const props = defineProps({
     plans: { type: Array, default: () => [] },
+    pricing: { type: Object, default: () => ({}) },
     faq: { type: Object, default: () => ({}) },
     cta: { type: Object, default: () => ({}) },
 });
@@ -20,8 +21,8 @@ const props = defineProps({
 const { t } = useI18n();
 
 const seo = useSeo({
-    title: t('public.pricing.title'),
-    description: t('public.pricing.subtitle'),
+    title: props.pricing.pricing_title || t('public.pricing.title'),
+    description: props.pricing.pricing_subtitle || t('public.pricing.subtitle'),
 });
 
 const cycle = ref('monthly');
@@ -64,6 +65,7 @@ const faqItems = computed(() =>
 <template>
     <PublicLayout>
         <Head :title="seo.title">
+            <link rel="canonical" head-key="canonical" :href="seo.canonical" />
             <meta v-for="m in seo.meta" :key="m.key" :head-key="m.key" :name="m.name" :property="m.property" :content="m.content" />
         </Head>
 
@@ -74,9 +76,9 @@ const faqItems = computed(() =>
 
             <div class="relative mx-auto w-full max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
                 <div v-reveal class="mx-auto max-w-2xl text-center">
-                    <p class="text-xs font-semibold uppercase tracking-widest text-ink-400">{{ t('public.pricing.kicker') }}</p>
-                    <h1 class="mt-3 text-4xl font-bold tracking-tight text-ink-900 dark:text-ink-50 sm:text-5xl">{{ t('public.pricing.title') }}</h1>
-                    <p class="mt-4 text-lg text-ink-600 dark:text-ink-300">{{ t('public.pricing.subtitle') }}</p>
+                    <p class="text-xs font-semibold uppercase tracking-widest text-ink-400">{{ pricing.pricing_kicker || t('public.pricing.kicker') }}</p>
+                    <h1 class="mt-3 text-4xl font-bold tracking-tight text-ink-900 dark:text-ink-50 sm:text-5xl">{{ pricing.pricing_title || t('public.pricing.title') }}</h1>
+                    <p class="mt-4 text-lg text-ink-600 dark:text-ink-300">{{ pricing.pricing_subtitle || t('public.pricing.subtitle') }}</p>
                 </div>
 
                 <!-- Monthly / Annual toggle -->
@@ -142,8 +144,8 @@ const faqItems = computed(() =>
         <section v-if="faqItems.length" class="border-t border-ink-200 bg-ink-50 dark:border-ink-800 dark:bg-ink-900/40">
             <div class="mx-auto w-full max-w-3xl px-4 py-20 sm:px-6 lg:px-8">
                 <div v-reveal class="text-center">
-                    <h2 class="text-3xl font-bold tracking-tight text-ink-900 dark:text-ink-50">{{ t('public.faq.title') }}</h2>
-                    <p class="mt-3 text-ink-600 dark:text-ink-300">{{ t('public.faq.subtitle') }}</p>
+                    <h2 class="text-3xl font-bold tracking-tight text-ink-900 dark:text-ink-50">{{ faq.faq_title || t('public.faq.title') }}</h2>
+                    <p class="mt-3 text-ink-600 dark:text-ink-300">{{ faq.faq_subtitle || t('public.faq.subtitle') }}</p>
                 </div>
                 <div v-reveal="120" class="mt-10">
                     <FaqAccordion :items="faqItems" />
@@ -154,8 +156,8 @@ const faqItems = computed(() =>
         <!-- Custom plan / contact CTA -->
         <section class="border-t border-ink-200 dark:border-ink-800">
             <div v-reveal class="mx-auto w-full max-w-3xl px-4 py-16 text-center sm:px-6 lg:px-8">
-                <h2 class="text-2xl font-bold tracking-tight text-ink-900 dark:text-ink-50">{{ t('public.pricing.custom_title') }}</h2>
-                <p class="mt-3 text-ink-600 dark:text-ink-300">{{ t('public.pricing.custom_subtitle') }}</p>
+                <h2 class="text-2xl font-bold tracking-tight text-ink-900 dark:text-ink-50">{{ pricing.pricing_custom_title || t('public.pricing.custom_title') }}</h2>
+                <p class="mt-3 text-ink-600 dark:text-ink-300">{{ pricing.pricing_custom_subtitle || t('public.pricing.custom_subtitle') }}</p>
                 <Link href="/contact" class="mt-7 inline-block rounded-control border border-ink-300 px-6 py-3 font-semibold text-ink-900 transition hover:bg-ink-100 dark:border-ink-700 dark:text-white dark:hover:bg-ink-800">
                     {{ t('public.nav.contact') }}
                 </Link>

@@ -58,6 +58,7 @@ const valueIcons = [
 <template>
     <PublicLayout>
         <Head :title="seo.title">
+            <link rel="canonical" head-key="canonical" :href="seo.canonical" />
             <meta v-for="m in seo.meta" :key="m.key" :head-key="m.key" :name="m.name" :property="m.property" :content="m.content" />
         </Head>
 
@@ -67,7 +68,7 @@ const valueIcons = [
                 <div class="absolute -top-24 left-1/2 h-72 w-[46rem] -translate-x-1/2 rounded-full bg-ink-100/80 blur-3xl dark:bg-ink-800/30"></div>
             </div>
             <div class="relative mx-auto w-full max-w-3xl px-4 py-20 text-center sm:px-6 lg:px-8">
-                <p v-reveal class="text-xs font-semibold uppercase tracking-widest text-ink-400">{{ t('public.about.kicker') }}</p>
+                <p v-reveal class="text-xs font-semibold uppercase tracking-widest text-ink-400">{{ about.about_kicker || t('public.about.kicker') }}</p>
                 <h1 v-reveal="80" class="mt-3 text-4xl font-bold tracking-tight text-ink-900 dark:text-ink-50 sm:text-5xl">
                     {{ about.about_heading || t('public.about.title') }}
                 </h1>
@@ -80,7 +81,7 @@ const valueIcons = [
                 <img v-if="aboutImage" :src="aboutImage" alt="" class="w-full rounded-card border border-ink-200 bg-white object-contain p-6 shadow-subtle dark:border-ink-800 dark:bg-ink-900" />
             </div>
             <div v-reveal="120">
-                <h2 class="text-2xl font-bold tracking-tight text-ink-900 dark:text-ink-50">{{ t('public.about.story_title') }}</h2>
+                <h2 class="text-2xl font-bold tracking-tight text-ink-900 dark:text-ink-50">{{ about.about_story_title || t('public.about.story_title') }}</h2>
                 <!-- eslint-disable-next-line vue/no-v-html -->
                 <div class="prose prose-ink mt-4 max-w-none text-ink-600 dark:prose-invert dark:text-ink-300" v-html="about.about_body"></div>
             </div>
@@ -89,7 +90,7 @@ const valueIcons = [
         <!-- Mission -->
         <section v-if="about.about_mission" class="border-t border-ink-200 bg-ink-50 dark:border-ink-800 dark:bg-ink-900/40">
             <div v-reveal class="mx-auto w-full max-w-3xl px-4 py-16 text-center sm:px-6 lg:px-8">
-                <p class="text-xs font-semibold uppercase tracking-widest text-ink-400">{{ t('public.about.mission_title') }}</p>
+                <p class="text-xs font-semibold uppercase tracking-widest text-ink-400">{{ about.about_mission_title || t('public.about.mission_title') }}</p>
                 <!-- eslint-disable-next-line vue/no-v-html -->
                 <div class="prose prose-ink mx-auto mt-5 max-w-none text-xl font-medium leading-relaxed text-ink-800 dark:prose-invert dark:text-ink-100" v-html="about.about_mission"></div>
             </div>
@@ -99,8 +100,8 @@ const valueIcons = [
         <section v-if="valueCards.length" class="border-t border-ink-200 dark:border-ink-800">
             <div class="mx-auto w-full max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
                 <div v-reveal class="mx-auto max-w-2xl text-center">
-                    <h2 class="text-3xl font-bold tracking-tight text-ink-900 dark:text-ink-50">{{ t('public.about.values_title') }}</h2>
-                    <p class="mt-3 text-ink-600 dark:text-ink-300">{{ t('public.about.values_subtitle') }}</p>
+                    <h2 class="text-3xl font-bold tracking-tight text-ink-900 dark:text-ink-50">{{ about.about_values_title || t('public.about.values_title') }}</h2>
+                    <p class="mt-3 text-ink-600 dark:text-ink-300">{{ about.about_values_subtitle || t('public.about.values_subtitle') }}</p>
                 </div>
                 <div class="mt-12 grid gap-6 sm:grid-cols-2">
                     <div
