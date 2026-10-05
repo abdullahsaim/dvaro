@@ -264,6 +264,12 @@ Route::middleware('auth:tenant')->group(function () {
     Route::post('billing/cancel', [BillingController::class, 'cancelSubscription'])
         ->name('billing.cancel');
 
+    // Self-service, in-place plan change on an EXISTING gateway subscription —
+    // immediate, with a prorated charge right now. Distinct from checkout()
+    // above, which starts a brand-new subscription for a first-time subscriber.
+    Route::post('billing/upgrade/{plan}', [StripeCheckoutController::class, 'upgrade'])
+        ->name('billing.upgrade');
+
     // Settings hub + the sections that live under it. Each controller enforces
     // its own permissions (most writes are tenant_admin-only); the hub only
     // decides which cards are shown.

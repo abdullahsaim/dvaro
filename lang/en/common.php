@@ -223,5 +223,7 @@ return [
         'no_stripe_subscription' => 'There is no active online subscription to cancel.',
         'cancel_failed' => 'We could not cancel the subscription. Please try again shortly.',
         'cancel_requested' => 'Cancellation scheduled — your plan remains active until the end of the current period.',
+        'upgrade_succeeded' => 'Plan changed — you\'ve been charged the prorated difference for the rest of this period.',
+        'upgrade_failed' => 'We could not change your plan. Please try again shortly.',
     ],
 ];

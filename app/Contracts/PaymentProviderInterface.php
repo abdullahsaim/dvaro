@@ -45,4 +45,19 @@ interface PaymentProviderInterface
      * final local cancellation).
      */
     public function cancelSubscription(string $gatewaySubscriptionId): bool;
+
+    /**
+     * Change an EXISTING subscription to a different plan price, immediately,
+     * charging (or crediting) the prorated difference for the rest of the
+     * current period right away — never deferred to the next invoice.
+     *
+     * Returns a gateway-agnostic result the caller can trust without knowing
+     * which gateway produced it: the new current period bounds (so the local
+     * Subscription row can be kept in sync immediately, not only once the
+     * gateway's own webhook arrives) and what was actually charged for the
+     * proration (0 when the change was a pure credit, never charged).
+     *
+     * @return array{current_period_start: \DateTimeInterface, current_period_end: \DateTimeInterface, amount_charged: int, gateway_price_id: string}
+     */
+    public function changeSubscriptionPlan(string $gatewaySubscriptionId, string $newGatewayPriceId): array;
 }

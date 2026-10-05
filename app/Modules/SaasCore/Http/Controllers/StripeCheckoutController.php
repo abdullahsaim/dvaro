@@ -3,7 +3,9 @@
 namespace App\Modules\SaasCore\Http\Controllers;
 
 use App\Exceptions\CheckoutNotAllowedException;
+use App\Exceptions\UpgradeNotAllowedException;
 use App\Http\Controllers\Controller;
+use App\Modules\SaasCore\Actions\UpgradeSubscriptionAction;
 use App\Modules\SaasCore\Http\Requests\CheckoutRequest;
 use App\Modules\SaasCore\Models\Plan;
 use App\Modules\SaasCore\Models\Tenant;
@@ -55,6 +57,7 @@ class StripeCheckoutController extends Controller
             return back()->with('error', $e->getMessage());
         } catch (Throwable $e) {
             report($e); // Stripe API/network failure — never leak the raw error
+
             return back()->with('error', __('common.billing.checkout_failed'));
         }
 
@@ -89,5 +92,34 @@ class StripeCheckoutController extends Controller
         return redirect()
             ->route('tenant.billing.index', ['tenant_slug' => $tenant->slug])
             ->with('error', __('common.billing.checkout_cancelled'));
+    }
+
+    /**
+     * Self-service, IN-PLACE plan change — immediate, with a prorated charge
+     * right now (UpgradeSubscriptionAction). Only reachable for a tenant
+     * already on an active gateway subscription; a first-time subscriber uses
+     * checkout() instead. No redirect to an external page — this completes
+     * synchronously and lands straight back on the billing screen.
+     */
+    public function upgrade(Plan $plan, UpgradeSubscriptionAction $action): RedirectResponse
+    {
+        Gate::forUser(auth('tenant')->user())->authorize('manageSubscription');
+
+        /** @var Tenant $tenant */
+        $tenant = app('current_tenant');
+
+        try {
+            $action->execute($tenant, $plan);
+        } catch (UpgradeNotAllowedException $e) {
+            return back()->with('error', $e->getMessage());
+        } catch (Throwable $e) {
+            report($e); // gateway API/network failure — never leak the raw error
+
+            return back()->with('error', __('common.billing.upgrade_failed'));
+        }
+
+        return redirect()
+            ->route('tenant.billing.index', ['tenant_slug' => $tenant->slug])
+            ->with('success', __('common.billing.upgrade_succeeded'));
     }
 }

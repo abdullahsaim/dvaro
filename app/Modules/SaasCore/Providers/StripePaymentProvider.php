@@ -132,6 +132,34 @@ class StripePaymentProvider implements PaymentProviderInterface
     }
 
     /**
+     * Change an existing subscription's price with `always_invoice` proration
+     * — Stripe computes the prorated difference for the rest of the current
+     * period AND immediately finalizes + pays an invoice for it against the
+     * customer's default payment method, rather than deferring the line item
+     * to the next regular invoice (the default `create_prorations` behaviour).
+     * A pure downgrade produces a $0 (or negative, absorbed as account
+     * balance — never a refund) invoice; `amount_paid` reflects that honestly.
+     */
+    public function changeSubscriptionPlan(string $gatewaySubscriptionId, string $newGatewayPriceId): array
+    {
+        $current = $this->client()->subscriptions->retrieve($gatewaySubscriptionId);
+        $itemId = $current->items->data[0]->id;
+
+        $updated = $this->client()->subscriptions->update($gatewaySubscriptionId, [
+            'items' => [['id' => $itemId, 'price' => $newGatewayPriceId]],
+            'proration_behavior' => 'always_invoice',
+            'expand' => ['latest_invoice'],
+        ]);
+
+        return [
+            'current_period_start' => (new \DateTimeImmutable)->setTimestamp((int) $updated->current_period_start),
+            'current_period_end' => (new \DateTimeImmutable)->setTimestamp((int) $updated->current_period_end),
+            'amount_charged' => (int) ($updated->latest_invoice->amount_paid ?? 0),
+            'gateway_price_id' => $newGatewayPriceId,
+        ];
+    }
+
+    /**
      * The tenant's Stripe Customer id, creating the Customer on first use.
      * Billing email is the tenant's (oldest) admin — the same recipient every
      * ops notification uses.

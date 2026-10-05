@@ -112,6 +112,21 @@ function subscribe(plan, cycle) {
     );
 }
 
+// Self-service in-place plan change — immediate, with a prorated charge for
+// the rest of the current period right now (confirmed before posting, since
+// it's a real, non-refundable charge).
+const upgrading = ref(null);
+
+function upgradeInPlace(plan) {
+    if (!confirm(t('billing.confirm_change_plan', { name: plan.name }))) return;
+
+    upgrading.value = plan.id;
+    router.post(`/app/${slug.value}/billing/upgrade/${plan.id}`, {}, {
+        preserveScroll: true,
+        onFinish: () => { upgrading.value = null; },
+    });
+}
+
 // A subscribe button is pointless for the exact plan+cycle already billing
 // through Stripe (unless it is winding down) — the server guards this too.
 function alreadyOnStripe(plan, cycle) {
@@ -318,6 +333,22 @@ function submitCancel() {
                     >
                         {{ checkingOut === `${plan.id}:annual` ? t('billing.redirecting') : t('billing.subscribe_annual') }}
                     </Button>
+                </div>
+
+                <!-- Self-service in-place change — immediate, prorated — on an
+                     EXISTING Stripe subscription. Distinct from the
+                     first-time Checkout buttons above. -->
+                <div v-if="plan.can_upgrade_in_place" class="mt-4 border-t border-ink-100 pt-4 dark:border-ink-800">
+                    <Button
+                        variant="primary"
+                        size="sm"
+                        :disabled="upgrading !== null"
+                        :loading="upgrading === plan.id"
+                        @click="upgradeInPlace(plan)"
+                    >
+                        {{ t('billing.change_plan') }}
+                    </Button>
+                    <p class="mt-1.5 text-2xs text-ink-500">{{ t('billing.change_plan_hint') }}</p>
                 </div>
             </div>
         </div>

@@ -55,27 +55,45 @@ class BillingController extends Controller
         $enabledModules = $plan?->modules ?? [];
         $disabledModules = array_values(array_diff(Plan::MODULE_KEYS, $enabledModules));
 
+        // Self-service IN-PLACE plan change (immediate, prorated) is only
+        // possible with an existing active gateway subscription to change —
+        // a tenant with none (on DVARO's own trial, or manually assigned) has
+        // nothing to prorate against and uses checkout() for a first sign-up.
+        $canUpgradeInPlace = $subscription !== null
+            && $subscription->gateway === Subscription::GATEWAY_STRIPE
+            && $subscription->status === Subscription::STATUS_ACTIVE;
+
         // Active plans available for upgrade, cheapest first.
         $availablePlans = Plan::query()
             ->where('is_active', true)
             ->orderBy('sort_order')
             ->orderBy('price_monthly')
             ->get()
-            ->map(fn (Plan $p) => [
-                'id' => $p->id,
-                'name' => $p->name,
-                'description' => $p->description,
-                'price_monthly' => $p->price_monthly,
-                'price_annual' => $p->price_annual,
-                'is_free' => $p->is_free,
-                'modules' => $p->modules ?? [],
-                'limits' => $p->limits ?? [],
-                'is_current' => $plan !== null && $p->id === $plan->id,
-                // Self-service Stripe checkout per cycle — only when the plan
-                // is paid AND synced to Stripe (stripe:sync-plans).
-                'can_checkout_monthly' => ! $p->is_free && $p->stripe_monthly_price_id !== null,
-                'can_checkout_annual' => ! $p->is_free && $p->stripe_annual_price_id !== null,
-            ]);
+            ->map(function (Plan $p) use ($plan, $canUpgradeInPlace, $subscription) {
+                $isCurrent = $plan !== null && $p->id === $plan->id;
+                $priceForCurrentCycle = $subscription?->billing_cycle === Subscription::BILLING_ANNUAL
+                    ? $p->stripe_annual_price_id
+                    : $p->stripe_monthly_price_id;
+
+                return [
+                    'id' => $p->id,
+                    'name' => $p->name,
+                    'description' => $p->description,
+                    'price_monthly' => $p->price_monthly,
+                    'price_annual' => $p->price_annual,
+                    'is_free' => $p->is_free,
+                    'modules' => $p->modules ?? [],
+                    'limits' => $p->limits ?? [],
+                    'is_current' => $isCurrent,
+                    // Self-service Stripe checkout per cycle (first-time
+                    // subscribe) — only when the plan is paid AND synced.
+                    'can_checkout_monthly' => ! $p->is_free && $p->stripe_monthly_price_id !== null,
+                    'can_checkout_annual' => ! $p->is_free && $p->stripe_annual_price_id !== null,
+                    // In-place upgrade/downgrade on the EXISTING subscription,
+                    // same billing cycle, immediate + prorated.
+                    'can_upgrade_in_place' => $canUpgradeInPlace && ! $isCurrent && ! $p->is_free && $priceForCurrentCycle !== null,
+                ];
+            });
 
         // Billing history — every subscription this tenant has held, newest first.
         $history = $tenant->subscriptions()->with('plan:id,name')->get()
@@ -135,6 +153,7 @@ class BillingController extends Controller
             return back()->with('error', $e->getMessage());
         } catch (Throwable $e) {
             report($e); // Stripe API/network failure — never leak the raw error
+
             return back()->with('error', __('common.billing.cancel_failed'));
         }
 

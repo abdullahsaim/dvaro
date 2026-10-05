@@ -5,6 +5,7 @@ namespace App\Modules\SaasCore\Services;
 use App\Modules\SaasCore\Actions\ActivateStripeSubscriptionAction;
 use App\Modules\SaasCore\Events\SubscriptionCancelled;
 use App\Modules\SaasCore\Events\SubscriptionPaymentFailed;
+use App\Modules\SaasCore\Events\SubscriptionUpgraded;
 use App\Modules\SaasCore\Models\Plan;
 use App\Modules\SaasCore\Models\Subscription;
 use App\Modules\SaasCore\Models\Tenant;
@@ -118,7 +119,38 @@ class StripeWebhookService extends BaseService
             $updates['status'] = Subscription::STATUS_ACTIVE;
         }
 
+        // Plan change reconciliation: a self-service upgrade (UpgradeSubscriptionAction)
+        // already updated plan_id/stripe_price_id synchronously for an immediate
+        // UI reflection — this just confirms it (idempotent) and is also the
+        // ONLY sync path for a plan changed directly in the Stripe dashboard.
+        $newPriceId = $stripeSub->items->data[0]->price->id ?? null;
+        if (is_string($newPriceId) && $newPriceId !== '' && $newPriceId !== $subscription->stripe_price_id) {
+            $newPlan = Plan::query()
+                ->where('stripe_monthly_price_id', $newPriceId)
+                ->orWhere('stripe_annual_price_id', $newPriceId)
+                ->first();
+
+            if ($newPlan !== null) {
+                $updates['plan_id'] = $newPlan->id;
+                $updates['stripe_price_id'] = $newPriceId;
+            }
+        }
+
+        if (isset($stripeSub->current_period_start, $stripeSub->current_period_end)) {
+            $updates['current_period_start'] = now()->setTimestamp((int) $stripeSub->current_period_start);
+            $updates['current_period_end'] = now()->setTimestamp((int) $stripeSub->current_period_end);
+        }
+
+        // Captured BEFORE update() — Eloquent refreshes "original" to the new
+        // values as soon as save() runs, so this must be read first.
+        $previousPlanId = $subscription->plan_id;
+
         $subscription->update($updates);
+
+        if (isset($updates['plan_id']) && $updates['plan_id'] !== $previousPlanId) {
+            $subscription->tenant->update(['plan_id' => $updates['plan_id']]);
+            SubscriptionUpgraded::dispatch($subscription->tenant, $subscription);
+        }
 
         if ($stripeStatus === 'past_due' && ! $wasPastDue) {
             SubscriptionPaymentFailed::dispatch($subscription->tenant, $subscription);

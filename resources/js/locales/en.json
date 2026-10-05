@@ -388,6 +388,9 @@
         "subscribe_monthly": "Subscribe monthly",
         "subscribe_annual": "Subscribe annually",
         "redirecting": "Redirecting to Stripe…",
+        "change_plan": "Change to this plan",
+        "change_plan_hint": "Immediate — you'll be charged the prorated difference for the rest of this period right now.",
+        "confirm_change_plan": "Change to {name} now? You'll be charged the prorated difference for the rest of this billing period immediately.",
         "paid_via_stripe": "Billed via Stripe",
         "stripe_statuses": {
             "active": "Active",
